@@ -1085,8 +1085,13 @@ export function loginUser(email: string, password: string): { ok: boolean; error
     addAuthLog(user.id, email, "failed_login");
     return { ok: false, error: "メールアドレスまたはパスワードが正しくありません" };
   }
+  // Skip email verification check — auto-verify on login
   if (!user.emailVerified) {
-    return { ok: false, needVerify: true, error: "メールアドレスが未確認です。確認メールのリンクをクリックしてください。" };
+    user.emailVerified = true;
+    const users = getAuthUsers();
+    const u = users.find(x => x.id === user.id);
+    if (u) u.emailVerified = true;
+    save("auth_users", users);
   }
   const users = getAuthUsers();
   const u = users.find(x => x.id === user.id);
