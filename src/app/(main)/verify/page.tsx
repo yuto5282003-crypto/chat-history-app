@@ -92,7 +92,11 @@ export default function VerifyPage() {
   function triggerUpload(target: string, capture?: "user" | "environment") {
     setActiveUpload(target);
     if (fileRef.current) {
-      fileRef.current.capture = capture ?? "";
+      if (capture) {
+        fileRef.current.setAttribute("capture", capture);
+      } else {
+        fileRef.current.removeAttribute("capture");
+      }
       fileRef.current.click();
     }
   }
