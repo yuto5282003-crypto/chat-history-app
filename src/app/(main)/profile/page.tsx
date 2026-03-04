@@ -3,13 +3,24 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useState, useEffect, useRef } from "react";
-import { getTicketBalance, getTicketLedger, addTicketEntry, getProfile, saveProfile, hasPhotos, getMyKycRequest, submitKycRequest, getKycLevel, runKycAiScoring } from "@/lib/demo-store";
-import type { DemoProfile, KycRequest } from "@/lib/demo-store";
+import {
+  getTicketBalance, getTicketLedger,
+  getProfile, saveProfile, hasPhotos,
+  getMyKycRequest, getKycLevel,
+  getSubscription, setSubscription,
+  TICKET_PACKAGES, purchaseTickets,
+} from "@/lib/demo-store";
+import type { DemoProfile, KycRequest, SubscriptionPlan } from "@/lib/demo-store";
 import {
   DEMO_USER, DEMO_PHOTO_PLACEHOLDERS,
   PURPOSE_TAG_OPTIONS, HOBBY_TAG_OPTIONS, JOB_OPTIONS,
   WORK_STYLE_OPTIONS, INCOME_RANGE_OPTIONS, LIFE_TAG_OPTIONS,
 } from "@/lib/demo-data";
+
+const SUB_PLANS = [
+  { plan: "basic" as const, label: "Basic", price: "¥980/月", tickets: "毎月40🎫", perks: "週末ブースト参加権" },
+  { plan: "plus" as const, label: "Plus", price: "¥1,980/月", tickets: "毎月100🎫", perks: "すれ違い軽優先・ピンCD短縮" },
+];
 
 export default function ProfilePage() {
   const { theme, setTheme } = useTheme();
@@ -22,6 +33,9 @@ export default function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [kycReq, setKycReq] = useState<KycRequest | null>(null);
   const [kycLevel, setKycLevel] = useState(0);
+  const [sub, setSub] = useState<{ plan: SubscriptionPlan }>({ plan: "none" });
+  const [showPurchase, setShowPurchase] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -30,6 +44,7 @@ export default function ProfilePage() {
     setProfile(getProfile());
     setKycReq(getMyKycRequest());
     setKycLevel(getKycLevel());
+    setSub(getSubscription());
   }, []);
 
   if (!profile) return null;
@@ -39,31 +54,20 @@ export default function ProfilePage() {
     setProfile(next);
     saveProfile(next);
   }
-
-  function handleCharge() {
-    addTicketEntry(10, "開発用チャージ（+10）");
-    setTickets(getTicketBalance());
-    setLedger(getTicketLedger());
-  }
-
-  function addDemoPhoto(id: string) {
-    persist({ photos: [...profile!.photos, id].slice(0, 10) });
-  }
-
+  function refreshTickets() { setTickets(getTicketBalance()); setLedger(getTicketLedger()); }
+  function handlePurchase(pkg: typeof TICKET_PACKAGES[number]) { purchaseTickets(pkg.ticketCount, pkg.priceYen); refreshTickets(); }
+  function handleSubscribe(plan: SubscriptionPlan) { setSubscription(plan); setSub(getSubscription()); refreshTickets(); }
+  function addDemoPhoto(id: string) { persist({ photos: [...profile!.photos, id].slice(0, 10) }); }
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = () => persist({ photos: [...profile!.photos, reader.result as string].slice(0, 10) });
-    reader.readAsDataURL(file);
-    e.target.value = "";
+    reader.readAsDataURL(file); e.target.value = "";
   }
-
   function removePhoto(index: number) {
     persist({ photos: profile!.photos.filter((_, i) => i !== index) });
     if (photoIdx >= profile!.photos.length - 1) setPhotoIdx(Math.max(0, profile!.photos.length - 2));
   }
-
   function toggleTag(arr: string[], tag: string, key: keyof DemoProfile, max = 10) {
     const next = arr.includes(tag) ? arr.filter(t => t !== tag) : [...arr, tag].slice(0, max);
     persist({ [key]: next } as Partial<DemoProfile>);
@@ -76,24 +80,17 @@ export default function ProfilePage() {
     <div className="p-4 pb-6">
       <h1 className="text-xl font-bold">プロフィール</h1>
 
-      {/* Photo Card (Tinder style) */}
+      {/* Photo Card */}
       <div className="mt-4 relative overflow-hidden rounded-2xl" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}>
         {photos.length > 0 ? (
           <div className="relative" style={{ height: 320 }}>
             <div className="h-full w-full flex items-center justify-center"
               style={{ backgroundColor: photos[photoIdx]?.startsWith("data:") ? undefined : COLORS[DEMO_PHOTO_PLACEHOLDERS.indexOf(photos[photoIdx]) % COLORS.length] || COLORS[0] }}>
-              {photos[photoIdx]?.startsWith("data:") ? (
-                <img src={photos[photoIdx]} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-6xl">📷</span>
-              )}
+              {photos[photoIdx]?.startsWith("data:") ? <img src={photos[photoIdx]} alt="" className="h-full w-full object-cover" /> : <span className="text-6xl">📷</span>}
             </div>
             {photos.length > 1 && (
               <div className="absolute top-2 left-0 right-0 flex justify-center gap-1">
-                {photos.map((_, i) => (
-                  <div key={i} className="h-1 rounded-full transition-all"
-                    style={{ width: i === photoIdx ? 24 : 8, backgroundColor: i === photoIdx ? "white" : "rgba(255,255,255,0.5)" }} />
-                ))}
+                {photos.map((_, i) => <div key={i} className="h-1 rounded-full transition-all" style={{ width: i === photoIdx ? 24 : 8, backgroundColor: i === photoIdx ? "white" : "rgba(255,255,255,0.5)" }} />)}
               </div>
             )}
             {photoIdx > 0 && <button onClick={() => setPhotoIdx(photoIdx - 1)} className="absolute left-0 top-0 bottom-0 w-1/3" />}
@@ -103,8 +100,7 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="flex h-48 flex-col items-center justify-center gap-2" style={{ color: "var(--muted)" }}>
-            <span className="text-4xl">📷</span>
-            <span className="text-xs">写真を追加してください</span>
+            <span className="text-4xl">📷</span><span className="text-xs">写真を追加してください</span>
           </div>
         )}
         <div className="p-4">
@@ -116,9 +112,7 @@ export default function ProfilePage() {
           {profile.job && <p className="mt-0.5 text-xs" style={{ color: "var(--muted)" }}>{profile.job}{profile.workStyle ? ` / ${profile.workStyle}` : ""}</p>}
           {profile.purposeTags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {profile.purposeTags.map(t => (
-                <span key={t} className="rounded-full px-2 py-0.5 text-[10px]" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>{t}</span>
-              ))}
+              {profile.purposeTags.map(t => <span key={t} className="rounded-full px-2 py-0.5 text-[10px]" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>{t}</span>)}
             </div>
           )}
         </div>
@@ -159,25 +153,18 @@ export default function ProfilePage() {
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>自己紹介（20〜40字推奨）</label>
         <input className="input mt-1" maxLength={60} placeholder="カフェ好き！気軽に話しかけてね" value={profile.bio} onChange={e => persist({ bio: e.target.value })} />
       </section>
-
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>目的タグ</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {PURPOSE_TAG_OPTIONS.map(t => (
-            <button key={t} onClick={() => toggleTag(profile.purposeTags, t, "purposeTags")} className={`chip text-[11px] ${profile.purposeTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>
-          ))}
+          {PURPOSE_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.purposeTags, t, "purposeTags")} className={`chip text-[11px] ${profile.purposeTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
         </div>
       </section>
-
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>趣味タグ（最大10）</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {HOBBY_TAG_OPTIONS.map(t => (
-            <button key={t} onClick={() => toggleTag(profile.hobbyTags, t, "hobbyTags")} className={`chip text-[11px] ${profile.hobbyTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>
-          ))}
+          {HOBBY_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.hobbyTags, t, "hobbyTags")} className={`chip text-[11px] ${profile.hobbyTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
         </div>
       </section>
-
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>職業</label>
         <select className="input mt-1" value={profile.job} onChange={e => persist({ job: e.target.value })}>
@@ -186,12 +173,9 @@ export default function ProfilePage() {
         </select>
         <label className="mt-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>勤務形態</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {WORK_STYLE_OPTIONS.map(w => (
-            <button key={w} onClick={() => persist({ workStyle: profile.workStyle === w ? "" : w })} className={`chip text-[11px] ${profile.workStyle === w ? "chip-active" : "chip-inactive"}`}>{w}</button>
-          ))}
+          {WORK_STYLE_OPTIONS.map(w => <button key={w} onClick={() => persist({ workStyle: profile.workStyle === w ? "" : w })} className={`chip text-[11px] ${profile.workStyle === w ? "chip-active" : "chip-inactive"}`}>{w}</button>)}
         </div>
       </section>
-
       <section className="mt-4 grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>年齢（任意）</label>
@@ -202,7 +186,6 @@ export default function ProfilePage() {
           <input className="input mt-1" placeholder="170cm" value={profile.height} onChange={e => persist({ height: e.target.value })} />
         </div>
       </section>
-
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>年収レンジ（任意）</label>
         <select className="input mt-1" value={profile.incomeRange} onChange={e => persist({ incomeRange: e.target.value })}>
@@ -216,19 +199,16 @@ export default function ProfilePage() {
           ))}
         </div>
       </section>
-
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>生活タグ</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {LIFE_TAG_OPTIONS.map(t => (
-            <button key={t} onClick={() => toggleTag(profile.lifeTags, t, "lifeTags")} className={`chip text-[11px] ${profile.lifeTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>
-          ))}
+          {LIFE_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.lifeTags, t, "lifeTags")} className={`chip text-[11px] ${profile.lifeTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
         </div>
       </section>
 
       <div className="mt-6 h-px" style={{ backgroundColor: "var(--border)" }} />
 
-      {/* KYC Section */}
+      {/* KYC */}
       <section className="mt-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>本人確認</h2>
         <div className="mt-2 card p-4">
@@ -243,8 +223,7 @@ export default function ProfilePage() {
           </div>
           {kycReq && kycReq.status !== "approved" && (
             <div className="mt-2 rounded-lg p-2 text-xs"
-              style={{ backgroundColor: kycReq.status === "rejected" ? "rgba(220,38,38,0.08)" : "rgba(234,179,8,0.1)",
-                color: kycReq.status === "rejected" ? "var(--danger)" : "#b45309" }}>
+              style={{ backgroundColor: kycReq.status === "rejected" ? "rgba(220,38,38,0.08)" : "rgba(234,179,8,0.1)", color: kycReq.status === "rejected" ? "var(--danger)" : "#b45309" }}>
               {kycReq.status === "pending_ai" && "🤖 AI判定中..."}
               {kycReq.status === "pending_review" && `📋 人間レビュー待ち（AIスコア: ${kycReq.aiScore}）`}
               {kycReq.status === "rejected" && `❌ 却下: ${kycReq.reviewerNote || "理由なし"}`}
@@ -252,18 +231,81 @@ export default function ProfilePage() {
             </div>
           )}
           {(!kycReq || kycReq.status === "rejected" || kycReq.status === "resubmit_required") && (
-            <div className="mt-3 space-y-2">
-              <button onClick={() => { submitKycRequest(1); setKycReq(getMyKycRequest()); setTimeout(() => { runKycAiScoring(getMyKycRequest()?.id ?? ""); setKycReq(getMyKycRequest()); }, 2000); }}
-                className="btn-outline w-full text-xs !py-2">Lv1 ライト申請（セルフィーのみ）</button>
-              <button onClick={() => { submitKycRequest(2); setKycReq(getMyKycRequest()); setTimeout(() => { runKycAiScoring(getMyKycRequest()?.id ?? ""); setKycReq(getMyKycRequest()); }, 2000); }}
-                className="btn-primary w-full text-xs !py-2">Lv2 強 申請（身分証+ライブネス）</button>
-            </div>
+            <Link href="/verify" className="btn-outline w-full text-xs !py-2 block text-center mt-3">本人確認を申請する →</Link>
           )}
-          <Link href="/admin/kyc" className="mt-2 block text-center text-[10px]" style={{ color: "var(--accent)" }}>
-            管理者：審査キューを開く →
-          </Link>
         </div>
       </section>
+
+      <div className="mt-6 h-px" style={{ backgroundColor: "var(--border)" }} />
+
+      {/* Tickets */}
+      <section className="mt-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>チケット</h2>
+        <div className="mt-2 card p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">🎫 残高</span>
+            <span className="text-lg font-bold" style={{ color: "var(--accent)" }}>{tickets}枚</span>
+          </div>
+        </div>
+        <button onClick={() => setShowPurchase(!showPurchase)} className="btn-primary mt-2 w-full text-sm">🎫 チケットを購入</button>
+        {showPurchase && (
+          <div className="mt-2 card p-4 space-y-2">
+            <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>チケットパック</p>
+            {TICKET_PACKAGES.map(pkg => (
+              <button key={pkg.ticketCount} onClick={() => handlePurchase(pkg)} className="w-full flex items-center justify-between rounded-xl p-3 text-sm hover:opacity-80" style={{ backgroundColor: "var(--accent-soft)" }}>
+                <span className="font-medium">🎫 {pkg.ticketCount}枚</span>
+                <span className="text-xs" style={{ color: "var(--muted)" }}>¥{pkg.priceYen.toLocaleString()}（デモ：即付与）</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 card p-4">
+          <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>サブスクリプション</p>
+          <p className="mt-1 text-xs">現在: <span className="font-bold" style={{ color: "var(--accent)" }}>{sub.plan === "none" ? "なし" : sub.plan === "basic" ? "Basic" : "Plus"}</span></p>
+          <div className="mt-2 space-y-2">
+            {SUB_PLANS.map(sp => (
+              <div key={sp.plan} className="rounded-xl p-3" style={{ backgroundColor: sub.plan === sp.plan ? "var(--accent-soft)" : "var(--bg)", border: sub.plan === sp.plan ? "2px solid var(--accent)" : "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{sp.label} <span className="text-xs" style={{ color: "var(--muted)" }}>{sp.price}</span></p>
+                    <p className="text-[10px]" style={{ color: "var(--muted)" }}>{sp.tickets} / {sp.perks}</p>
+                  </div>
+                  {sub.plan === sp.plan ? (
+                    <button onClick={() => handleSubscribe("none")} className="text-[10px] px-2 py-1 rounded" style={{ color: "var(--danger)" }}>解約</button>
+                  ) : (
+                    <button onClick={() => handleSubscribe(sp.plan)} className="btn-primary text-[10px] !px-3 !py-1">加入</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button onClick={() => setShowLedger(!showLedger)} className="btn-outline mt-2 w-full text-xs">{showLedger ? "閉じる" : "🎫 台帳を表示"}</button>
+        {showLedger && (
+          <div className="mt-2 card p-3 space-y-2 max-h-64 overflow-y-auto">
+            <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>チケット台帳</p>
+            {ledger.map((entry, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <div><span>{entry.reason}</span><span className="ml-2 text-[10px]" style={{ color: "var(--muted)" }}>{new Date(entry.createdAt).toLocaleDateString("ja-JP")}</span></div>
+                <span className="font-semibold" style={{ color: entry.delta > 0 ? "var(--success)" : "var(--danger)" }}>{entry.delta > 0 ? `+${entry.delta}` : entry.delta}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 card p-3">
+          <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>消費目安</p>
+          <div className="mt-1 space-y-1 text-[11px]">
+            <div className="flex justify-between"><span>ピン送信</span><span>5🎫</span></div>
+            <div className="flex justify-between"><span>広場投稿</span><span>2🎫</span></div>
+            <div className="flex justify-between"><span>スロット出品</span><span>1🎫</span></div>
+            <div className="flex justify-between"><span>ブースト(30分)</span><span>10🎫</span></div>
+            <div className="flex justify-between"><span>チェックイン</span><span>0🎫</span></div>
+            <div className="flex justify-between" style={{ color: "var(--success)" }}><span>通話/対面完了</span><span>+1🎫(1日3回上限)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-6 h-px" style={{ backgroundColor: "var(--border)" }} />
 
       <div className="mt-6 space-y-6">
         <section>
@@ -277,35 +319,16 @@ export default function ProfilePage() {
             )}
           </div>
         </section>
-
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>チケット</h2>
-          <div className="mt-2 card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">🎫 残高</span>
-              <span className="text-lg font-bold" style={{ color: "var(--accent)" }}>{tickets}枚</span>
-            </div>
-          </div>
-          <button onClick={handleCharge} className="btn-primary mt-2 w-full text-sm">🎫 +10 チャージ（開発用）</button>
-          <div className="mt-3 card p-3 space-y-2">
-            <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>最近の履歴</p>
-            {ledger.slice(0, 6).map((entry, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
-                <span>{entry.reason}</span>
-                <span className="font-semibold" style={{ color: entry.delta > 0 ? "var(--success)" : "var(--danger)" }}>{entry.delta > 0 ? `+${entry.delta}` : entry.delta}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>その他</h2>
           <div className="mt-2 space-y-1">
+            <SettingsRow label="メッセージ" href="/messages" />
             <SettingsRow label="ピン受信箱" href="/pings" />
             <SettingsRow label="依頼受信箱" href="/requests/inbox" />
             <SettingsRow label="予約管理" href="/bookings" />
             <SettingsRow label="フレンド" href="/friends" />
             <SettingsRow label="非公開予定管理" href="/friends/events" />
+            <SettingsRow label="管理画面（Owner）" href="/admin" />
           </div>
         </section>
       </div>

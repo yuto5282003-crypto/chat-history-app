@@ -621,8 +621,10 @@ export function getReports(): DemoReport[] {
 }
 export function addReport(roomId: string, targetId: string, reason: string) {
   const reports = getReports();
-  reports.unshift({ id: `rpt-${Date.now()}`, roomId, reporterId: "demo-user-1", targetId, reason, createdAt: new Date().toISOString() });
+  const rpt: DemoReport = { id: `rpt-${Date.now()}`, roomId, reporterId: "demo-user-1", targetId, reason, createdAt: new Date().toISOString() };
+  reports.unshift(rpt);
   save("reports", reports);
+  return rpt;
 }
 
 export function getBlocks(): DemoBlock[] {
@@ -634,6 +636,190 @@ export function addBlock(userId: string) {
     blocks.push({ userId, blockedAt: new Date().toISOString() });
     save("blocks", blocks);
   }
+}
+
+// --- Subscription ---
+export type SubscriptionPlan = "none" | "basic" | "plus";
+export type SubscriptionState = {
+  plan: SubscriptionPlan;
+  startedAt: string | null;
+  ticketsGrantedThisMonth: boolean;
+};
+export function getSubscription(): SubscriptionState {
+  return load<SubscriptionState>("subscription_state", { plan: "none", startedAt: null, ticketsGrantedThisMonth: false });
+}
+export function setSubscription(plan: SubscriptionPlan) {
+  const sub: SubscriptionState = { plan, startedAt: plan === "none" ? null : new Date().toISOString(), ticketsGrantedThisMonth: plan !== "none" };
+  save("subscription_state", sub);
+  if (plan === "basic") addTicketEntry(40, "Basicサブスク 月40🎫付与");
+  if (plan === "plus") addTicketEntry(100, "Plusサブスク 月100🎫付与");
+}
+
+// --- Ticket Purchases (mock) ---
+export type TicketPurchase = {
+  id: string;
+  ticketCount: number;
+  priceYen: number;
+  createdAt: string;
+};
+export const TICKET_PACKAGES = [
+  { ticketCount: 10, priceYen: 480 },
+  { ticketCount: 30, priceYen: 1200 },
+  { ticketCount: 80, priceYen: 2980 },
+  { ticketCount: 200, priceYen: 6980 },
+] as const;
+export function getPurchases(): TicketPurchase[] {
+  return load<TicketPurchase[]>("purchases_mock", []);
+}
+export function purchaseTickets(ticketCount: number, priceYen: number) {
+  const purchases = getPurchases();
+  purchases.unshift({ id: `pur-${Date.now()}`, ticketCount, priceYen, createdAt: new Date().toISOString() });
+  save("purchases_mock", purchases);
+  addTicketEntry(ticketCount, `${ticketCount}🎫購入`);
+}
+
+// --- Free reward (completion bonus) ---
+export function claimCompletionReward(partnerId: string): boolean {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const rewards = load<{ date: string; partnerId: string }[]>("completion_rewards", []);
+  const todayRewards = rewards.filter(r => r.date === todayKey);
+  // Same partner within 24h: 1 time only
+  if (todayRewards.some(r => r.partnerId === partnerId)) return false;
+  // Daily cap: 3
+  if (todayRewards.length >= 3) return false;
+  rewards.push({ date: todayKey, partnerId });
+  save("completion_rewards", rewards);
+  addTicketEntry(1, "通話/対面完了ボーナス (+1🎫)");
+  return true;
+}
+
+// --- Users (admin view) ---
+export type DemoUser = {
+  id: string;
+  displayName: string;
+  loginEmail: string;
+  loginProvider: "email" | "google" | "apple";
+  kycLevel: KycLevel;
+  reportCount: number;
+  lastActiveAt: string;
+  status: "active" | "banned";
+  forceResetFlag: boolean;
+  adminNote: string;
+};
+const DEMO_USERS_DEFAULT: DemoUser[] = [
+  { id: "demo-user-1", displayName: "あなた（デモ）", loginEmail: "demo@sloty.app", loginProvider: "email", kycLevel: 0, reportCount: 0, lastActiveAt: new Date().toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+  { id: "user-a", displayName: "はるか", loginEmail: "haruka@example.com", loginProvider: "google", kycLevel: 2, reportCount: 0, lastActiveAt: new Date(Date.now() - 3600_000).toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+  { id: "user-b", displayName: "たくや", loginEmail: "takuya@example.com", loginProvider: "email", kycLevel: 1, reportCount: 1, lastActiveAt: new Date(Date.now() - 7200_000).toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+  { id: "user-c", displayName: "みさき", loginEmail: "misaki@example.com", loginProvider: "apple", kycLevel: 0, reportCount: 0, lastActiveAt: new Date(Date.now() - 86400_000).toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+  { id: "user-d", displayName: "ゆうた", loginEmail: "yuta@example.com", loginProvider: "google", kycLevel: 2, reportCount: 0, lastActiveAt: new Date(Date.now() - 1800_000).toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+  { id: "user-e", displayName: "あおい", loginEmail: "aoi@example.com", loginProvider: "email", kycLevel: 1, reportCount: 2, lastActiveAt: new Date(Date.now() - 14400_000).toISOString(), status: "active", forceResetFlag: false, adminNote: "" },
+];
+export function getUsers(): DemoUser[] {
+  return load<DemoUser[]>("users", DEMO_USERS_DEFAULT);
+}
+export function getUser(userId: string): DemoUser | null {
+  return getUsers().find(u => u.id === userId) ?? null;
+}
+export function updateUser(userId: string, updates: Partial<DemoUser>) {
+  const users = getUsers();
+  const u = users.find(x => x.id === userId);
+  if (u) Object.assign(u, updates);
+  save("users", users);
+}
+export function banUser(userId: string) { updateUser(userId, { status: "banned" }); }
+export function unbanUser(userId: string) { updateUser(userId, { status: "active" }); }
+export function forcePasswordReset(userId: string) { updateUser(userId, { forceResetFlag: true }); }
+
+// --- Admin Audit Log ---
+export type AdminAuditEntry = {
+  id: string;
+  actorUserId: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  createdAt: string;
+  ip: string;
+  userAgent: string;
+};
+export function getAdminAuditLog(): AdminAuditEntry[] {
+  return load<AdminAuditEntry[]>("admin_audit_log", []);
+}
+export function addAdminAudit(action: string, targetType: string, targetId: string, reason: string) {
+  const log = getAdminAuditLog();
+  log.unshift({
+    id: `aal-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    actorUserId: "owner",
+    action, targetType, targetId, reason,
+    createdAt: new Date().toISOString(),
+    ip: "127.0.0.1",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : "demo",
+  });
+  save("admin_audit_log", log);
+}
+
+// --- Admin session ---
+export function getAdminSession(): { authenticated: boolean; expiresAt: number } {
+  const s = load<{ authenticated: boolean; expiresAt: number }>("admin_session", { authenticated: false, expiresAt: 0 });
+  if (s.authenticated && s.expiresAt < Date.now()) {
+    save("admin_session", { authenticated: false, expiresAt: 0 });
+    return { authenticated: false, expiresAt: 0 };
+  }
+  return s;
+}
+export function setAdminSession() {
+  save("admin_session", { authenticated: true, expiresAt: Date.now() + 30 * 60_000 }); // 30min
+}
+export function clearAdminSession() {
+  save("admin_session", { authenticated: false, expiresAt: 0 });
+}
+
+// --- Media (image messages) ---
+export type DemoMedia = {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  url: string; // data URI in demo
+  createdAt: string;
+};
+export function getMedia(roomId: string): DemoMedia[] {
+  return load<DemoMedia[]>(`media_${roomId}`, []);
+}
+export function addMedia(roomId: string, senderId: string, senderName: string, url: string): DemoMedia {
+  const media = getMedia(roomId);
+  const m: DemoMedia = { id: `med-${Date.now()}`, roomId, senderId, senderName, url, createdAt: new Date().toISOString() };
+  media.push(m);
+  save(`media_${roomId}`, media);
+  return m;
+}
+export function getAllMedia(): DemoMedia[] {
+  // Gather media from all rooms
+  const rooms = getRooms();
+  return rooms.flatMap(r => getMedia(r.id));
+}
+
+// --- KYC asset metadata (no raw images stored in app) ---
+export type KycAssetMeta = {
+  id: string;
+  kycRequestId: string;
+  userId: string;
+  assetType: "selfie" | "id_front" | "id_back" | "liveness_left" | "liveness_right";
+  uploadedAt: string;
+  objectKey: string; // simulated S3 path
+};
+export function getKycAssetsMeta(kycRequestId: string): KycAssetMeta[] {
+  return load<KycAssetMeta[]>("kyc_assets_meta", []).filter(a => a.kycRequestId === kycRequestId);
+}
+export function addKycAssetMeta(kycRequestId: string, userId: string, assetType: KycAssetMeta["assetType"]) {
+  const all = load<KycAssetMeta[]>("kyc_assets_meta", []);
+  all.push({
+    id: `kya-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    kycRequestId, userId, assetType,
+    uploadedAt: new Date().toISOString(),
+    objectKey: `kyc/${userId}/${kycRequestId}/${assetType}.jpg`,
+  });
+  save("kyc_assets_meta", all);
 }
 
 // ===== Conflict check =====
