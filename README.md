@@ -135,6 +135,7 @@ npm run dev
 | マーケット | 🏪 | /market |
 | すれ違い | 📡 | /nearby |
 | メッセージ | 💬 | /messages |
+| カレンダー | 📅 | /calendar |
 | 広場 | 🏛️ | /square |
 | 設定 | ⚙️ | /profile |
 
