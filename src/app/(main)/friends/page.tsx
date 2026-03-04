@@ -10,8 +10,16 @@ const PERMISSION_OPTIONS = [
   { value: "none", label: "非公開" },
 ] as const;
 
+type Friend = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  permissionLevel: string;
+  status: string;
+};
+
 export default function FriendsPage() {
-  const [friends, setFriends] = useState(
+  const [friends, setFriends] = useState<Friend[]>(
     DEMO_FRIENDS.map((f) => ({ ...f }))
   );
 
