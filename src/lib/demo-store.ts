@@ -108,7 +108,16 @@ export type DemoPing = {
 
 export type DemoProfile = {
   bio: string;
-  photos: string[];    // data URLs or demo placeholder IDs
+  photos: string[];
+  purposeTags: string[];
+  hobbyTags: string[];
+  job: string;
+  workStyle: string;
+  age: string;
+  height: string;
+  incomeRange: string;
+  incomeVisibility: "all" | "match" | "private";
+  lifeTags: string[];
 };
 
 // ===== localStorage helpers =====
@@ -281,14 +290,83 @@ export function setPingCooldown(targetUserId: string) {
 }
 
 // --- Profile ---
+const DEFAULT_PROFILE: DemoProfile = {
+  bio: "", photos: [], purposeTags: [], hobbyTags: [],
+  job: "", workStyle: "", age: "", height: "",
+  incomeRange: "", incomeVisibility: "private", lifeTags: [],
+};
 export function getProfile(): DemoProfile {
-  return load<DemoProfile>("profile", { bio: "", photos: [] });
+  return load<DemoProfile>("profile", DEFAULT_PROFILE);
 }
 export function saveProfile(p: DemoProfile) {
   save("profile", p);
 }
 export function hasPhotos(): boolean {
   return getProfile().photos.length > 0;
+}
+
+// --- Friend events (shared busy/free) ---
+export type FriendEvent = {
+  startAt: string; endAt: string;
+  type: "busy" | "free"; title?: string;
+};
+export function getFriendEvents(friendId: string): FriendEvent[] {
+  return load<FriendEvent[]>(`friend_events_${friendId}`, []);
+}
+export function getCalendarVisibility(): { showFriends: boolean; selectedFriends: string[] } {
+  return load("cal_vis", { showFriends: false, selectedFriends: [] });
+}
+export function setCalendarVisibility(v: { showFriends: boolean; selectedFriends: string[] }) {
+  save("cal_vis", v);
+}
+// --- Common free time ---
+export function calcCommonFree(friendId: string): { start: string; end: string; minutes: number }[] {
+  const myEvents = getPrivateEvents().filter(e => (e.kind ?? "busy") !== "free");
+  const friendEvents = getFriendEvents(friendId).filter(e => e.type === "busy");
+  const now = Date.now();
+  const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+  const eod = endOfDay.getTime();
+
+  // Build blocked intervals
+  const blocked: { s: number; e: number }[] = [];
+  for (const ev of myEvents) {
+    const buf = ((ev.bufferBefore ?? 10) + (ev.bufferAfter ?? 10)) * 60_000;
+    blocked.push({ s: new Date(ev.startAt).getTime() - (ev.bufferBefore ?? 10) * 60_000, e: new Date(ev.endAt).getTime() + (ev.bufferAfter ?? 10) * 60_000 });
+  }
+  for (const ev of friendEvents) {
+    blocked.push({ s: new Date(ev.startAt).getTime(), e: new Date(ev.endAt).getTime() });
+  }
+  blocked.sort((a, b) => a.s - b.s);
+
+  // Merge intervals
+  const merged: { s: number; e: number }[] = [];
+  for (const b of blocked) {
+    if (merged.length && b.s <= merged[merged.length - 1].e) {
+      merged[merged.length - 1].e = Math.max(merged[merged.length - 1].e, b.e);
+    } else {
+      merged.push({ ...b });
+    }
+  }
+
+  // Find gaps from now to end of day
+  const gaps: { start: string; end: string; minutes: number }[] = [];
+  let cursor = now;
+  for (const m of merged) {
+    if (m.s > cursor && m.s <= eod) {
+      const gapMin = Math.floor((m.s - cursor) / 60_000);
+      if (gapMin >= 15) {
+        gaps.push({ start: new Date(cursor).toISOString(), end: new Date(m.s).toISOString(), minutes: gapMin });
+      }
+    }
+    cursor = Math.max(cursor, m.e);
+  }
+  if (cursor < eod) {
+    const gapMin = Math.floor((eod - cursor) / 60_000);
+    if (gapMin >= 15) {
+      gaps.push({ start: new Date(cursor).toISOString(), end: new Date(eod).toISOString(), minutes: gapMin });
+    }
+  }
+  return gaps.slice(0, 5);
 }
 
 // --- Free time calculation ---

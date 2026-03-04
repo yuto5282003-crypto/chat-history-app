@@ -113,10 +113,10 @@ export default function RequestFormPage() {
           </div>
         </div>
         <div>
-          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>予算上限</label>
+          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>消費チケット上限</label>
           <div className="mt-1 flex items-center gap-1">
-            <span className="text-sm">¥</span>
             <input type="number" className="input" value={budget} onChange={(e) => setBudget(e.target.value)} />
+            <span className="text-sm">🎫</span>
           </div>
         </div>
         <div>

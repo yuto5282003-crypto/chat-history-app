@@ -18,7 +18,8 @@ import {
   getTicketBalance,
 } from "@/lib/demo-store";
 import type { DemoCheckin } from "@/lib/demo-store";
-import { DEMO_USER, PURPOSE_TEMPLATES, DEMO_NEARBY_CHECKINS } from "@/lib/demo-data";
+import { DEMO_USER, PURPOSE_TEMPLATES, DEMO_NEARBY_CHECKINS, DEMO_POIS } from "@/lib/demo-data";
+import { suggestMeetups } from "@/lib/ai";
 
 // 擬似位置（仙台駅）
 const FALLBACK_LAT = 38.2601;
@@ -38,6 +39,7 @@ export default function NearbyPage() {
   const [cooldown, setCooldown] = useState(0);
   const [freeInfo, setFreeInfo] = useState({ freeMinutes: 0, nextEventTitle: null as string | null, nextEventAt: null as string | null });
   const [tickets, setTickets] = useState(18);
+  const [showMap, setShowMap] = useState(false);
 
   // form
   const [duration, setDuration] = useState(15);
@@ -53,7 +55,6 @@ export default function NearbyPage() {
 
   const reload = useCallback(() => {
     setMyCheckin(getMyCheckin());
-    // Merge demo + user checkins (exclude self)
     const userCheckins = getCheckins().filter((c) => c.userId !== "demo-user-1");
     const demoIds = new Set(userCheckins.map((c) => c.userId));
     const demoCheckins = DEMO_NEARBY_CHECKINS.filter((c) => !demoIds.has(c.userId));
@@ -138,13 +139,24 @@ export default function NearbyPage() {
 
   const photoGuard = !hasPhotos();
 
+  // AI meetup suggestions for current context
+  const aiSuggestions = myCheckin
+    ? suggestMeetups(myCheckin.mode, myCheckin.purpose, myCheckin.durationMinutes)
+    : [];
+
   return (
     <div className="p-4 pb-2">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">すれ違い</h1>
-        <Link href="/pings" className="btn-outline !px-3 !py-1.5 text-xs">
-          受信箱
-        </Link>
+        <div className="flex gap-2">
+          <button onClick={() => setShowMap(!showMap)}
+            className={`!px-3 !py-1.5 text-xs rounded-lg ${showMap ? "btn-primary" : "btn-outline"}`}>
+            🌍 マップ
+          </button>
+          <Link href="/pings" className="btn-outline !px-3 !py-1.5 text-xs">
+            受信箱
+          </Link>
+        </div>
       </div>
 
       {/* Photo guard banner */}
@@ -156,6 +168,72 @@ export default function NearbyPage() {
         >
           ⚠️ プロフィール写真を登録するとすれ違い機能が使えます →
         </Link>
+      )}
+
+      {/* Map view */}
+      {showMap && (
+        <div className="mt-3 card overflow-hidden">
+          <div className="relative" style={{ height: 280, backgroundColor: "#e8e0f0" }}>
+            {/* Simplified map representation */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative" style={{ width: "100%", height: "100%" }}>
+                {/* Grid lines for map feel */}
+                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  {[0.2, 0.4, 0.6, 0.8].map(r => (
+                    <g key={r}>
+                      <line x1={`${r * 100}%`} y1="0" x2={`${r * 100}%`} y2="100%" stroke="rgba(155,138,251,0.1)" strokeWidth="1" />
+                      <line x1="0" y1={`${r * 100}%`} x2="100%" y2={`${r * 100}%`} stroke="rgba(155,138,251,0.1)" strokeWidth="1" />
+                    </g>
+                  ))}
+                </svg>
+                {/* Center marker (me) */}
+                <div className="absolute" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
+                  <div className="relative">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm" style={{ backgroundColor: "var(--accent)", color: "white", boxShadow: "0 0 0 4px rgba(155,138,251,0.3)" }}>
+                      📍
+                    </div>
+                    <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-medium px-1 rounded" style={{ backgroundColor: "var(--accent)", color: "white" }}>自分</span>
+                  </div>
+                </div>
+                {/* Nearby checkins */}
+                {nearbyList.map((ci, idx) => {
+                  const angle = (idx / nearbyList.length) * Math.PI * 2;
+                  const radius = 25 + (idx % 3) * 10;
+                  const top = 50 + Math.sin(angle) * radius;
+                  const left = 50 + Math.cos(angle) * radius;
+                  return (
+                    <button key={ci.id} className="absolute"
+                      style={{ top: `${top}%`, left: `${left}%`, transform: "translate(-50%, -50%)" }}
+                      onClick={() => { setPingTarget(ci); setPingSent(false); setPingError(""); }}>
+                      <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)", border: "2px solid white" }}>
+                        {ci.displayName[0]}
+                      </div>
+                    </button>
+                  );
+                })}
+                {/* POI markers */}
+                {DEMO_POIS.slice(0, 3).map((poi, idx) => {
+                  const top = 20 + idx * 25;
+                  const left = 15 + idx * 20;
+                  return (
+                    <div key={poi.name} className="absolute" style={{ top: `${top}%`, left: `${left}%` }}>
+                      <div className="h-5 w-5 rounded flex items-center justify-center text-[10px]"
+                        style={{ backgroundColor: "rgba(255,255,255,0.9)", border: "1px solid var(--border)" }}>
+                        📍
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="p-2 flex items-center gap-2 text-[10px]" style={{ color: "var(--muted)" }}>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--accent)" }} /> 自分</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--accent-soft-text)" }} /> チェックイン中</span>
+            <span className="flex items-center gap-1">📍 POI</span>
+          </div>
+        </div>
       )}
 
       {/* Auto-free suggestion card */}
@@ -186,6 +264,23 @@ export default function NearbyPage() {
           >
             タップでイマヒマON
           </button>
+        </div>
+      )}
+
+      {/* AI meetup suggestions (shown when checked in for in_person) */}
+      {myCheckin && aiSuggestions.length > 0 && myCheckin.mode === "in_person" && (
+        <div className="mt-3 card p-3">
+          <p className="text-xs font-semibold flex items-center gap-1" style={{ color: "var(--muted)" }}>
+            🤖 AI待ち合わせ提案
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {aiSuggestions.map((s, i) => (
+              <div key={i} className="rounded-lg p-2 text-xs" style={{ backgroundColor: "var(--accent-soft)" }}>
+                <span className="font-medium" style={{ color: "var(--accent-soft-text)" }}>📍 {s.place}</span>
+                <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted)" }}>{s.reason}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -280,7 +375,6 @@ export default function NearbyPage() {
             {nearbyList.map((ci) => (
               <div key={ci.id} className="card p-3">
                 <div className="flex items-start gap-3">
-                  {/* Avatar */}
                   <div
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold"
                     style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}
@@ -346,6 +440,19 @@ export default function NearbyPage() {
                 <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
                   目的: {pingTarget.purpose} / {pingTarget.mode === "call" ? "📞 通話" : "🚶 対面"}
                 </p>
+
+                {/* AI place suggestions for in_person */}
+                {pingTarget.mode === "in_person" && (
+                  <div className="mt-3 rounded-lg p-2" style={{ backgroundColor: "var(--accent-soft)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "var(--accent-soft-text)" }}>🤖 おすすめ待ち合わせ場所</p>
+                    <div className="mt-1 space-y-1">
+                      {suggestMeetups("in_person", pingTarget.purpose, pingDuration).map((s, i) => (
+                        <p key={i} className="text-[10px]" style={{ color: "var(--muted)" }}>📍 {s.place}（{s.reason}）</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4">
                   <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>希望時間</label>
                   <div className="mt-1 flex gap-2">

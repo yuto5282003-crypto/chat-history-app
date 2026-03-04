@@ -367,3 +367,45 @@ export const MEETUP_PLACES = [
   "仙台パルコ 1F",
   "勾当台公園",
 ];
+
+// ===== プロフィール タグ選択肢 =====
+export const PURPOSE_TAG_OPTIONS = ["雑談", "カフェ", "勉強", "作業同行", "散歩", "ゲーム", "相談", "観光", "暇つぶし"];
+export const HOBBY_TAG_OPTIONS = ["カフェ巡り", "読書", "映画", "音楽", "旅行", "料理", "スポーツ", "ゲーム", "プログラミング", "写真", "アニメ", "ファッション", "筋トレ", "ヨガ", "登山"];
+export const JOB_OPTIONS = ["会社員", "学生", "フリーランス", "自営業", "公務員", "クリエイター", "エンジニア", "医療", "教育", "その他"];
+export const WORK_STYLE_OPTIONS = ["フルリモート", "ハイブリッド", "出社", "フリー"];
+export const INCOME_RANGE_OPTIONS = ["非公開", "〜300万", "300〜500万", "500〜700万", "700〜1000万", "1000万〜"];
+export const LIFE_TAG_OPTIONS = ["非喫煙", "喫煙", "お酒飲む", "お酒飲まない", "朝型", "夜型", "インドア", "アウトドア"];
+
+// ===== POI（近くの候補地点） =====
+export const DEMO_POIS = [
+  { id: "poi-1", name: "仙台駅 アーケード", category: "公共", lat: 38.2601, lng: 140.8829, note: "雨でもOK・人が多く安全" },
+  { id: "poi-2", name: "スターバックス 仙台駅前店", category: "カフェ", lat: 38.2608, lng: 140.8835, note: "Wi-Fi有・長居OK" },
+  { id: "poi-3", name: "仙台パルコ 1Fエントランス", category: "商業施設", lat: 38.2598, lng: 140.8820, note: "わかりやすい待ち合わせスポット" },
+  { id: "poi-4", name: "青葉通り ケヤキ並木", category: "公園", lat: 38.2612, lng: 140.8800, note: "天気いい日の散歩に最適" },
+  { id: "poi-5", name: "勾当台公園", category: "公園", lat: 38.2650, lng: 140.8700, note: "広くて開放的" },
+];
+
+// ===== フレンドカレンダーデモイベント =====
+export function getDemoFriendCalendarEvents(friendId: string) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const events: { startAt: string; endAt: string; type: "busy" | "free"; title?: string }[] = [];
+  for (let day = 0; day < 14; day++) {
+    const d = new Date(today.getTime() + day * 86400_000);
+    if (day % 2 === 0) {
+      const s = new Date(d); s.setHours(9, 0);
+      const e = new Date(d); e.setHours(12, 0);
+      events.push({ startAt: s.toISOString(), endAt: e.toISOString(), type: "busy", title: friendId === "friend-2" ? "仕事" : undefined });
+    }
+    if (day % 3 === 0) {
+      const s = new Date(d); s.setHours(14, 0);
+      const e = new Date(d); e.setHours(16, 0);
+      events.push({ startAt: s.toISOString(), endAt: e.toISOString(), type: "busy", title: friendId === "friend-2" ? "予定あり" : undefined });
+    }
+    if (day % 4 === 1) {
+      const s = new Date(d); s.setHours(18, 0);
+      const e = new Date(d); e.setHours(20, 0);
+      events.push({ startAt: s.toISOString(), endAt: e.toISOString(), type: "free" });
+    }
+  }
+  return events;
+}

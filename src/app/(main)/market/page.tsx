@@ -89,8 +89,11 @@ function TimeSearch() {
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>予算上限</label>
-          <input type="number" className="input mt-1" placeholder="例: 1000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>消費チケット上限</label>
+          <div className="mt-1 flex items-center gap-1">
+            <input type="number" className="input" placeholder="例: 10" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+            <span className="text-sm">🎫</span>
+          </div>
         </div>
         <button className="btn-primary w-full" onClick={() => { setSlots(getSlots()); setSearched(true); }}>候補を検索</button>
       </div>

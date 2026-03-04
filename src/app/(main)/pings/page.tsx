@@ -10,11 +10,13 @@ import {
 } from "@/lib/demo-store";
 import type { DemoPing } from "@/lib/demo-store";
 import { DEMO_USER, MEETUP_PLACES } from "@/lib/demo-data";
+import { suggestMeetups, generateFirstMessage } from "@/lib/ai";
 
 export default function PingsPage() {
   const router = useRouter();
   const [pings, setPings] = useState<DemoPing[]>([]);
   const [acceptedId, setAcceptedId] = useState<string | null>(null);
+  const [acceptedPing, setAcceptedPing] = useState<DemoPing | null>(null);
 
   useEffect(() => {
     setPings(getPings());
@@ -26,6 +28,10 @@ export default function PingsPage() {
 
   function handleAccept(ping: DemoPing) {
     updatePingStatus(ping.id, "accepted");
+
+    // AI-suggested place for in_person
+    const suggestions = suggestMeetups(ping.mode, ping.purpose, ping.durationMinutes);
+    const meetupPlace = ping.mode === "in_person" ? suggestions[0]?.place ?? MEETUP_PLACES[0] : null;
 
     // Create booking from ping
     const now = new Date();
@@ -41,7 +47,7 @@ export default function PingsPage() {
         endAt: endAt.toISOString(),
         durationMinutes: ping.durationMinutes,
         priceYen: 0,
-        areaValue: ping.mode === "in_person" ? MEETUP_PLACES[0] : null,
+        areaValue: meetupPlace,
         bookingType: "instant",
         status: "booked",
         seller: {
@@ -59,6 +65,7 @@ export default function PingsPage() {
     });
 
     setAcceptedId(ping.id);
+    setAcceptedPing(ping);
     setPings(getPings());
   }
 
@@ -69,16 +76,57 @@ export default function PingsPage() {
     setPings(getPings());
   }
 
+  // Get suggestions for accepted ping
+  const acceptSuggestions = acceptedPing && acceptedPing.mode === "in_person"
+    ? suggestMeetups("in_person", acceptedPing.purpose, acceptedPing.durationMinutes)
+    : [];
+  const firstMessage = acceptedPing
+    ? generateFirstMessage(
+        acceptedPing.fromUser.displayName,
+        acceptSuggestions[0]?.place ?? "オンライン",
+        acceptedPing.durationMinutes,
+        acceptedPing.purpose
+      )
+    : "";
+
   return (
     <div className="p-4">
       <button onClick={() => router.back()} className="text-sm" style={{ color: "var(--muted)" }}>← 戻る</button>
       <h1 className="mt-3 text-xl font-bold">ピン受信箱</h1>
 
-      {/* Accepted toast */}
+      {/* Accepted toast with AI suggestions */}
       {acceptedId && (
-        <div className="mt-3 rounded-xl p-3 text-sm font-medium" style={{ backgroundColor: "rgba(52,199,123,0.1)", color: "var(--success)" }}>
-          ✓ マッチ成立！予約が作成されました
-          <button onClick={() => router.push("/bookings")} className="ml-2 underline">予約を確認</button>
+        <div className="mt-3 space-y-2">
+          <div className="rounded-xl p-3 text-sm font-medium" style={{ backgroundColor: "rgba(52,199,123,0.1)", color: "var(--success)" }}>
+            ✓ マッチ成立！予約が作成されました
+            <button onClick={() => router.push("/bookings")} className="ml-2 underline">予約を確認</button>
+          </div>
+
+          {/* AI place suggestions */}
+          {acceptSuggestions.length > 0 && (
+            <div className="card p-3">
+              <p className="text-xs font-semibold flex items-center gap-1" style={{ color: "var(--muted)" }}>
+                🤖 AI待ち合わせ提案
+              </p>
+              <div className="mt-2 space-y-1.5">
+                {acceptSuggestions.map((s, i) => (
+                  <div key={i} className="rounded-lg p-2 text-xs flex items-start gap-2" style={{ backgroundColor: "var(--accent-soft)" }}>
+                    <span>📍</span>
+                    <div>
+                      <span className="font-medium" style={{ color: "var(--accent-soft-text)" }}>{s.place}</span>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{s.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {firstMessage && (
+                <div className="mt-2 rounded-lg p-2 text-xs" style={{ backgroundColor: "rgba(52,199,123,0.08)" }}>
+                  <p className="text-[10px] font-semibold" style={{ color: "var(--success)" }}>💬 初手メッセージ例</p>
+                  <p className="mt-0.5">{firstMessage}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -125,20 +173,31 @@ export default function PingsPage() {
                 </div>
 
                 {p.status === "pending" && (
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => handleReject(p)} className="btn-outline flex-1 text-xs">
-                      拒否
-                    </button>
-                    <button onClick={() => handleAccept(p)} className="btn-primary flex-1 text-xs">
-                      承認（マッチ）
-                    </button>
-                  </div>
+                  <>
+                    {/* Show AI suggestions for in_person before accepting */}
+                    {p.mode === "in_person" && (
+                      <div className="mt-2 rounded-lg p-2 text-[10px]" style={{ backgroundColor: "var(--accent-soft)" }}>
+                        <span className="font-semibold" style={{ color: "var(--accent-soft-text)" }}>🤖 承認すると公共の場所で待ち合わせ</span>
+                        <p style={{ color: "var(--muted)" }}>
+                          提案場所: {suggestMeetups("in_person", p.purpose, p.durationMinutes).map(s => s.place).join(" / ")}
+                        </p>
+                      </div>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => handleReject(p)} className="btn-outline flex-1 text-xs">
+                        拒否
+                      </button>
+                      <button onClick={() => handleAccept(p)} className="btn-primary flex-1 text-xs">
+                        承認（マッチ）
+                      </button>
+                    </div>
+                  </>
                 )}
 
                 {p.status === "accepted" && (
                   <div className="mt-2 rounded-lg p-2 text-xs" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
                     {p.mode === "in_person"
-                      ? `📍 待ち合わせ: ${MEETUP_PLACES[0]}`
+                      ? `📍 待ち合わせ: ${suggestMeetups("in_person", p.purpose, p.durationMinutes)[0]?.place ?? MEETUP_PLACES[0]}`
                       : "📞 通話を開始してください"}
                   </div>
                 )}

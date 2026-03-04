@@ -86,8 +86,8 @@ export default function SlotCard({
           <span>{dateStr} {timeStr}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span>💰</span>
-          <span className="font-semibold">¥{priceYen.toLocaleString()}</span>
+          <span>🎫</span>
+          <span className="font-semibold">{priceYen}枚</span>
         </div>
         {areaValue && (
           <div className="flex items-center gap-1.5">

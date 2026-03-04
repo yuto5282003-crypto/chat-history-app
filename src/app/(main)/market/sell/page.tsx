@@ -114,9 +114,12 @@ export default function SellPage() {
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>価格（円）</label>
-          <input type="number" className="input mt-1" value={price} onChange={(e) => setPrice(e.target.value)} />
-          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>手数料15%を差し引いた額が売上になります</p>
+          <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>チケット枚数</label>
+          <div className="mt-1 flex items-center gap-1">
+            <input type="number" className="input" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <span className="text-sm">🎫</span>
+          </div>
+          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>購入者がこの枚数のチケットを消費します</p>
         </div>
         <div>
           <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>予約タイプ</label>

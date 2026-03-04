@@ -6,9 +6,12 @@ import {
   addPrivateEvent,
   removePrivateEvent,
   getBookings,
+  getCalendarVisibility,
+  setCalendarVisibility,
+  calcCommonFree,
 } from "@/lib/demo-store";
-import type { DemoEvent, DemoBooking, EventKind } from "@/lib/demo-store";
-import { CATEGORY_LABELS } from "@/lib/demo-data";
+import type { DemoEvent, DemoBooking, EventKind, FriendEvent } from "@/lib/demo-store";
+import { CATEGORY_LABELS, getDemoFriendCalendarEvents, DEMO_FRIENDS } from "@/lib/demo-data";
 
 /* ── helpers ── */
 function startOfMonth(d: Date) {
@@ -52,13 +55,14 @@ type CalendarItem = {
   title: string;
   startAt: string;
   endAt: string;
-  itemKind: "event" | "booking";
+  itemKind: "event" | "booking" | "friend";
   eventKind?: EventKind;
   visibility?: string;
   memo?: string;
   nearbyExclude?: boolean;
   bufferBefore?: number;
   bufferAfter?: number;
+  friendName?: string;
 };
 
 const VISIBILITY_OPTIONS = [
@@ -75,6 +79,14 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState<Date | null>(null);
   const [detail, setDetail] = useState<CalendarItem | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [dayModal, setDayModal] = useState<Date | null>(null);
+
+  /* friend overlay */
+  const [calVis, setCalVis] = useState({ showFriends: false, selectedFriends: [] as string[] });
+  const [friendEvents, setFriendEvents] = useState<(FriendEvent & { friendId: string; friendName: string })[]>([]);
+  const [showCommonFree, setShowCommonFree] = useState(false);
+  const [commonFreeTarget, setCommonFreeTarget] = useState("");
+  const [commonFreeSlots, setCommonFreeSlots] = useState<{ start: string; end: string; minutes: number }[]>([]);
 
   /* form state */
   const [title, setTitle] = useState("");
@@ -91,13 +103,29 @@ export default function CalendarPage() {
   const reload = useCallback(() => {
     setEvents(getPrivateEvents());
     setBookings(getBookings());
+    const cv = getCalendarVisibility();
+    setCalVis(cv);
+    // Load friend events
+    if (cv.showFriends && cv.selectedFriends.length > 0) {
+      const fEvents: (FriendEvent & { friendId: string; friendName: string })[] = [];
+      for (const fid of cv.selectedFriends) {
+        const friend = DEMO_FRIENDS.find(f => f.id === fid);
+        const evts = getDemoFriendCalendarEvents(fid);
+        for (const ev of evts) {
+          fEvents.push({ ...ev, friendId: fid, friendName: friend?.displayName ?? fid });
+        }
+      }
+      setFriendEvents(fEvents);
+    } else {
+      setFriendEvents([]);
+    }
   }, []);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
-  /* merge events + bookings into CalendarItems */
+  /* merge events + bookings + friend events into CalendarItems */
   const items: CalendarItem[] = [
     ...events.map((e) => ({
       id: e.id,
@@ -121,6 +149,15 @@ export default function CalendarPage() {
         endAt: b.slot.endAt,
         itemKind: "booking" as const,
       })),
+    ...friendEvents.map((fe, i) => ({
+      id: `friend-${fe.friendId}-${i}`,
+      title: fe.title ?? (fe.type === "busy" ? "予定あり" : "空き"),
+      startAt: fe.startAt,
+      endAt: fe.endAt,
+      itemKind: "friend" as const,
+      eventKind: (fe.type === "busy" ? "busy" : "free") as EventKind,
+      friendName: fe.friendName,
+    })),
   ];
 
   function itemsForDay(d: Date) {
@@ -175,6 +212,7 @@ export default function CalendarPage() {
     });
     reload();
     setShowAdd(false);
+    setDayModal(null);
     resetForm();
   }
 
@@ -184,27 +222,100 @@ export default function CalendarPage() {
     setDetail(null);
   }
 
+  function toggleFriendOverlay() {
+    const next = { ...calVis, showFriends: !calVis.showFriends };
+    if (!calVis.showFriends && calVis.selectedFriends.length === 0) {
+      next.selectedFriends = DEMO_FRIENDS.map(f => f.id);
+    }
+    setCalVis(next);
+    setCalendarVisibility(next);
+    setTimeout(reload, 50);
+  }
+
+  function toggleFriendSelection(fid: string) {
+    const sel = calVis.selectedFriends.includes(fid)
+      ? calVis.selectedFriends.filter(f => f !== fid)
+      : [...calVis.selectedFriends, fid];
+    const next = { ...calVis, selectedFriends: sel };
+    setCalVis(next);
+    setCalendarVisibility(next);
+    setTimeout(reload, 50);
+  }
+
+  function handleShowCommonFree(fid: string) {
+    setCommonFreeTarget(fid);
+    setCommonFreeSlots(calcCommonFree(fid));
+    setShowCommonFree(true);
+  }
+
+  function handleDayTap(cellDate: Date) {
+    if (selected && isSameDay(cellDate, selected)) {
+      // Double tap → open day modal
+      setDayModal(cellDate);
+    } else {
+      setSelected(cellDate);
+    }
+  }
+
   const selectedItems = selected ? itemsForDay(selected) : [];
+  const dayModalItems = dayModal ? itemsForDay(dayModal) : [];
 
   return (
     <div className="p-4 pb-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">カレンダー</h1>
-        <button
-          onClick={() => {
-            setDate(
-              selected
-                ? `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
-                : new Date().toISOString().slice(0, 10)
-            );
-            setShowAdd(true);
-          }}
-          className="btn-primary !px-4 !py-2 text-sm"
-        >
-          + 予定追加
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={toggleFriendOverlay}
+            className={`!px-3 !py-2 text-xs rounded-lg ${calVis.showFriends ? "btn-primary" : "btn-outline"}`}
+          >
+            👥 フレンド
+          </button>
+          <button
+            onClick={() => {
+              setDate(
+                selected
+                  ? `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
+                  : new Date().toISOString().slice(0, 10)
+              );
+              setShowAdd(true);
+            }}
+            className="btn-primary !px-4 !py-2 text-sm"
+          >
+            + 追加
+          </button>
+        </div>
       </div>
+
+      {/* Friend overlay controls */}
+      {calVis.showFriends && (
+        <div className="mt-3 card p-3">
+          <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>フレンド予定を表示</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {DEMO_FRIENDS.map(f => (
+              <button key={f.id} onClick={() => toggleFriendSelection(f.id)}
+                className={`chip text-[11px] ${calVis.selectedFriends.includes(f.id) ? "chip-active" : "chip-inactive"}`}>
+                {f.displayName}
+              </button>
+            ))}
+          </div>
+          {calVis.selectedFriends.length > 0 && (
+            <div className="mt-2 flex gap-1">
+              {calVis.selectedFriends.map(fid => {
+                const friend = DEMO_FRIENDS.find(f => f.id === fid);
+                return (
+                  <button key={fid} onClick={() => handleShowCommonFree(fid)}
+                    className="rounded-lg px-2 py-1 text-[10px]"
+                    style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
+                    🕐 {friend?.displayName}との空き
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Month nav */}
       <div className="mt-4 flex items-center justify-between">
@@ -231,11 +342,12 @@ export default function CalendarPage() {
           const isToday = isSameDay(cellDate, today);
           const isSelected = selected && isSameDay(cellDate, selected);
           const hasItems = dayItems.length > 0;
+          const hasFriend = dayItems.some(it => it.itemKind === "friend");
 
           return (
             <button
               key={day}
-              onClick={() => setSelected(cellDate)}
+              onClick={() => handleDayTap(cellDate)}
               className="relative flex min-h-[72px] flex-col items-start p-1 text-left transition-colors"
               style={{
                 backgroundColor: isSelected
@@ -255,7 +367,7 @@ export default function CalendarPage() {
               >
                 {day}
               </span>
-              {dayItems.slice(0, 2).map((it) => (
+              {dayItems.filter(it => it.itemKind !== "friend").slice(0, 2).map((it) => (
                 <div
                   key={it.id}
                   className="w-full truncate rounded px-1 text-[10px] leading-tight mb-px flex items-center gap-0.5"
@@ -270,9 +382,15 @@ export default function CalendarPage() {
                   <span className="truncate">{it.title}</span>
                 </div>
               ))}
-              {dayItems.length > 2 && (
+              {hasFriend && (
+                <div className="w-full truncate rounded px-1 text-[10px] leading-tight mb-px"
+                  style={{ backgroundColor: "rgba(59,130,246,0.15)", color: "#3b82f6" }}>
+                  👥 フレンド
+                </div>
+              )}
+              {dayItems.length > 3 && (
                 <span className="text-[9px] font-medium" style={{ color: "var(--accent)" }}>
-                  +{dayItems.length - 2}
+                  +{dayItems.length - 3}
                 </span>
               )}
             </button>
@@ -281,11 +399,17 @@ export default function CalendarPage() {
       </div>
 
       {/* Selected day detail */}
-      {selected && (
+      {selected && !dayModal && (
         <div className="mt-4">
-          <h2 className="text-sm font-semibold">
-            {selected.toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "short" })}の予定
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">
+              {selected.toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "short" })}の予定
+            </h2>
+            <button onClick={() => {
+              setDate(`${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`);
+              setShowAdd(true);
+            }} className="text-xs" style={{ color: "var(--accent)" }}>+ この日に追加</button>
+          </div>
           {selectedItems.length === 0 ? (
             <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>予定はありません</p>
           ) : (
@@ -293,7 +417,7 @@ export default function CalendarPage() {
               {selectedItems.map((it) => (
                 <button
                   key={it.id}
-                  onClick={() => setDetail(it)}
+                  onClick={() => it.itemKind !== "friend" && setDetail(it)}
                   className="card w-full p-3 text-left"
                 >
                   <div className="flex items-center gap-2">
@@ -302,16 +426,19 @@ export default function CalendarPage() {
                       style={{
                         backgroundColor: it.itemKind === "booking"
                           ? "var(--accent)"
-                          : KIND_COLORS[it.eventKind ?? "busy"],
+                          : it.itemKind === "friend"
+                            ? "#3b82f6"
+                            : KIND_COLORS[it.eventKind ?? "busy"],
                       }}
                     />
                     <span className="font-medium text-sm">{it.title}</span>
+                    {it.friendName && <span className="text-[10px] rounded-full px-1.5 py-0.5" style={{ backgroundColor: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>{it.friendName}</span>}
                     <span className="ml-auto text-xs" style={{ color: "var(--muted)" }}>
                       {timeStr(it.startAt)} - {timeStr(it.endAt)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center gap-2">
-                    {it.eventKind && (
+                    {it.eventKind && it.itemKind !== "friend" && (
                       <span className="text-[10px]" style={{ color: KIND_COLORS[it.eventKind] }}>
                         {KIND_LABELS[it.eventKind]}
                       </span>
@@ -327,6 +454,49 @@ export default function CalendarPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Day tap modal */}
+      {dayModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDayModal(null)} />
+          <div className="relative w-full max-w-lg rounded-t-2xl p-5 pb-8 max-h-[85vh] overflow-y-auto" style={{ backgroundColor: "var(--card)" }}>
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ backgroundColor: "var(--border)" }} />
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">
+                {dayModal.toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "short" })}
+              </h3>
+              <button onClick={() => {
+                setDayModal(null);
+                setDate(`${dayModal.getFullYear()}-${String(dayModal.getMonth() + 1).padStart(2, "0")}-${String(dayModal.getDate()).padStart(2, "0")}`);
+                setShowAdd(true);
+              }} className="btn-primary !px-3 !py-1.5 text-xs">+ 追加</button>
+            </div>
+            {dayModalItems.length === 0 ? (
+              <p className="mt-4 text-sm text-center" style={{ color: "var(--muted)" }}>予定はありません</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {dayModalItems.map(it => (
+                  <div key={it.id} className="card p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: it.itemKind === "friend" ? "#3b82f6" : it.itemKind === "booking" ? "var(--accent)" : KIND_COLORS[it.eventKind ?? "busy"] }} />
+                      <span className="font-medium text-sm flex-1">{it.title}</span>
+                      {it.friendName && <span className="text-[10px] rounded-full px-1.5 py-0.5" style={{ backgroundColor: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>{it.friendName}</span>}
+                    </div>
+                    <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>{timeStr(it.startAt)} - {timeStr(it.endAt)}</p>
+                    {it.itemKind === "event" && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-[10px]" style={{ color: KIND_COLORS[it.eventKind ?? "busy"] }}>{KIND_LABELS[it.eventKind ?? "busy"]}</span>
+                        <button onClick={() => handleDelete(it.id)} className="ml-auto text-[10px]" style={{ color: "var(--danger)" }}>削除</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -365,6 +535,35 @@ export default function CalendarPage() {
               )}
               <button onClick={() => setDetail(null)} className="btn-primary flex-1 text-sm">閉じる</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Common free time modal */}
+      {showCommonFree && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCommonFree(false)} />
+          <div className="relative w-full max-w-lg rounded-t-2xl p-5 pb-8" style={{ backgroundColor: "var(--card)" }}>
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ backgroundColor: "var(--border)" }} />
+            <h3 className="text-lg font-bold">
+              🕐 {DEMO_FRIENDS.find(f => f.id === commonFreeTarget)?.displayName}との共通空き時間
+            </h3>
+            {commonFreeSlots.length === 0 ? (
+              <p className="mt-4 text-sm" style={{ color: "var(--muted)" }}>今日の共通空き時間が見つかりませんでした</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {commonFreeSlots.map((slot, i) => (
+                  <div key={i} className="card p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{timeStr(slot.start)} - {timeStr(slot.end)}</p>
+                      <p className="text-xs" style={{ color: "var(--success)" }}>{slot.minutes}分の空き</p>
+                    </div>
+                    <span className="text-xl">🟢</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setShowCommonFree(false)} className="btn-primary w-full mt-4 text-sm">閉じる</button>
           </div>
         </div>
       )}

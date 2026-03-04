@@ -30,7 +30,7 @@ export default function SlotDetailPage() {
   const end = new Date(slot.endAt);
   const dateStr = start.toLocaleDateString("ja-JP", { year: "numeric", month: "numeric", day: "numeric", weekday: "short" });
   const timeStr = `${start.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`;
-  const feeYen = Math.round(slot.priceYen * 0.15);
+  const ticketCost = slot.priceYen; // priceYen is reused as ticket count in demo
 
   function handleBook() {
     const status = slot!.bookingType === "instant" ? "confirmed" as const : "pending" as const;
@@ -64,16 +64,8 @@ export default function SlotDetailPage() {
 
           <div className="card p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm" style={{ color: "var(--muted)" }}>料金</span>
-              <span className="text-lg font-bold">¥{slot.priceYen.toLocaleString()}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-xs" style={{ color: "var(--muted)" }}>
-              <span>手数料（15%）</span>
-              <span>¥{feeYen.toLocaleString()}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-sm font-semibold" style={{ borderTop: "1px solid var(--border)", paddingTop: "0.5rem" }}>
-              <span>合計</span>
-              <span style={{ color: "var(--accent)" }}>¥{(slot.priceYen + feeYen).toLocaleString()}</span>
+              <span className="text-sm" style={{ color: "var(--muted)" }}>消費チケット</span>
+              <span className="text-lg font-bold" style={{ color: "var(--accent)" }}>{ticketCost}🎫</span>
             </div>
           </div>
 
@@ -112,7 +104,7 @@ export default function SlotDetailPage() {
           </div>
         ) : (
           <button className="btn-primary mt-6 w-full text-base" onClick={handleBook}>
-            予約する ¥{(slot.priceYen + feeYen).toLocaleString()}
+            予約する {ticketCost}🎫
           </button>
         )}
       </div>

@@ -75,7 +75,7 @@ export default function BookingsPage() {
               <div className="mt-2 space-y-1 text-sm" style={{ color: "var(--muted)" }}>
                 <p>📅 {start.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short" })} {start.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
                 <p>👤 {b.slot.seller.displayName}</p>
-                <p>💰 ¥{b.slot.priceYen.toLocaleString()}</p>
+                <p>🎫 {b.slot.priceYen}枚</p>
               </div>
               {b.status === "confirmed" && (
                 <div className="mt-3 flex gap-2">

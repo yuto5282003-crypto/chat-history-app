@@ -70,7 +70,7 @@ export default function RequestInboxPage() {
               {req.postText && <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>元投稿: 「{req.postText}」</p>}
               <div className="mt-2 space-y-1 text-sm" style={{ color: "var(--muted)" }}>
                 <p>📅 {req.timing} / {req.mode === "call" ? "📞 通話" : "🚶 対面"} / {req.durationMinutes}分</p>
-                <p>💰 予算: ¥{req.budgetYen.toLocaleString()}</p>
+                <p>🎫 上限: {req.budgetYen}枚</p>
                 {req.note && <p>💬 {req.note}</p>}
               </div>
               {req.status === "pending" && (
