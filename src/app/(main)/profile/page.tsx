@@ -328,7 +328,6 @@ export default function ProfilePage() {
             <SettingsRow label="予約管理" href="/bookings" />
             <SettingsRow label="フレンド" href="/friends" />
             <SettingsRow label="非公開予定管理" href="/friends/events" />
-            <SettingsRow label="管理画面（Owner）" href="/admin" />
           </div>
         </section>
       </div>

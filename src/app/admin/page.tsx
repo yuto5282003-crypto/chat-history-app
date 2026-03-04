@@ -13,26 +13,51 @@ import type {
   DemoUser, DemoReport, DemoRoom, DemoMessage, DemoMedia, TicketEntry,
 } from "@/lib/demo-store";
 
-const ADMIN_TABS = ["KYC", "Users", "Reports", "Sessions", "Messages", "Tickets", "Audit Logs"] as const;
-type AdminTab = typeof ADMIN_TABS[number];
+// ===== 日本語タブ定義 =====
+const ADMIN_TABS = [
+  { key: "kyc", label: "本人確認" },
+  { key: "users", label: "ユーザー" },
+  { key: "reports", label: "通報" },
+  { key: "sessions", label: "セッション" },
+  { key: "messages", label: "会話ログ" },
+  { key: "tickets", label: "チケット" },
+  { key: "audit", label: "監査ログ" },
+] as const;
+type AdminTab = typeof ADMIN_TABS[number]["key"];
 
 const STATUS_LABELS: Record<string, string> = {
-  none: "未申請", pending_ai: "AI判定中", pending_review: "レビュー待ち",
-  approved: "承認済み", rejected: "却下", resubmit_required: "再提出要求",
+  none: "未申請", pending_ai: "AI判定中", pending_review: "審査待ち",
+  approved: "承認", rejected: "却下", resubmit_required: "再提出",
 };
 const STATUS_COLORS: Record<string, string> = {
   pending_ai: "#f59e0b", pending_review: "#3b82f6", approved: "#22c55e",
   rejected: "#ef4444", resubmit_required: "#f97316",
 };
+const USER_STATUS_LABELS: Record<string, string> = {
+  active: "有効", banned: "凍結",
+};
 
-// Demo passcode (in production would be server-side)
+// デモ用パスコード（本番ではサーバーサイド検証）
 const DEMO_PASSCODE = "sloty2024";
 
+// ===== 文字列正規化（検索用） =====
+function normalize(s: string): string {
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[\s\u3000]+/g, "")
+    // ひらがな→カタカナ
+    .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60))
+    // 全角英数→半角
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+}
+
+// ===== メインコンポーネント =====
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<AdminTab>("KYC");
+  const [tab, setTab] = useState<AdminTab>("kyc");
 
   useEffect(() => {
     const session = getAdminSession();
@@ -62,7 +87,7 @@ export default function AdminPage() {
         <div className="card p-6 text-center">
           <p className="text-3xl">🔐</p>
           <h1 className="mt-2 text-lg font-bold">管理画面ログイン</h1>
-          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>Owner専用：Admin Passcode を入力</p>
+          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>オーナー専用：パスコードを入力してください</p>
           <input type="password" className="input mt-4" placeholder="パスコード" value={passcode}
             onChange={e => setPasscode(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleLogin()} />
@@ -79,43 +104,42 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">管理画面</h1>
         <div className="flex items-center gap-2">
-          <a href="/profile" className="text-xs" style={{ color: "var(--accent)" }}>← アプリ</a>
+          <a href="/market" className="text-xs" style={{ color: "var(--accent)" }}>← アプリへ戻る</a>
           <button onClick={handleLogout} className="text-xs px-2 py-1 rounded" style={{ color: "var(--danger)" }}>ログアウト</button>
         </div>
       </div>
-      <p className="text-[10px]" style={{ color: "var(--muted)" }}>Owner: demo@sloty.app / セッション30分</p>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>オーナー: demo@sloty.app ／ セッション有効期限: 30分</p>
 
-      {/* Tabs */}
+      {/* タブ */}
       <div className="mt-4 flex gap-1 overflow-x-auto pb-1" style={{ borderBottom: "1px solid var(--border)" }}>
         {ADMIN_TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
+          <button key={t.key} onClick={() => setTab(t.key)}
             className="shrink-0 px-3 py-2 text-xs font-medium transition-colors"
-            style={{ color: tab === t ? "var(--accent)" : "var(--muted)", borderBottom: tab === t ? "2px solid var(--accent)" : "2px solid transparent" }}>
-            {t}
+            style={{ color: tab === t.key ? "var(--accent)" : "var(--muted)", borderBottom: tab === t.key ? "2px solid var(--accent)" : "2px solid transparent" }}>
+            {t.label}
           </button>
         ))}
       </div>
 
       <div className="mt-4">
-        {tab === "KYC" && <AdminKyc />}
-        {tab === "Users" && <AdminUsers />}
-        {tab === "Reports" && <AdminReports />}
-        {tab === "Sessions" && <AdminSessions />}
-        {tab === "Messages" && <AdminMessages />}
-        {tab === "Tickets" && <AdminTickets />}
-        {tab === "Audit Logs" && <AdminAuditLogs />}
+        {tab === "kyc" && <AdminKyc />}
+        {tab === "users" && <AdminUsersTab />}
+        {tab === "reports" && <AdminReportsTab />}
+        {tab === "sessions" && <AdminSessionsTab />}
+        {tab === "messages" && <AdminMessagesTab />}
+        {tab === "tickets" && <AdminTicketsTab />}
+        {tab === "audit" && <AdminAuditTab />}
       </div>
     </div>
   );
 }
 
-// ===== KYC Tab =====
+// ===== 本人確認タブ =====
 function AdminKyc() {
   const [requests, setRequests] = useState<KycRequest[]>([]);
   const [auditLog, setAuditLog] = useState<KycAuditEntry[]>([]);
   const [selected, setSelected] = useState<KycRequest | null>(null);
   const [reviewNote, setReviewNote] = useState("");
-  const [viewReason, setViewReason] = useState("");
   const [showAssets, setShowAssets] = useState(false);
   const [assets, setAssets] = useState<KycAssetMeta[]>([]);
 
@@ -123,31 +147,27 @@ function AdminKyc() {
   function refresh() { setRequests(getKycRequests()); setAuditLog(getKycAuditLog()); }
 
   function handleViewAssets(req: KycRequest) {
-    if (!viewReason.trim()) { alert("閲覧理由を入力してください"); return; }
-    addAdminAudit("VIEW_KYC_ASSET", "kyc", req.id, viewReason);
+    addAdminAudit("VIEW_KYC_ASSET", "kyc", req.id, "書類閲覧");
     setAssets(getKycAssetsMeta(req.id));
     setShowAssets(true);
     refresh();
   }
   function handleApprove(req: KycRequest) {
-    if (!reviewNote.trim()) { alert("理由を入力してください"); return; }
     updateKycRequest(req.id, { status: "approved", reviewerNote: reviewNote });
-    addKycAudit(req.id, "approved", "owner", reviewNote);
-    addAdminAudit("APPROVE_KYC", "kyc", req.id, reviewNote);
+    addKycAudit(req.id, "approved", "owner", reviewNote || "承認");
+    addAdminAudit("APPROVE_KYC", "kyc", req.id, reviewNote || "承認");
     setSelected(null); setReviewNote(""); refresh();
   }
   function handleReject(req: KycRequest) {
-    if (!reviewNote.trim()) { alert("理由を入力してください"); return; }
     updateKycRequest(req.id, { status: "rejected", reviewerNote: reviewNote });
-    addKycAudit(req.id, "rejected", "owner", reviewNote);
-    addAdminAudit("REJECT_KYC", "kyc", req.id, reviewNote);
+    addKycAudit(req.id, "rejected", "owner", reviewNote || "却下");
+    addAdminAudit("REJECT_KYC", "kyc", req.id, reviewNote || "却下");
     setSelected(null); setReviewNote(""); refresh();
   }
   function handleResubmit(req: KycRequest) {
-    if (!reviewNote.trim()) { alert("理由を入力してください"); return; }
     updateKycRequest(req.id, { status: "resubmit_required", reviewerNote: reviewNote });
-    addKycAudit(req.id, "resubmit_required", "owner", reviewNote);
-    addAdminAudit("RESUBMIT_KYC", "kyc", req.id, reviewNote);
+    addKycAudit(req.id, "resubmit_required", "owner", reviewNote || "再提出要求");
+    addAdminAudit("RESUBMIT_KYC", "kyc", req.id, reviewNote || "再提出要求");
     setSelected(null); setReviewNote(""); refresh();
   }
   function handleRunAi(req: KycRequest) {
@@ -157,15 +177,15 @@ function AdminKyc() {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">KYC審査キュー</h2>
+      <h2 className="text-sm font-semibold">本人確認 審査一覧</h2>
       <div className="mt-3 space-y-3">
         {requests.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>審査待ちの申請はありません</p>}
         {requests.map(req => (
-          <div key={req.id} className="card p-4 cursor-pointer" onClick={() => { setSelected(req); setReviewNote(""); setShowAssets(false); setViewReason(""); }}>
+          <div key={req.id} className="card p-4 cursor-pointer" onClick={() => { setSelected(req); setReviewNote(""); setShowAssets(false); }}>
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-medium text-sm">{req.displayName}</span>
-                <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>Lv{req.level}</span>
+                <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>レベル{req.level}</span>
               </div>
               <span className="rounded-full px-2 py-0.5 text-[10px] font-medium"
                 style={{ backgroundColor: `${STATUS_COLORS[req.status] ?? "#999"}20`, color: STATUS_COLORS[req.status] ?? "#999" }}>
@@ -174,7 +194,7 @@ function AdminKyc() {
             </div>
             {req.aiScore !== null && (
               <div className="mt-1 flex items-center gap-2">
-                <span className="text-xs" style={{ color: "var(--muted)" }}>AI:</span>
+                <span className="text-xs" style={{ color: "var(--muted)" }}>AIスコア:</span>
                 <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: "var(--border)" }}>
                   <div className="h-2 rounded-full" style={{ width: `${req.aiScore}%`, backgroundColor: req.aiScore >= 80 ? "var(--success)" : "#f59e0b" }} />
                 </div>
@@ -185,38 +205,33 @@ function AdminKyc() {
         ))}
       </div>
 
-      {/* Detail modal */}
+      {/* 詳細モーダル */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSelected(null)} />
           <div className="relative w-full max-w-md rounded-2xl p-5 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: "var(--card)" }}>
-            <h3 className="text-lg font-bold">{selected.displayName} — Lv{selected.level}</h3>
+            <h3 className="text-lg font-bold">{selected.displayName} — レベル{selected.level}</h3>
             <p className="text-xs" style={{ color: "var(--muted)" }}>ステータス: {STATUS_LABELS[selected.status]}</p>
-            {selected.aiScore !== null && <p className="text-xs" style={{ color: "var(--muted)" }}>AI スコア: {selected.aiScore}</p>}
+            {selected.aiScore !== null && <p className="text-xs" style={{ color: "var(--muted)" }}>AIスコア: {selected.aiScore}</p>}
 
             {selected.status === "pending_ai" && (
               <button onClick={() => { handleRunAi(selected); setSelected(getKycRequests().find(r => r.id === selected.id) ?? null); }} className="btn-primary w-full mt-3 text-sm">AI判定を実行</button>
             )}
 
-            {/* KYC asset viewing with reason */}
+            {/* 提出書類の閲覧 */}
             <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: "var(--bg)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-medium">提出書類の閲覧（理由必須）</p>
-              <input className="input mt-1 text-xs" placeholder="閲覧理由（例：本人確認審査）" value={viewReason} onChange={e => setViewReason(e.target.value)} />
-              <button onClick={() => handleViewAssets(selected)} className="btn-outline w-full mt-1 text-[10px]">提出書類を確認</button>
+              <p className="text-xs font-medium">提出書類</p>
+              <button onClick={() => handleViewAssets(selected)} className="btn-outline w-full mt-1 text-[10px]">書類を確認する</button>
               {showAssets && (
                 <div className="mt-2 space-y-1">
-                  {assets.length === 0 && <p className="text-[10px]" style={{ color: "var(--muted)" }}>メタデータなし</p>}
+                  {assets.length === 0 && <p className="text-[10px]" style={{ color: "var(--muted)" }}>書類データなし</p>}
                   {assets.map(a => (
                     <div key={a.id} className="flex items-center gap-2 text-[10px] p-2 rounded" style={{ backgroundColor: "var(--accent-soft)" }}>
-                      <span>📄 {a.assetType}</span>
+                      <span>📄 {a.assetType === "selfie" ? "セルフィー" : a.assetType === "id_front" ? "身分証（表）" : a.assetType === "id_back" ? "身分証（裏）" : a.assetType === "liveness_left" ? "ライブネス（左）" : "ライブネス（右）"}</span>
                       <span className="flex-1 truncate" style={{ color: "var(--muted)" }}>{a.objectKey}</span>
-                      <span className="text-[9px]" style={{ color: "var(--muted)" }}>
-                        {/* Watermark simulation */}
-                        <span className="bg-black/10 px-1 rounded">SLOTY MODERATION</span>
-                      </span>
                     </div>
                   ))}
-                  <p className="text-[9px]" style={{ color: "var(--muted)" }}>※ 画像はウォーターマーク付き一時表示。DL禁止。</p>
+                  <p className="text-[9px]" style={{ color: "var(--muted)" }}>※ ウォーターマーク付き一時表示。ダウンロード不可。</p>
                 </div>
               )}
             </div>
@@ -224,8 +239,8 @@ function AdminKyc() {
             {(selected.status === "pending_review" || selected.status === "pending_ai") && (
               <>
                 <div className="mt-3">
-                  <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>審査メモ（理由必須）</label>
-                  <input className="input mt-1" placeholder="理由を入力" value={reviewNote} onChange={e => setReviewNote(e.target.value)} />
+                  <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>審査メモ（任意）</label>
+                  <input className="input mt-1" placeholder="メモがあれば入力" value={reviewNote} onChange={e => setReviewNote(e.target.value)} />
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button onClick={() => handleReject(selected)} className="btn-outline flex-1 text-xs" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>却下</button>
@@ -239,11 +254,11 @@ function AdminKyc() {
         </div>
       )}
 
-      {/* KYC Audit */}
+      {/* 本人確認 監査ログ */}
       <div className="mt-6">
-        <h3 className="text-xs font-semibold" style={{ color: "var(--muted)" }}>KYC監査ログ</h3>
+        <h3 className="text-xs font-semibold" style={{ color: "var(--muted)" }}>本人確認 操作履歴</h3>
         <div className="mt-2 space-y-1">
-          {auditLog.slice(0, 20).map(entry => (
+          {auditLog.slice(0, 30).map(entry => (
             <div key={entry.id} className="flex items-center gap-2 text-[10px] py-1" style={{ borderBottom: "1px solid var(--border)" }}>
               <span className="shrink-0" style={{ color: "var(--muted)" }}>{new Date(entry.createdAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</span>
               <span className="font-medium">{entry.actor}</span>
@@ -251,32 +266,43 @@ function AdminKyc() {
               <span className="truncate flex-1">{entry.note}</span>
             </div>
           ))}
+          {auditLog.length === 0 && <p className="text-[10px]" style={{ color: "var(--muted)" }}>履歴なし</p>}
         </div>
       </div>
     </div>
   );
 }
 
-// ===== Users Tab =====
-function AdminUsers() {
+// ===== ユーザータブ =====
+function AdminUsersTab() {
   const [users, setUsers] = useState<DemoUser[]>([]);
   const [selected, setSelected] = useState<DemoUser | null>(null);
   const [note, setNote] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => { setUsers(getUsers()); }, []);
 
+  const filteredUsers = search.trim()
+    ? users.filter(u => {
+        const q = normalize(search);
+        return normalize(u.displayName).includes(q)
+          || normalize(u.loginEmail).includes(q)
+          || normalize(u.id).includes(q);
+      })
+    : users;
+
   function handleBan(u: DemoUser) {
-    addAdminAudit("BAN_USER", "user", u.id, note || "BAN処理");
+    addAdminAudit("BAN_USER", "user", u.id, "凍結");
     banUser(u.id);
     setUsers(getUsers()); setSelected(null);
   }
   function handleUnban(u: DemoUser) {
-    addAdminAudit("UNBAN_USER", "user", u.id, note || "BAN解除");
+    addAdminAudit("UNBAN_USER", "user", u.id, "凍結解除");
     unbanUser(u.id);
     setUsers(getUsers()); setSelected(null);
   }
   function handleForceReset(u: DemoUser) {
-    addAdminAudit("FORCE_PASSWORD_RESET", "user", u.id, note || "強制パスワードリセット");
+    addAdminAudit("FORCE_PASSWORD_RESET", "user", u.id, "パスワード強制リセット");
     forcePasswordReset(u.id);
     setUsers(getUsers()); setSelected(null);
   }
@@ -288,56 +314,64 @@ function AdminUsers() {
   return (
     <div>
       <h2 className="text-sm font-semibold">ユーザー管理</h2>
-      <p className="text-[10px]" style={{ color: "var(--muted)" }}>パスワード平文の閲覧は禁止（ハッシュ化保存前提）</p>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>パスワードの平文閲覧は不可（ハッシュ化保存前提）</p>
+
+      {/* 検索 */}
+      <input className="input mt-3 text-xs" placeholder="表示名・メール・ユーザーIDで検索（表記揺れ対応）" value={search} onChange={e => setSearch(e.target.value)} />
+
       <div className="mt-3 space-y-2">
-        {users.map(u => (
+        {filteredUsers.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>該当するユーザーはいません</p>}
+        {filteredUsers.map(u => (
           <div key={u.id} className="card p-3 cursor-pointer" onClick={() => { setSelected(u); setNote(u.adminNote); }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{u.displayName}</span>
-                <span className="text-[10px] px-1 rounded" style={{ backgroundColor: u.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", color: u.status === "active" ? "var(--success)" : "var(--danger)" }}>
-                  {u.status}
+                <span className="text-[10px] px-1 rounded" style={{
+                  backgroundColor: u.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                  color: u.status === "active" ? "var(--success)" : "var(--danger)"
+                }}>
+                  {USER_STATUS_LABELS[u.status] ?? u.status}
                 </span>
               </div>
-              <span className="text-[10px]" style={{ color: "var(--muted)" }}>Lv{u.kycLevel}</span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>レベル{u.kycLevel}</span>
             </div>
             <div className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
-              <span>{u.loginEmail}</span> / <span>{u.loginProvider}</span> / <span>通報{u.reportCount}件</span>
-              {u.forceResetFlag && <span className="ml-1" style={{ color: "var(--danger)" }}>※PW強制リセット済</span>}
+              <span>{u.loginEmail}</span> ／ <span>{u.loginProvider}</span> ／ <span>通報{u.reportCount}件</span>
+              {u.forceResetFlag && <span className="ml-1" style={{ color: "var(--danger)" }}>※パスワード強制リセット済</span>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* User detail modal */}
+      {/* ユーザー詳細モーダル */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSelected(null)} />
           <div className="relative w-full max-w-md rounded-2xl p-5" style={{ backgroundColor: "var(--card)" }}>
             <h3 className="text-lg font-bold">{selected.displayName}</h3>
             <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--muted)" }}>
-              <p>ID: {selected.id}</p>
-              <p>Email: {selected.loginEmail}</p>
+              <p>ユーザーID: {selected.id}</p>
+              <p>メールアドレス: {selected.loginEmail}</p>
               <p>ログイン方式: {selected.loginProvider}</p>
-              <p>KYCレベル: Lv{selected.kycLevel}</p>
-              <p>通報回数: {selected.reportCount}</p>
+              <p>本人確認レベル: レベル{selected.kycLevel}</p>
+              <p>通報回数: {selected.reportCount}件</p>
               <p>最終アクティブ: {new Date(selected.lastActiveAt).toLocaleString("ja-JP")}</p>
-              <p>状態: {selected.status}</p>
+              <p>状態: {USER_STATUS_LABELS[selected.status] ?? selected.status}</p>
               {selected.forceResetFlag && <p style={{ color: "var(--danger)" }}>※ パスワード強制リセット済み</p>}
               <p className="text-[10px] italic">※ パスワードの平文閲覧は不可（仕様）</p>
             </div>
             <div className="mt-3">
               <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>管理者メモ</label>
-              <input className="input mt-1 text-xs" value={note} onChange={e => setNote(e.target.value)} placeholder="メモ（保存可）" />
-              <button onClick={() => handleSaveNote(selected)} className="btn-outline w-full mt-1 text-[10px]">メモ保存</button>
+              <input className="input mt-1 text-xs" value={note} onChange={e => setNote(e.target.value)} placeholder="メモ（任意）" />
+              <button onClick={() => handleSaveNote(selected)} className="btn-outline w-full mt-1 text-[10px]">メモを保存</button>
             </div>
             <div className="mt-3 flex gap-2">
               {selected.status === "active" ? (
-                <button onClick={() => handleBan(selected)} className="btn-outline flex-1 text-xs" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>BAN</button>
+                <button onClick={() => handleBan(selected)} className="btn-outline flex-1 text-xs" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>凍結する</button>
               ) : (
-                <button onClick={() => handleUnban(selected)} className="btn-outline flex-1 text-xs" style={{ color: "var(--success)", borderColor: "var(--success)" }}>BAN解除</button>
+                <button onClick={() => handleUnban(selected)} className="btn-outline flex-1 text-xs" style={{ color: "var(--success)", borderColor: "var(--success)" }}>凍結解除</button>
               )}
-              <button onClick={() => handleForceReset(selected)} className="btn-outline flex-1 text-xs" style={{ color: "#f59e0b", borderColor: "#f59e0b" }}>強制PWリセット</button>
+              <button onClick={() => handleForceReset(selected)} className="btn-outline flex-1 text-xs" style={{ color: "#f59e0b", borderColor: "#f59e0b" }}>パスワード強制リセット</button>
             </div>
             <button onClick={() => setSelected(null)} className="btn-outline w-full mt-3 text-sm">閉じる</button>
           </div>
@@ -347,8 +381,8 @@ function AdminUsers() {
   );
 }
 
-// ===== Reports Tab =====
-function AdminReports() {
+// ===== 通報タブ =====
+function AdminReportsTab() {
   const [reports, setReports] = useState<DemoReport[]>([]);
   useEffect(() => { setReports(getReports()); }, []);
 
@@ -364,7 +398,7 @@ function AdminReports() {
               <span className="text-[10px]" style={{ color: "var(--muted)" }}>{new Date(r.createdAt).toLocaleString("ja-JP")}</span>
             </div>
             <div className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
-              <p>Room: {r.roomId} / 対象: {r.targetId}</p>
+              <p>ルーム: {r.roomId} ／ 対象: {r.targetId}</p>
               <p>理由: {r.reason}</p>
             </div>
           </div>
@@ -374,14 +408,15 @@ function AdminReports() {
   );
 }
 
-// ===== Sessions Tab =====
-function AdminSessions() {
+// ===== セッションタブ =====
+function AdminSessionsTab() {
   const [rooms, setRooms] = useState<DemoRoom[]>([]);
   useEffect(() => { setRooms(getRooms()); }, []);
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">セッション一覧（成立/通話/対面）</h2>
+      <h2 className="text-sm font-semibold">セッション一覧</h2>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>成立した予約・通話・対面の履歴</p>
       <div className="mt-3 space-y-2">
         {rooms.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>セッションはありません</p>}
         {rooms.map(r => {
@@ -389,12 +424,12 @@ function AdminSessions() {
           return (
             <div key={r.id} className="card p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{r.participants.map(p => p.displayName).join(" / ")}</span>
+                <span className="text-sm font-medium">{r.participants.map(p => p.displayName).join(" ／ ")}</span>
                 <span className="text-[10px]" style={{ color: r.extended ? "var(--accent)" : "var(--muted)" }}>{r.extended ? "延長済" : ""}</span>
               </div>
               <div className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
                 <p>{new Date(r.startAt).toLocaleString("ja-JP")} 〜 {new Date(r.endAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
-                <p>通話回数: {calls.length}</p>
+                <p>通話回数: {calls.length}回</p>
               </div>
             </div>
           );
@@ -404,113 +439,117 @@ function AdminSessions() {
   );
 }
 
-// ===== Messages Tab (moderation) =====
-function AdminMessages() {
-  const [reports, setReportsState] = useState<DemoReport[]>([]);
-  const [selectedReport, setSelectedReport] = useState<DemoReport | null>(null);
-  const [viewReason, setViewReason] = useState("");
+// ===== 会話ログタブ（ページング・件数制限なし） =====
+const PAGE_SIZE = 50;
+
+function AdminMessagesTab() {
+  const [rooms, setRoomsState] = useState<DemoRoom[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [messages, setMessagesState] = useState<DemoMessage[]>([]);
   const [media, setMediaState] = useState<DemoMedia[]>([]);
-  const [breakGlass, setBreakGlass] = useState(false);
-  const [breakGlassRoomId, setBreakGlassRoomId] = useState("");
-  const [breakGlassReason, setBreakGlassReason] = useState("");
+  const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roomSearch, setRoomSearch] = useState("");
 
-  useEffect(() => { setReportsState(getReports()); }, []);
+  useEffect(() => { setRoomsState(getRooms()); }, []);
 
-  function handleViewMessages(rpt: DemoReport) {
-    if (!viewReason.trim()) { alert("閲覧理由を入力してください（必須）"); return; }
-    addAdminAudit("VIEW_CHAT_LOG", "room", rpt.roomId, `通報 #${rpt.id.slice(-4)} - ${viewReason}`);
-    const msgs = getMessages(rpt.roomId).slice(-200); // Direct 200 limit
-    setMessagesState(msgs);
-    addAdminAudit("VIEW_MEDIA_LOG", "room", rpt.roomId, viewReason);
-    setMediaState(getMedia(rpt.roomId));
+  function handleOpenRoom(roomId: string) {
+    addAdminAudit("VIEW_CHAT_LOG", "room", roomId, "会話ログ閲覧");
+    const allMsgs = getMessages(roomId);
+    setMessagesState(allMsgs);
+    setMediaState(getMedia(roomId));
+    setSelectedRoomId(roomId);
+    setPage(0);
+    setSearchQuery("");
   }
 
-  function handleBreakGlassView() {
-    if (!breakGlassReason.trim()) { alert("緊急閲覧理由を入力してください（必須）"); return; }
-    if (!breakGlassRoomId.trim()) { alert("Room IDを入力してください"); return; }
-    addAdminAudit("VIEW_CHAT_LOG", "room", breakGlassRoomId, `[BREAK-GLASS] ${breakGlassReason}`);
-    const msgs = getMessages(breakGlassRoomId).slice(-200);
-    setMessagesState(msgs);
-    setMediaState(getMedia(breakGlassRoomId));
-    setSelectedReport(null);
-  }
-
-  // Mask external contacts in admin view too
+  // 外部連絡先マスク
   const CONTACT_RE = /(\d{3}[-\s]?\d{4}[-\s]?\d{4}|@[a-zA-Z0-9_.]+|LINE|カカオ|instagram|twitter|discord)/gi;
   function maskText(text: string): string {
-    return text.replace(CONTACT_RE, "***MASKED***");
+    return text.replace(CONTACT_RE, "***非表示***");
   }
+
+  // フィルタ済みメッセージ
+  const filteredMsgs = searchQuery.trim()
+    ? messages.filter(m => normalize(m.text).includes(normalize(searchQuery)) || normalize(m.senderName).includes(normalize(searchQuery)))
+    : messages;
+
+  const totalPages = Math.max(1, Math.ceil(filteredMsgs.length / PAGE_SIZE));
+  const pagedMsgs = filteredMsgs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // ルーム検索
+  const filteredRooms = roomSearch.trim()
+    ? rooms.filter(r => {
+        const q = normalize(roomSearch);
+        return normalize(r.id).includes(q) || r.participants.some(p => normalize(p.displayName).includes(q));
+      })
+    : rooms;
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">メッセージ閲覧（運営用）</h2>
-      <p className="text-[10px]" style={{ color: "var(--muted)" }}>原則: reportId紐付けのみ / break-glass: 理由必須+監査ログ / 200件上限</p>
-      <p className="text-[10px]" style={{ color: "var(--danger)" }}>一括DL・エクスポート禁止</p>
+      <h2 className="text-sm font-semibold">会話ログ</h2>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>ルームを選んで会話履歴を確認。エクスポート・一括ダウンロードは禁止。</p>
 
-      {/* Report-linked viewing */}
+      {/* ルーム検索 */}
+      <input className="input mt-2 text-xs" placeholder="ルームID・ユーザー名で検索" value={roomSearch} onChange={e => setRoomSearch(e.target.value)} />
+
+      {/* ルーム一覧 */}
       <div className="mt-3 space-y-2">
-        {reports.map(rpt => (
-          <div key={rpt.id} className="card p-3 cursor-pointer" onClick={() => { setSelectedReport(rpt); setViewReason(""); setMessagesState([]); setMediaState([]); }}>
+        {filteredRooms.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>ルームなし</p>}
+        {filteredRooms.map(r => (
+          <div key={r.id} className="card p-3 cursor-pointer" onClick={() => handleOpenRoom(r.id)}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium">通報 #{rpt.id.slice(-4)} → Room: {rpt.roomId.slice(-6)}</span>
-              <span className="text-[10px]" style={{ color: "var(--muted)" }}>{new Date(rpt.createdAt).toLocaleDateString("ja-JP")}</span>
+              <span className="text-xs font-medium">{r.participants.map(p => p.displayName).join(" ／ ")}</span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>{r.id.slice(-6)}</span>
             </div>
-            <p className="text-[10px]" style={{ color: "var(--muted)" }}>{rpt.reason}</p>
+            <p className="text-[10px]" style={{ color: "var(--muted)" }}>{new Date(r.startAt).toLocaleDateString("ja-JP")}</p>
           </div>
         ))}
-        {reports.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>通報なし</p>}
       </div>
 
-      {/* Break glass */}
-      <div className="mt-4 p-3 rounded-xl" style={{ border: "1px dashed var(--danger)" }}>
-        <p className="text-xs font-medium" style={{ color: "var(--danger)" }}>🚨 緊急閲覧（Break Glass）</p>
-        <p className="text-[10px]" style={{ color: "var(--muted)" }}>通報外の会話を閲覧。監査ログに記録されます。</p>
-        <button onClick={() => setBreakGlass(!breakGlass)} className="btn-outline w-full mt-2 text-[10px]" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>
-          {breakGlass ? "閉じる" : "Break Glass を開く"}
-        </button>
-        {breakGlass && (
-          <div className="mt-2 space-y-1">
-            <input className="input text-xs" placeholder="Room ID (例: room-1234)" value={breakGlassRoomId} onChange={e => setBreakGlassRoomId(e.target.value)} />
-            <input className="input text-xs" placeholder="緊急閲覧理由（必須）" value={breakGlassReason} onChange={e => setBreakGlassReason(e.target.value)} />
-            <button onClick={handleBreakGlassView} className="btn-primary w-full text-xs">閲覧する</button>
-          </div>
-        )}
-      </div>
-
-      {/* Report detail + messages */}
-      {selectedReport && (
+      {/* 会話詳細モーダル */}
+      {selectedRoomId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedReport(null)} />
-          <div className="relative w-full max-w-lg rounded-2xl p-5 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: "var(--card)" }}>
-            <h3 className="text-sm font-bold">通報 #{selectedReport.id.slice(-4)} のチャット</h3>
-            <div className="mt-2">
-              <input className="input text-xs" placeholder="閲覧理由（必須）" value={viewReason} onChange={e => setViewReason(e.target.value)} />
-              <button onClick={() => handleViewMessages(selectedReport)} className="btn-primary w-full mt-1 text-xs">閲覧する</button>
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedRoomId(null)} />
+          <div className="relative w-full max-w-lg rounded-2xl p-5 max-h-[85vh] overflow-y-auto" style={{ backgroundColor: "var(--card)" }}>
+            <h3 className="text-sm font-bold">会話ログ — {selectedRoomId.slice(-8)}</h3>
+            <p className="text-[10px]" style={{ color: "var(--muted)" }}>全{filteredMsgs.length}件</p>
+
+            {/* キーワード検索 */}
+            <input className="input mt-2 text-xs" placeholder="キーワード・送信者名で絞り込み" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(0); }} />
+
+            {/* メッセージ一覧 */}
+            <div className="mt-3 space-y-1">
+              {pagedMsgs.length === 0 && <p className="text-[10px]" style={{ color: "var(--muted)" }}>メッセージなし</p>}
+              {pagedMsgs.map(m => (
+                <div key={m.id} className="text-[10px] p-1.5 rounded" style={{ backgroundColor: "var(--bg)" }}>
+                  <span className="font-medium">{m.senderName}</span>
+                  <span className="ml-1" style={{ color: "var(--muted)" }}>{new Date(m.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                  <p className="mt-0.5" style={{ color: m.masked ? "var(--danger)" : undefined }}>{maskText(m.text)}</p>
+                </div>
+              ))}
             </div>
 
-            {messages.length > 0 && (
-              <div className="mt-3 space-y-1 max-h-60 overflow-y-auto">
-                {messages.map(m => (
-                  <div key={m.id} className="text-[10px] p-1.5 rounded" style={{ backgroundColor: "var(--bg)" }}>
-                    <span className="font-medium">{m.senderName}</span>
-                    <span className="ml-1" style={{ color: "var(--muted)" }}>{new Date(m.createdAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</span>
-                    <p className="mt-0.5" style={{ color: m.masked ? "var(--danger)" : undefined }}>{maskText(m.text)}</p>
-                  </div>
-                ))}
+            {/* ページング */}
+            {totalPages > 1 && (
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page === 0 ? 0.3 : 1 }}>← 前へ</button>
+                <span className="text-[10px]" style={{ color: "var(--muted)" }}>{page + 1} / {totalPages}</span>
+                <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page >= totalPages - 1 ? 0.3 : 1 }}>次へ →</button>
               </div>
             )}
 
+            {/* 画像送信履歴 */}
             {media.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>画像送信履歴（ウォーターマーク付き / DL禁止）</p>
+                <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>画像送信履歴（ダウンロード不可）</p>
                 <div className="mt-1 space-y-1">
                   {media.map(m => (
                     <div key={m.id} className="text-[10px] p-2 rounded relative" style={{ backgroundColor: "var(--bg)" }}>
-                      <span>{m.senderName} — {new Date(m.createdAt).toLocaleTimeString("ja-JP")}</span>
-                      <div className="mt-1 relative h-16 w-16 rounded bg-gray-200 flex items-center justify-center">
+                      <span>{m.senderName} — {new Date(m.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      <div className="mt-1 relative h-16 w-16 rounded bg-gray-200 flex items-center justify-center select-none" style={{ pointerEvents: "none" }}>
                         <span>🖼️</span>
-                        <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold text-black/20 rotate-[-20deg]">SLOTY MODERATION {new Date().toISOString().slice(0, 10)}</span>
+                        <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold text-black/20 rotate-[-20deg]">SLOTY管理 {new Date().toISOString().slice(0, 10)}</span>
                       </div>
                     </div>
                   ))}
@@ -518,7 +557,7 @@ function AdminMessages() {
               </div>
             )}
 
-            <button onClick={() => setSelectedReport(null)} className="btn-outline w-full mt-3 text-sm">閉じる</button>
+            <button onClick={() => setSelectedRoomId(null)} className="btn-outline w-full mt-3 text-sm">閉じる</button>
           </div>
         </div>
       )}
@@ -526,8 +565,8 @@ function AdminMessages() {
   );
 }
 
-// ===== Tickets Tab =====
-function AdminTickets() {
+// ===== チケットタブ =====
+function AdminTicketsTab() {
   const [ledger, setLedger] = useState<TicketEntry[]>([]);
   const [balance, setBalance] = useState(0);
 
@@ -547,36 +586,67 @@ function AdminTickets() {
             <span className="font-semibold" style={{ color: entry.delta > 0 ? "var(--success)" : "var(--danger)" }}>{entry.delta > 0 ? `+${entry.delta}` : entry.delta}</span>
           </div>
         ))}
+        {ledger.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>履歴なし</p>}
       </div>
     </div>
   );
 }
 
-// ===== Audit Logs Tab =====
-function AdminAuditLogs() {
+// ===== 監査ログタブ =====
+function AdminAuditTab() {
   const [logs, setLogs] = useState<AdminAuditEntry[]>([]);
+  const [page, setPage] = useState(0);
 
   useEffect(() => { setLogs(getAdminAuditLog()); const iv = setInterval(() => setLogs(getAdminAuditLog()), 3000); return () => clearInterval(iv); }, []);
 
+  const totalPages = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));
+  const pagedLogs = logs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // アクション名の日本語マッピング
+  const ACTION_LABELS: Record<string, string> = {
+    ADMIN_LOGIN: "ログイン",
+    ADMIN_LOGOUT: "ログアウト",
+    VIEW_KYC_ASSET: "本人確認書類閲覧",
+    VIEW_CHAT_LOG: "会話ログ閲覧",
+    VIEW_MEDIA_LOG: "画像履歴閲覧",
+    APPROVE_KYC: "本人確認 承認",
+    REJECT_KYC: "本人確認 却下",
+    RESUBMIT_KYC: "本人確認 再提出要求",
+    BAN_USER: "ユーザー凍結",
+    UNBAN_USER: "凍結解除",
+    FORCE_PASSWORD_RESET: "パスワード強制リセット",
+    ADJUST_TICKETS: "チケット調整",
+  };
+
   return (
     <div>
-      <h2 className="text-sm font-semibold">管理者監査ログ</h2>
-      <p className="text-[10px]" style={{ color: "var(--muted)" }}>誰が・何を・いつ・なぜ — 全操作を記録</p>
-      <div className="mt-3 space-y-1 max-h-96 overflow-y-auto">
-        {logs.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>ログなし</p>}
-        {logs.map(entry => (
+      <h2 className="text-sm font-semibold">監査ログ</h2>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>全管理操作の記録（誰が・何を・いつ）</p>
+      <div className="mt-3 space-y-1">
+        {pagedLogs.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>ログなし</p>}
+        {pagedLogs.map(entry => (
           <div key={entry.id} className="text-[10px] py-1.5" style={{ borderBottom: "1px solid var(--border)" }}>
             <div className="flex items-center gap-2">
-              <span className="shrink-0 font-medium" style={{ color: entry.action.startsWith("VIEW_") ? "#f59e0b" : entry.action.includes("BAN") ? "var(--danger)" : "var(--accent)" }}>
-                {entry.action}
+              <span className="shrink-0 font-medium" style={{
+                color: entry.action.startsWith("VIEW_") ? "#f59e0b" : entry.action.includes("BAN") ? "var(--danger)" : "var(--accent)"
+              }}>
+                {ACTION_LABELS[entry.action] ?? entry.action}
               </span>
               <span style={{ color: "var(--muted)" }}>{entry.targetType}/{entry.targetId.slice(0, 12)}</span>
               <span className="ml-auto shrink-0" style={{ color: "var(--muted)" }}>{new Date(entry.createdAt).toLocaleString("ja-JP")}</span>
             </div>
-            <p className="mt-0.5" style={{ color: "var(--muted)" }}>理由: {entry.reason}</p>
+            {entry.reason && <p className="mt-0.5" style={{ color: "var(--muted)" }}>{entry.reason}</p>}
           </div>
         ))}
       </div>
+      {/* ページング */}
+      {totalPages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page === 0 ? 0.3 : 1 }}>← 前へ</button>
+          <span className="text-[10px]" style={{ color: "var(--muted)" }}>{page + 1} / {totalPages}</span>
+          <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page >= totalPages - 1 ? 0.3 : 1 }}>次へ →</button>
+        </div>
+      )}
     </div>
   );
 }
