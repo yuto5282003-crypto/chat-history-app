@@ -880,17 +880,15 @@ export function removeBookingCalendarEvent(bookingId: string) {
   removePrivateEvent(sourceId);
 }
 
-// ===== KYC image storage (session-based with meta in localStorage) =====
-const kycImageCache = new Map<string, string>();
-
+// ===== KYC image storage (localStorage for cross-tab access) =====
 export function saveKycImage(assetType: string, dataUrl: string) {
-  kycImageCache.set(`kyc_img_${assetType}`, dataUrl);
-  // Also persist to sessionStorage for tab lifetime
-  try { sessionStorage.setItem(`sloty_kyc_img_${assetType}`, dataUrl); } catch { /* quota */ }
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(`sloty_kyc_img_${assetType}`, dataUrl); } catch { /* quota */ }
 }
 
 export function getKycImage(assetType: string): string | null {
-  return kycImageCache.get(`kyc_img_${assetType}`) ?? (typeof sessionStorage !== "undefined" ? sessionStorage.getItem(`sloty_kyc_img_${assetType}`) : null);
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(`sloty_kyc_img_${assetType}`);
 }
 
 // ===== POI categories =====

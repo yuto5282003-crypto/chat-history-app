@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   getAdminSession, setAdminSession, clearAdminSession, addAdminAudit, getAdminAuditLog,
-  getKycRequests, updateKycRequest, addKycAudit, getKycAuditLog, runKycAiScoring, getKycAssetsMeta,
+  getKycRequests, updateKycRequest, addKycAudit, getKycAuditLog, runKycAiScoring, getKycAssetsMeta, getKycImage,
   getUsers, updateUser, banUser, unbanUser, forcePasswordReset,
   getReports, getRooms, getMessages, getMedia, getCallLogs,
   getTicketLedger, getTicketBalance,
@@ -229,14 +229,32 @@ function AdminKyc() {
               <p className="text-xs font-medium">提出書類</p>
               <button onClick={() => handleViewAssets(selected)} className="btn-outline w-full mt-1 text-[10px]">書類を確認する</button>
               {showAssets && (
-                <div className="mt-2 space-y-1">
+                <div className="mt-2 space-y-2">
                   {assets.length === 0 && <p className="text-[10px]" style={{ color: "var(--muted)" }}>書類データなし</p>}
-                  {assets.map(a => (
-                    <div key={a.id} className="flex items-center gap-2 text-[10px] p-2 rounded" style={{ backgroundColor: "var(--accent-soft)" }}>
-                      <span>📄 {a.assetType === "selfie" ? "セルフィー" : a.assetType === "id_front" ? "身分証（表）" : a.assetType === "id_back" ? "身分証（裏）" : a.assetType === "liveness_left" ? "ライブネス（左）" : "ライブネス（右）"}</span>
-                      <span className="flex-1 truncate" style={{ color: "var(--muted)" }}>{a.objectKey}</span>
-                    </div>
-                  ))}
+                  {assets.map(a => {
+                    const ASSET_LABELS: Record<string, string> = {
+                      selfie: "セルフィー", id_front: "身分証（表）", id_back: "身分証（裏）",
+                      liveness_left: "ライブネス（左）", liveness_right: "ライブネス（右）",
+                    };
+                    const imgData = getKycImage(a.assetType);
+                    return (
+                      <div key={a.id} className="p-2 rounded" style={{ backgroundColor: "var(--accent-soft)" }}>
+                        <p className="text-[10px] font-medium">📄 {ASSET_LABELS[a.assetType] ?? a.assetType}</p>
+                        {imgData ? (
+                          <div className="relative mt-1 rounded-lg overflow-hidden select-none" style={{ maxHeight: 200, pointerEvents: "none" }}>
+                            <img src={imgData} alt={a.assetType} className="w-full object-contain" style={{ maxHeight: 200 }} draggable={false} />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-lg font-bold rotate-[-25deg] select-none" style={{ color: "rgba(0,0,0,0.15)" }}>
+                                SLOTY管理 {new Date().toISOString().slice(0, 10)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>画像データなし（{a.objectKey}）</p>
+                        )}
+                      </div>
+                    );
+                  })}
                   <p className="text-[9px]" style={{ color: "var(--muted)" }}>※ ウォーターマーク付き一時表示。ダウンロード不可。</p>
                 </div>
               )}
