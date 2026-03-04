@@ -1,110 +1,103 @@
 "use client";
 
 import Link from "next/link";
-import { DEMO_USER, DEMO_TICKET_LEDGER, IS_DEMO } from "@/lib/demo-data";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
+import { getTicketBalance, getTicketLedger, addTicketEntry } from "@/lib/demo-store";
+import { DEMO_USER } from "@/lib/demo-data";
 
 export default function ProfilePage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [tickets, setTickets] = useState(18);
+  const [ledger, setLedger] = useState<{ delta: number; reason: string; createdAt: string }[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    setTickets(getTicketBalance());
+    setLedger(getTicketLedger());
+  }, []);
+
+  function handleCharge() {
+    addTicketEntry(10, "開発用チャージ（+10）");
+    setTickets(getTicketBalance());
+    setLedger(getTicketLedger());
+  }
+
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold">設定</h1>
 
-      {IS_DEMO && (
-        <div className="mt-4 card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-              {DEMO_USER.displayName[0]}
-            </div>
-            <div>
-              <p className="font-semibold">{DEMO_USER.displayName}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">{DEMO_USER.email}</p>
-            </div>
+      <div className="mt-4 card p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold"
+            style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
+            {DEMO_USER.displayName[0]}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
-            <span className="text-sm">🎫 チケット残高</span>
-            <span className="text-lg font-bold text-[var(--color-accent)]">{DEMO_USER.ticketBalance}枚</span>
+          <div>
+            <p className="font-semibold">{DEMO_USER.displayName}</p>
+            <p className="text-xs" style={{ color: "var(--muted)" }}>{DEMO_USER.email}</p>
           </div>
         </div>
-      )}
+        <div className="mt-3 flex items-center justify-between" style={{ borderTop: "1px solid var(--border)", paddingTop: "0.75rem" }}>
+          <span className="text-sm">🎫 チケット残高</span>
+          <span className="text-lg font-bold" style={{ color: "var(--accent)" }}>{tickets}枚</span>
+        </div>
+      </div>
 
       <div className="mt-6 space-y-6">
-        {/* アカウント */}
         <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            アカウント
-          </h2>
-          <div className="mt-2 space-y-1">
-            <SettingsRow label="プロフィール編集" href="/profile/edit" />
-            <SettingsRow label="本人確認" href="/profile/verify" />
-          </div>
-        </section>
-
-        {/* 表示 */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            表示
-          </h2>
-          <div className="mt-2 space-y-1">
-            <SettingsToggle label="ダークモード" />
-          </div>
-        </section>
-
-        {/* 通知 */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            通知
-          </h2>
-          <div className="mt-2 space-y-1">
-            <SettingsToggle label="Push通知" defaultOn />
-            <SettingsToggle label="予約リマインド" defaultOn />
-            <SettingsToggle label="依頼通知" defaultOn />
-          </div>
-        </section>
-
-        {/* チケット */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            チケット
-          </h2>
-          <div className="mt-2 space-y-1">
-            <SettingsRow label="チケット購入" href="/profile/tickets" />
-            <SettingsRow label="利用履歴" href="/profile/tickets/history" />
-          </div>
-          {IS_DEMO && (
-            <div className="mt-2 card p-3 space-y-2">
-              <p className="text-xs font-semibold text-[var(--color-text-secondary)]">最近の履歴（デモ）</p>
-              {DEMO_TICKET_LEDGER.slice(0, 4).map((entry, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <span>{entry.reason}</span>
-                  <span className={entry.delta > 0 ? "text-green-600 font-semibold" : "text-red-500 font-semibold"}>
-                    {entry.delta > 0 ? `+${entry.delta}` : entry.delta}
-                  </span>
-                </div>
-              ))}
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>表示</h2>
+          <div className="mt-2">
+            <div className="flex items-center justify-between rounded-xl p-3 text-sm">
+              <span>ダークモード</span>
+              {mounted && (
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                  style={{ backgroundColor: theme === "dark" ? "var(--accent)" : "#d1d5db" }}
+                >
+                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                    style={{ transform: theme === "dark" ? "translateX(1.375rem)" : "translateX(0.25rem)" }} />
+                </button>
+              )}
             </div>
-          )}
-        </section>
-
-        {/* その他 */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            その他
-          </h2>
-          <div className="mt-2 space-y-1">
-            <SettingsRow label="利用規約" href="/terms" />
-            <SettingsRow label="プライバシーポリシー" href="/privacy" />
-            <SettingsRow label="ヘルプ" href="/help" />
           </div>
         </section>
 
-        {/* ログアウト */}
-        <div className="space-y-2">
-          <button className="w-full rounded-xl border border-[var(--color-border)] p-3 text-sm text-[var(--color-text-secondary)]">
-            ログアウト
-          </button>
-          <button className="w-full rounded-xl p-3 text-sm text-red-500">
-            アカウント削除
-          </button>
-        </div>
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>チケット</h2>
+          <button onClick={handleCharge} className="btn-primary mt-2 w-full text-sm">🎫 +10 チャージ（開発用）</button>
+          <div className="mt-3 card p-3 space-y-2">
+            <p className="text-xs font-semibold" style={{ color: "var(--muted)" }}>最近の履歴</p>
+            {ledger.slice(0, 6).map((entry, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span>{entry.reason}</span>
+                <span className="font-semibold" style={{ color: entry.delta > 0 ? "var(--success)" : "var(--danger)" }}>
+                  {entry.delta > 0 ? `+${entry.delta}` : entry.delta}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 rounded-xl p-3 text-xs" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
+            <p className="font-semibold">消費ルール:</p>
+            <ul className="mt-1 space-y-0.5 list-disc pl-4">
+              <li>広場投稿: 2🎫</li>
+              <li>時間共有依頼: 5🎫（拒否時2🎫返金）</li>
+              <li>スロット出品: 無料</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>その他</h2>
+          <div className="mt-2 space-y-1">
+            <SettingsRow label="依頼受信箱" href="/requests/inbox" />
+            <SettingsRow label="非公開予定管理" href="/friends/events" />
+            <SettingsRow label="利用規約" href="/profile" />
+            <SettingsRow label="ヘルプ" href="/profile" />
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -112,34 +105,9 @@ export default function ProfilePage() {
 
 function SettingsRow({ label, href }: { label: string; href: string }) {
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between rounded-xl p-3 text-sm transition-colors hover:bg-[var(--color-card)]"
-    >
+    <Link href={href} className="flex items-center justify-between rounded-xl p-3 text-sm transition-colors hover:opacity-80">
       <span>{label}</span>
-      <span className="text-[var(--color-text-secondary)]">→</span>
+      <span style={{ color: "var(--muted)" }}>→</span>
     </Link>
-  );
-}
-
-function SettingsToggle({
-  label,
-  defaultOn = false,
-}: {
-  label: string;
-  defaultOn?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-xl p-3 text-sm">
-      <span>{label}</span>
-      <label className="relative inline-flex cursor-pointer items-center">
-        <input
-          type="checkbox"
-          defaultChecked={defaultOn}
-          className="peer sr-only"
-        />
-        <div className="peer h-5 w-9 rounded-full bg-gray-300 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--color-accent)] peer-checked:after:translate-x-full" />
-      </label>
-    </div>
   );
 }

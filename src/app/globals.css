@@ -4,54 +4,113 @@
 
 @layer base {
   :root {
-    --color-bg: #ffffff;
-    --color-card: #f8f8fc;
-    --color-text-primary: #1a1a2e;
-    --color-text-secondary: #6b7280;
-    --color-accent: #8b5cf6;
-    --color-accent-hover: #7c3aed;
-    --color-border: #e5e7eb;
+    --bg: #ffffff;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-fg: #ffffff;
+    --accent-soft: #f5f3ff;
+    --accent-soft-text: #6d28d9;
+    --success: #16a34a;
+    --danger: #dc2626;
   }
 
   .dark {
-    --color-bg: #1a1a2e;
-    --color-card: #252540;
-    --color-text-primary: #f0f0f5;
-    --color-text-secondary: #9ca3af;
-    --color-accent: #a78bfa;
-    --color-accent-hover: #8b5cf6;
-    --color-border: #374151;
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --text: #f0f0f5;
+    --muted: #9ca3af;
+    --border: #2d2d44;
+    --accent: #a78bfa;
+    --accent-hover: #c4b5fd;
+    --accent-fg: #0f0f1a;
+    --accent-soft: rgba(139, 92, 246, 0.15);
+    --accent-soft-text: #c4b5fd;
+    --success: #22c55e;
+    --danger: #f87171;
   }
 
   body {
-    background-color: var(--color-bg);
-    color: var(--color-text-primary);
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  /* Legacy aliases */
+  :root {
+    --color-bg: var(--bg);
+    --color-card: var(--card);
+    --color-text-primary: var(--text);
+    --color-text-secondary: var(--muted);
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-border: var(--border);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply rounded-xl px-6 py-3 font-semibold text-white transition-colors;
-    background-color: var(--color-accent);
+    @apply rounded-xl px-6 py-3 font-semibold transition-colors;
+    background-color: var(--accent);
+    color: var(--accent-fg);
   }
   .btn-primary:hover {
-    background-color: var(--color-accent-hover);
+    background-color: var(--accent-hover);
+  }
+  .btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply rounded-xl px-4 py-2 text-sm font-medium transition-colors;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-text);
+    border-color: var(--accent);
   }
 
   .card {
     @apply rounded-2xl p-4 shadow-sm;
-    background-color: var(--color-card);
-    border: 1px solid var(--color-border);
+    background-color: var(--card);
+    border: 1px solid var(--border);
   }
 
   .tab-active {
     @apply border-b-2 font-semibold;
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .tab-inactive {
     @apply border-b-2 border-transparent;
-    color: var(--color-text-secondary);
+    color: var(--muted);
+  }
+
+  .chip {
+    @apply rounded-full px-3 py-1.5 text-xs font-medium transition-colors;
+  }
+  .chip-active {
+    background-color: var(--accent);
+    color: var(--accent-fg);
+  }
+  .chip-inactive {
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .input {
+    @apply w-full rounded-xl p-3 text-sm;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
   }
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import SplashScreen from "@/components/shared/SplashScreen";
 
 export const metadata: Metadata = {
   title: "SLOTY — 時間共有マーケット",
@@ -21,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <SplashScreen>
+            {children}
+          </SplashScreen>
         </ThemeProvider>
       </body>
     </html>
