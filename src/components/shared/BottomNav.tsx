@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
+  { href: "/home", label: "ホーム", icon: "🏠" },
   { href: "/market", label: "マーケット", icon: "🏪" },
   { href: "/nearby", label: "すれ違い", icon: "📡" },
   { href: "/messages", label: "メッセージ", icon: "💬" },

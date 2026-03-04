@@ -885,3 +885,152 @@ export function getKycImage(assetType: string): string | null {
 // ===== POI categories =====
 export const POI_CATEGORIES = ["カフェ", "ご飯", "公共", "公園"] as const;
 export type PoiCategory = typeof POI_CATEGORIES[number];
+
+// ===== Auth system (DEMO_MODE) =====
+export type AuthUser = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  displayName: string;
+  createdAt: string;
+  lastLoginAt: string;
+  loginCount: number;
+  status: "active" | "banned" | "kycpending";
+};
+export type AuthSession = {
+  userId: string;
+  email: string;
+  token: string;
+  expiresAt: number;
+};
+export type AuthLogEntry = {
+  id: string;
+  timestamp: string;
+  userId: string;
+  email: string;
+  action: "signup" | "login" | "logout" | "failed_login" | "password_reset";
+  ip: string;
+  ua: string;
+};
+
+// FNV-1a based hash (not reversible, demo substitute for SHA-256)
+function simpleHash(str: string): string {
+  let h1 = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = ((h1 << 5) - h1 + c) | 0;
+  }
+  let h2 = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h2 ^= str.charCodeAt(i);
+    h2 = Math.imul(h2, 0x01000193);
+  }
+  return `hash:${(h1 >>> 0).toString(16).padStart(8, "0")}${(h2 >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function hashPassword(password: string): string {
+  return simpleHash(password + "sloty_salt_2024");
+}
+
+export function getAuthUsers(): AuthUser[] {
+  return load<AuthUser[]>("auth_users", []);
+}
+
+export function findAuthUserByEmail(email: string): AuthUser | null {
+  return getAuthUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) ?? null;
+}
+
+export function signupUser(email: string, password: string, displayName: string): { ok: boolean; error?: string } {
+  const users = getAuthUsers();
+  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    return { ok: false, error: "このメールアドレスは既に登録されています" };
+  }
+  const user: AuthUser = {
+    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    email,
+    passwordHash: hashPassword(password),
+    displayName,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    loginCount: 1,
+    status: "active",
+  };
+  users.push(user);
+  save("auth_users", users);
+  addAuthLog(user.id, email, "signup");
+  setAuthSession(user.id, email);
+  return { ok: true };
+}
+
+export function loginUser(email: string, password: string): { ok: boolean; error?: string } {
+  const user = findAuthUserByEmail(email);
+  if (!user) {
+    addAuthLog("unknown", email, "failed_login");
+    return { ok: false, error: "メールアドレスまたはパスワードが正しくありません" };
+  }
+  if (user.status === "banned") {
+    addAuthLog(user.id, email, "failed_login");
+    return { ok: false, error: "このアカウントは凍結されています" };
+  }
+  if (user.passwordHash !== hashPassword(password)) {
+    addAuthLog(user.id, email, "failed_login");
+    return { ok: false, error: "メールアドレスまたはパスワードが正しくありません" };
+  }
+  const users = getAuthUsers();
+  const u = users.find(x => x.id === user.id);
+  if (u) { u.lastLoginAt = new Date().toISOString(); u.loginCount += 1; }
+  save("auth_users", users);
+  addAuthLog(user.id, email, "login");
+  setAuthSession(user.id, email);
+  return { ok: true };
+}
+
+export function logoutUser() {
+  const session = getAuthSession();
+  if (session) addAuthLog(session.userId, session.email, "logout");
+  save("auth_session", null);
+}
+
+export function getAuthSession(): AuthSession | null {
+  const s = load<AuthSession | null>("auth_session", null);
+  if (!s) return null;
+  if (s.expiresAt < Date.now()) { save("auth_session", null); return null; }
+  return s;
+}
+
+export function setAuthSession(userId: string, email: string) {
+  save("auth_session", {
+    userId, email,
+    token: `tok-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    expiresAt: Date.now() + 24 * 60 * 60_000,
+  });
+}
+
+export function isLoggedIn(): boolean { return getAuthSession() !== null; }
+
+export function getAuthLog(): AuthLogEntry[] { return load<AuthLogEntry[]>("auth_log", []); }
+
+export function addAuthLog(userId: string, email: string, action: AuthLogEntry["action"]) {
+  const log = getAuthLog();
+  log.unshift({
+    id: `alog-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    timestamp: new Date().toISOString(),
+    userId, email, action,
+    ip: "unknown",
+    ua: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 60) : "unknown",
+  });
+  save("auth_log", log);
+}
+
+// Support messages
+export type SupportMessage = { id: string; name: string; email: string; message: string; createdAt: string };
+export function getSupportMessages(): SupportMessage[] { return load<SupportMessage[]>("support_messages", []); }
+export function addSupportMessage(name: string, email: string, message: string) {
+  const msgs = getSupportMessages();
+  msgs.unshift({ id: `sup-${Date.now()}`, name, email, message, createdAt: new Date().toISOString() });
+  save("support_messages", msgs);
+}
+
+// ===== Imahima status =====
+export function getImahimaStatus(): boolean { return load<boolean>("imahima_status", false); }
+export function setImahimaStatus(on: boolean) { save("imahima_status", on); }

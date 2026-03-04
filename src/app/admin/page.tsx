@@ -7,10 +7,12 @@ import {
   getUsers, updateUser, banUser, unbanUser, forcePasswordReset,
   getReports, getRooms, getMessages, getMedia, getCallLogs,
   getTicketLedger, getTicketBalance,
+  getAuthUsers, getAuthLog, getSupportMessages,
 } from "@/lib/demo-store";
 import type {
   AdminAuditEntry, KycRequest, KycAuditEntry, KycAssetMeta,
   DemoUser, DemoReport, DemoRoom, DemoMessage, DemoMedia, TicketEntry,
+  AuthUser, AuthLogEntry, SupportMessage,
 } from "@/lib/demo-store";
 
 // ===== 日本語タブ定義 =====
@@ -21,6 +23,8 @@ const ADMIN_TABS = [
   { key: "sessions", label: "セッション" },
   { key: "messages", label: "会話ログ" },
   { key: "tickets", label: "チケット" },
+  { key: "authlog", label: "認証ログ" },
+  { key: "support", label: "問い合わせ" },
   { key: "audit", label: "監査ログ" },
 ] as const;
 type AdminTab = typeof ADMIN_TABS[number]["key"];
@@ -128,6 +132,8 @@ export default function AdminPage() {
         {tab === "sessions" && <AdminSessionsTab />}
         {tab === "messages" && <AdminMessagesTab />}
         {tab === "tickets" && <AdminTicketsTab />}
+        {tab === "authlog" && <AdminAuthLogTab />}
+        {tab === "support" && <AdminSupportTab />}
         {tab === "audit" && <AdminAuditTab />}
       </div>
     </div>
@@ -276,11 +282,12 @@ function AdminKyc() {
 // ===== ユーザータブ =====
 function AdminUsersTab() {
   const [users, setUsers] = useState<DemoUser[]>([]);
+  const [authUsers, setAuthUsers] = useState<AuthUser[]>([]);
   const [selected, setSelected] = useState<DemoUser | null>(null);
   const [note, setNote] = useState("");
   const [search, setSearch] = useState("");
 
-  useEffect(() => { setUsers(getUsers()); }, []);
+  useEffect(() => { setUsers(getUsers()); setAuthUsers(getAuthUsers()); }, []);
 
   const filteredUsers = search.trim()
     ? users.filter(u => {
@@ -339,6 +346,11 @@ function AdminUsersTab() {
               <span>{u.loginEmail}</span> ／ <span>{u.loginProvider}</span> ／ <span>通報{u.reportCount}件</span>
               {u.forceResetFlag && <span className="ml-1" style={{ color: "var(--danger)" }}>※パスワード強制リセット済</span>}
             </div>
+            {(() => { const au = authUsers.find(a => a.email.toLowerCase() === u.loginEmail.toLowerCase()); return au ? (
+              <div className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
+                登録: {new Date(au.createdAt).toLocaleDateString("ja-JP")} ／ 最終ログイン: {au.lastLoginAt ? new Date(au.lastLoginAt).toLocaleString("ja-JP") : "なし"} ／ ログイン{au.loginCount}回
+              </div>
+            ) : null; })()}
           </div>
         ))}
       </div>
@@ -587,6 +599,87 @@ function AdminTicketsTab() {
           </div>
         ))}
         {ledger.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>履歴なし</p>}
+      </div>
+    </div>
+  );
+}
+
+// ===== 認証ログタブ =====
+function AdminAuthLogTab() {
+  const [logs, setLogs] = useState<AuthLogEntry[]>([]);
+  const [page, setPage] = useState(0);
+
+  useEffect(() => { setLogs(getAuthLog()); const iv = setInterval(() => setLogs(getAuthLog()), 3000); return () => clearInterval(iv); }, []);
+
+  const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+    signup: { label: "新規登録", color: "var(--success)" },
+    login: { label: "ログイン", color: "var(--accent)" },
+    logout: { label: "ログアウト", color: "var(--muted)" },
+    failed_login: { label: "ログイン失敗", color: "var(--danger)" },
+    password_reset: { label: "パスワードリセット", color: "#f59e0b" },
+  };
+
+  const totalPages = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));
+  const pagedLogs = logs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  return (
+    <div>
+      <h2 className="text-sm font-semibold">認証ログ</h2>
+      <p className="text-[10px]" style={{ color: "var(--muted)" }}>
+        全{logs.length}件 ／ ログイン・登録・ログアウト・失敗の履歴 ／ パスワード平文閲覧不可
+      </p>
+      <div className="mt-3 space-y-1">
+        {pagedLogs.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>認証ログなし</p>}
+        {pagedLogs.map(entry => {
+          const a = ACTION_LABELS[entry.action] ?? { label: entry.action, color: "var(--muted)" };
+          return (
+            <div key={entry.id} className="text-[10px] py-1.5" style={{ borderBottom: "1px solid var(--border)" }}>
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 font-medium" style={{ color: a.color }}>{a.label}</span>
+                <span className="truncate">{entry.email}</span>
+                <span className="ml-auto shrink-0" style={{ color: "var(--muted)" }}>
+                  {new Date(entry.timestamp).toLocaleString("ja-JP")}
+                </span>
+              </div>
+              <div className="flex gap-2 mt-0.5" style={{ color: "var(--muted)" }}>
+                <span>ID: {entry.userId.slice(0, 12)}</span>
+                <span>IP: {entry.ip}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {totalPages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page === 0 ? 0.3 : 1 }}>← 前へ</button>
+          <span className="text-[10px]" style={{ color: "var(--muted)" }}>{page + 1} / {totalPages}</span>
+          <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="btn-outline text-[10px] !px-2 !py-1" style={{ opacity: page >= totalPages - 1 ? 0.3 : 1 }}>次へ →</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== お問い合わせタブ =====
+function AdminSupportTab() {
+  const [messages, setMessages] = useState<SupportMessage[]>([]);
+  useEffect(() => { setMessages(getSupportMessages()); }, []);
+
+  return (
+    <div>
+      <h2 className="text-sm font-semibold">お問い合わせ一覧</h2>
+      <div className="mt-3 space-y-2">
+        {messages.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>お問い合わせはありません</p>}
+        {messages.map(m => (
+          <div key={m.id} className="card p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{m.name}</span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>{new Date(m.createdAt).toLocaleString("ja-JP")}</span>
+            </div>
+            <p className="text-[10px]" style={{ color: "var(--muted)" }}>{m.email}</p>
+            <p className="mt-1 text-xs">{m.message}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

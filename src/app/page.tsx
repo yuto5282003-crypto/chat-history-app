@@ -9,7 +9,7 @@ export default function SplashPage() {
 
   useEffect(() => {
     const t1 = setTimeout(() => setFade(true), 1700);
-    const t2 = setTimeout(() => router.replace("/market"), 2000);
+    const t2 = setTimeout(() => router.replace("/home"), 2000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
