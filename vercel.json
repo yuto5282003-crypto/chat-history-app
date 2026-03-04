@@ -1,5 +1,7 @@
 {
-  "builds": [{ "src": "package.json", "use": "@vercel/next" }],
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "npm install",
   "env": {
     "NEXT_PUBLIC_DEMO_MODE": "1",
     "ADMIN_PASSCODE": "sloty2024",
