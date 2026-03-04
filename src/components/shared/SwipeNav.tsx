@@ -3,7 +3,7 @@
 import { useRef, useCallback, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-const TAB_ORDER = ["/market", "/nearby", "/messages", "/square", "/profile"];
+const TAB_ORDER = ["/market", "/nearby", "/messages", "/calendar", "/square", "/profile"];
 
 type Props = {
   children: ReactNode;
