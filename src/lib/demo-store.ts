@@ -107,13 +107,22 @@ export type DemoPing = {
 };
 
 export type DemoProfile = {
-  bio: string;
+  displayName: string;
+  handle: string;
+  bioShort: string;
+  bioLong: string;
+  bio: string;               // legacy compat
   photos: string[];
+  birthdate: string;
+  age: string;
+  gender: string;
   purposeTags: string[];
   hobbyTags: string[];
   job: string;
   workStyle: string;
-  age: string;
+  areaTags: string[];
+  contactStyle: string;
+  ngTags: string[];
   height: string;
   incomeRange: string;
   incomeVisibility: "all" | "match" | "private";
@@ -291,9 +300,11 @@ export function setPingCooldown(targetUserId: string) {
 
 // --- Profile ---
 const DEFAULT_PROFILE: DemoProfile = {
-  bio: "", photos: [], purposeTags: [], hobbyTags: [],
-  job: "", workStyle: "", age: "", height: "",
-  incomeRange: "", incomeVisibility: "private", lifeTags: [],
+  displayName: "", handle: "", bioShort: "", bioLong: "",
+  bio: "", photos: [], birthdate: "", age: "", gender: "",
+  purposeTags: [], hobbyTags: [], job: "", workStyle: "",
+  areaTags: [], contactStyle: "", ngTags: [],
+  height: "", incomeRange: "", incomeVisibility: "private", lifeTags: [],
 };
 export function getProfile(): DemoProfile {
   return load<DemoProfile>("profile", DEFAULT_PROFILE);
@@ -892,6 +903,7 @@ export type AuthUser = {
   email: string;
   passwordHash: string;
   displayName: string;
+  emailVerified: boolean;
   createdAt: string;
   lastLoginAt: string;
   loginCount: number;
@@ -908,10 +920,106 @@ export type AuthLogEntry = {
   timestamp: string;
   userId: string;
   email: string;
-  action: "signup" | "login" | "logout" | "failed_login" | "password_reset";
+  action: "signup" | "login" | "logout" | "failed_login" | "password_reset" | "email_change" | "email_verified";
   ip: string;
   ua: string;
 };
+
+// Outbox (pseudo-email)
+export type OutboxMail = {
+  id: string;
+  to: string;
+  subject: string;
+  body: string;
+  links: { label: string; url: string }[];
+  createdAt: string;
+};
+export function getOutbox(): OutboxMail[] { return load<OutboxMail[]>("outbox", []); }
+export function addOutboxMail(mail: Omit<OutboxMail, "id" | "createdAt">) {
+  const mails = getOutbox();
+  mails.unshift({ ...mail, id: `mail-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, createdAt: new Date().toISOString() });
+  save("outbox", mails);
+}
+
+// Tokens (email verify / password reset / email change)
+type TokenEntry = { token: string; userId: string; email: string; expiresAt: number; newEmail?: string };
+function getTokens(kind: string): TokenEntry[] { return load<TokenEntry[]>(`tokens_${kind}`, []); }
+function addToken(kind: string, userId: string, email: string, newEmail?: string): string {
+  const tokens = getTokens(kind).filter(t => t.expiresAt > Date.now());
+  const token = `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  tokens.push({ token, userId, email, expiresAt: Date.now() + 60 * 60_000, newEmail });
+  save(`tokens_${kind}`, tokens);
+  return token;
+}
+function consumeToken(kind: string, token: string): TokenEntry | null {
+  const tokens = getTokens(kind);
+  const idx = tokens.findIndex(t => t.token === token && t.expiresAt > Date.now());
+  if (idx === -1) return null;
+  const entry = tokens[idx];
+  tokens.splice(idx, 1);
+  save(`tokens_${kind}`, tokens);
+  return entry;
+}
+
+// Email verification
+export function sendVerificationEmail(userId: string, email: string) {
+  const token = addToken("verify", userId, email);
+  addOutboxMail({ to: email, subject: "【SLOTY】メールアドレスの確認", body: "以下のリンクをクリックしてメールアドレスを確認してください。", links: [{ label: "メールを確認する", url: `/auth/verify-email?token=${token}` }] });
+}
+export function verifyEmail(token: string): { ok: boolean; error?: string } {
+  const entry = consumeToken("verify", token);
+  if (!entry) return { ok: false, error: "トークンが無効または期限切れです" };
+  const users = getAuthUsers();
+  const u = users.find(x => x.id === entry.userId);
+  if (!u) return { ok: false, error: "ユーザーが見つかりません" };
+  u.emailVerified = true;
+  save("auth_users", users);
+  addAuthLog(u.id, u.email, "email_verified");
+  setAuthSession(u.id, u.email);
+  return { ok: true };
+}
+
+// Password reset via token
+export function sendPasswordResetEmail(email: string) {
+  const user = findAuthUserByEmail(email);
+  if (!user) return; // don't reveal existence
+  const token = addToken("reset", user.id, email);
+  addOutboxMail({ to: email, subject: "【SLOTY】パスワードリセット", body: "以下のリンクからパスワードを再設定してください。", links: [{ label: "パスワードをリセットする", url: `/auth/reset-password?token=${token}` }] });
+  addAuthLog(user.id, email, "password_reset");
+}
+export function resetPasswordWithToken(token: string, newPassword: string): { ok: boolean; error?: string } {
+  const entry = consumeToken("reset", token);
+  if (!entry) return { ok: false, error: "トークンが無効または期限切れです" };
+  const users = getAuthUsers();
+  const u = users.find(x => x.id === entry.userId);
+  if (!u) return { ok: false, error: "ユーザーが見つかりません" };
+  u.passwordHash = hashPassword(newPassword);
+  save("auth_users", users);
+  return { ok: true };
+}
+
+// Email change via token
+export function sendEmailChangeEmail(userId: string, currentEmail: string, newEmail: string) {
+  if (findAuthUserByEmail(newEmail)) return { ok: false, error: "このメールアドレスは既に使用されています" };
+  const token = addToken("emailchange", userId, currentEmail, newEmail);
+  addOutboxMail({ to: newEmail, subject: "【SLOTY】メールアドレス変更の確認", body: `メールアドレスを ${newEmail} に変更するには、以下のリンクをクリックしてください。`, links: [{ label: "メールアドレスを変更する", url: `/auth/confirm-email-change?token=${token}` }] });
+  return { ok: true };
+}
+export function confirmEmailChange(token: string): { ok: boolean; error?: string } {
+  const entry = consumeToken("emailchange", token);
+  if (!entry || !entry.newEmail) return { ok: false, error: "トークンが無効または期限切れです" };
+  const users = getAuthUsers();
+  const u = users.find(x => x.id === entry.userId);
+  if (!u) return { ok: false, error: "ユーザーが見つかりません" };
+  const oldEmail = u.email;
+  u.email = entry.newEmail;
+  save("auth_users", users);
+  addAuthLog(u.id, entry.newEmail, "email_change");
+  // Update session
+  const session = getAuthSession();
+  if (session && session.userId === u.id) setAuthSession(u.id, entry.newEmail);
+  return { ok: true };
+}
 
 // FNV-1a based hash (not reversible, demo substitute for SHA-256)
 function simpleHash(str: string): string {
@@ -940,7 +1048,7 @@ export function findAuthUserByEmail(email: string): AuthUser | null {
   return getAuthUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
-export function signupUser(email: string, password: string, displayName: string): { ok: boolean; error?: string } {
+export function signupUser(email: string, password: string, displayName: string): { ok: boolean; error?: string; needVerify?: boolean } {
   const users = getAuthUsers();
   if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
     return { ok: false, error: "このメールアドレスは既に登録されています" };
@@ -950,6 +1058,7 @@ export function signupUser(email: string, password: string, displayName: string)
     email,
     passwordHash: hashPassword(password),
     displayName,
+    emailVerified: false,
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     loginCount: 1,
@@ -958,11 +1067,11 @@ export function signupUser(email: string, password: string, displayName: string)
   users.push(user);
   save("auth_users", users);
   addAuthLog(user.id, email, "signup");
-  setAuthSession(user.id, email);
-  return { ok: true };
+  sendVerificationEmail(user.id, email);
+  return { ok: true, needVerify: true };
 }
 
-export function loginUser(email: string, password: string): { ok: boolean; error?: string } {
+export function loginUser(email: string, password: string): { ok: boolean; error?: string; needVerify?: boolean } {
   const user = findAuthUserByEmail(email);
   if (!user) {
     addAuthLog("unknown", email, "failed_login");
@@ -976,6 +1085,9 @@ export function loginUser(email: string, password: string): { ok: boolean; error
     addAuthLog(user.id, email, "failed_login");
     return { ok: false, error: "メールアドレスまたはパスワードが正しくありません" };
   }
+  if (!user.emailVerified) {
+    return { ok: false, needVerify: true, error: "メールアドレスが未確認です。確認メールのリンクをクリックしてください。" };
+  }
   const users = getAuthUsers();
   const u = users.find(x => x.id === user.id);
   if (u) { u.lastLoginAt = new Date().toISOString(); u.loginCount += 1; }
@@ -983,6 +1095,12 @@ export function loginUser(email: string, password: string): { ok: boolean; error
   addAuthLog(user.id, email, "login");
   setAuthSession(user.id, email);
   return { ok: true };
+}
+
+// Resend verification
+export function resendVerificationEmail(email: string) {
+  const user = findAuthUserByEmail(email);
+  if (user && !user.emailVerified) sendVerificationEmail(user.id, email);
 }
 
 export function logoutUser() {
@@ -1010,7 +1128,7 @@ export function isLoggedIn(): boolean { return getAuthSession() !== null; }
 
 export function getAuthLog(): AuthLogEntry[] { return load<AuthLogEntry[]>("auth_log", []); }
 
-export function addAuthLog(userId: string, email: string, action: AuthLogEntry["action"]) {
+export function addAuthLog(userId: string, email: string, action: AuthLogEntry["action"], meta?: string) {
   const log = getAuthLog();
   log.unshift({
     id: `alog-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,

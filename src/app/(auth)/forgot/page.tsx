@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { findAuthUserByEmail, addAuthLog } from "@/lib/demo-store";
+import { sendPasswordResetEmail } from "@/lib/demo-store";
 
 export default function ForgotPage() {
   const router = useRouter();
@@ -13,11 +13,7 @@ export default function ForgotPage() {
   function handleReset() {
     setError("");
     if (!email.trim()) { setError("メールアドレスを入力してください"); return; }
-    const user = findAuthUserByEmail(email);
-    if (user) {
-      addAuthLog(user.id, email, "password_reset");
-    }
-    // Always show success to prevent email enumeration
+    sendPasswordResetEmail(email);
     setSent(true);
   }
 
@@ -30,9 +26,10 @@ export default function ForgotPage() {
           <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
             ご入力のメールアドレスにリセット用リンクを送信しました。
           </p>
-          <p className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
-            ※ デモモードではメール送信は行われません
-          </p>
+          <div className="mt-3 card p-3 text-xs" style={{ backgroundColor: "var(--accent-soft)" }}>
+            <p className="font-semibold">デモモード:</p>
+            <p className="mt-1"><a href="/dev/mailbox" className="underline" style={{ color: "var(--accent)" }}>/dev/mailbox</a> でリセットリンクを確認できます</p>
+          </div>
           <button onClick={() => router.push("/login")} className="btn-primary w-full mt-4 text-sm">
             ログイン画面へ戻る
           </button>

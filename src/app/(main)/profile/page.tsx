@@ -15,6 +15,7 @@ import {
   DEMO_USER, DEMO_PHOTO_PLACEHOLDERS,
   PURPOSE_TAG_OPTIONS, HOBBY_TAG_OPTIONS, JOB_OPTIONS,
   WORK_STYLE_OPTIONS, INCOME_RANGE_OPTIONS, LIFE_TAG_OPTIONS,
+  GENDER_OPTIONS, AREA_TAG_OPTIONS, CONTACT_STYLE_OPTIONS, NG_TAG_OPTIONS,
 } from "@/lib/demo-data";
 
 const SUB_PLANS = [
@@ -128,10 +129,12 @@ export default function ProfilePage() {
         )}
         <div className="p-4">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold">{DEMO_USER.displayName}</span>
+            <span className="text-lg font-bold">{profile.displayName || DEMO_USER.displayName}</span>
             {profile.age && <span className="text-sm" style={{ color: "var(--muted)" }}>{profile.age}</span>}
+            {profile.gender && profile.gender !== "非公開" && <span className="text-xs" style={{ color: "var(--muted)" }}>{profile.gender}</span>}
           </div>
-          {profile.bio && <p className="mt-1 text-sm">{profile.bio}</p>}
+          {profile.handle && <p className="text-xs" style={{ color: "var(--muted)" }}>@{profile.handle}</p>}
+          {(profile.bioShort || profile.bio) && <p className="mt-1 text-sm">{profile.bioShort || profile.bio}</p>}
           {profile.job && <p className="mt-0.5 text-xs" style={{ color: "var(--muted)" }}>{profile.job}{profile.workStyle ? ` / ${profile.workStyle}` : ""}</p>}
           {profile.purposeTags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
@@ -172,9 +175,24 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <section className="mt-5">
-        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>自己紹介（20〜40字推奨）</label>
-        <input className="input mt-1" maxLength={60} placeholder="カフェ好き！気軽に話しかけてね" value={profile.bio} onChange={e => persist({ bio: e.target.value })} />
+      {/* Basic info */}
+      <section className="mt-5 grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>表示名</label>
+          <input className="input mt-1" maxLength={20} placeholder="表示名" value={profile.displayName} onChange={e => persist({ displayName: e.target.value })} />
+        </div>
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>任意ID</label>
+          <input className="input mt-1" maxLength={20} placeholder="@handle" value={profile.handle} onChange={e => persist({ handle: e.target.value.replace(/[^a-zA-Z0-9_]/g, "") })} />
+        </div>
+      </section>
+      <section className="mt-4">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>自己紹介（1行・20〜40字推奨）</label>
+        <input className="input mt-1" maxLength={60} placeholder="カフェ好き！気軽に話しかけてね" value={profile.bioShort || profile.bio} onChange={e => persist({ bioShort: e.target.value, bio: e.target.value })} />
+      </section>
+      <section className="mt-3">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>詳しい自己紹介（任意）</label>
+        <textarea className="input mt-1" rows={3} maxLength={300} placeholder="趣味や好きなことなど自由に" value={profile.bioLong} onChange={e => persist({ bioLong: e.target.value })} style={{ resize: "vertical" }} />
       </section>
       <section className="mt-4">
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>目的タグ</label>
@@ -197,6 +215,12 @@ export default function ProfilePage() {
         <label className="mt-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>勤務形態</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {WORK_STYLE_OPTIONS.map(w => <button key={w} onClick={() => persist({ workStyle: profile.workStyle === w ? "" : w })} className={`chip text-[11px] ${profile.workStyle === w ? "chip-active" : "chip-inactive"}`}>{w}</button>)}
+        </div>
+      </section>
+      <section className="mt-4">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>性別（任意）</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {GENDER_OPTIONS.map(g => <button key={g} onClick={() => persist({ gender: profile.gender === g ? "" : g })} className={`chip text-[11px] ${profile.gender === g ? "chip-active" : "chip-inactive"}`}>{g}</button>)}
         </div>
       </section>
       <section className="mt-4 grid grid-cols-2 gap-3">
@@ -226,6 +250,24 @@ export default function ProfilePage() {
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>生活タグ</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {LIFE_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.lifeTags, t, "lifeTags")} className={`chip text-[11px] ${profile.lifeTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
+        </div>
+      </section>
+      <section className="mt-4">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>活動エリア</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {AREA_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.areaTags, t, "areaTags")} className={`chip text-[11px] ${profile.areaTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
+        </div>
+      </section>
+      <section className="mt-4">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>連絡スタイル</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {CONTACT_STYLE_OPTIONS.map(c => <button key={c} onClick={() => persist({ contactStyle: profile.contactStyle === c ? "" : c })} className={`chip text-[11px] ${profile.contactStyle === c ? "chip-active" : "chip-inactive"}`}>{c}</button>)}
+        </div>
+      </section>
+      <section className="mt-4">
+        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>NG事項</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {NG_TAG_OPTIONS.map(t => <button key={t} onClick={() => toggleTag(profile.ngTags, t, "ngTags")} className={`chip text-[11px] ${profile.ngTags.includes(t) ? "chip-active" : "chip-inactive"}`}>{t}</button>)}
         </div>
       </section>
 
@@ -343,6 +385,14 @@ export default function ProfilePage() {
           </div>
         </section>
         <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>アカウント</h2>
+          <div className="mt-2 space-y-1">
+            <SettingsRow label="マイプロフィール" href="/profile" />
+            <SettingsRow label="アカウント設定" href="/account" />
+            <SettingsRow label="本人確認" href="/verify" />
+          </div>
+        </section>
+        <section>
           <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>その他</h2>
           <div className="mt-2 space-y-1">
             <SettingsRow label="メッセージ" href="/messages" />
@@ -351,6 +401,15 @@ export default function ProfilePage() {
             <SettingsRow label="予約管理" href="/bookings" />
             <SettingsRow label="フレンド" href="/friends" />
             <SettingsRow label="非公開予定管理" href="/friends/events" />
+          </div>
+        </section>
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>法的情報</h2>
+          <div className="mt-2 space-y-1">
+            <SettingsRow label="利用規約" href="/legal/terms" />
+            <SettingsRow label="プライバシーポリシー" href="/legal/privacy" />
+            <SettingsRow label="特定商取引法に基づく表示" href="/legal/tokusho" />
+            <SettingsRow label="お問い合わせ" href="/support" />
           </div>
         </section>
       </div>

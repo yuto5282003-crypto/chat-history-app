@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   function handleSignup() {
     setError("");
@@ -25,11 +26,32 @@ export default function SignupPage() {
     setLoading(true);
     const result = signupUser(email, password, displayName);
     if (result.ok) {
-      router.replace("/home");
+      setSent(true);
     } else {
       setError(result.error ?? "登録に失敗しました");
-      setLoading(false);
     }
+    setLoading(false);
+  }
+
+  if (sent) {
+    return (
+      <div className="mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="card p-6 text-center w-full">
+          <p className="text-3xl">📧</p>
+          <h2 className="mt-2 text-lg font-bold">確認メールを送信しました</h2>
+          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+            {email} に確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。
+          </p>
+          <div className="mt-4 card p-3 text-xs" style={{ backgroundColor: "var(--accent-soft)" }}>
+            <p className="font-semibold">デモモード:</p>
+            <p className="mt-1"><a href="/dev/mailbox" className="underline" style={{ color: "var(--accent)" }}>/dev/mailbox</a> で確認メールを確認できます</p>
+          </div>
+          <button onClick={() => router.push("/login")} className="btn-outline w-full mt-4 text-sm">
+            ログイン画面へ
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

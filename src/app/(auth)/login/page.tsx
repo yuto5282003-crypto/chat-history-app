@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/lib/demo-store";
+import { loginUser, resendVerificationEmail } from "@/lib/demo-store";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,18 +10,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needVerify, setNeedVerify] = useState(false);
 
   function handleLogin() {
     setError("");
+    setNeedVerify(false);
     if (!email || !password) { setError("メールアドレスとパスワードを入力してください"); return; }
     setLoading(true);
     const result = loginUser(email, password);
     if (result.ok) {
       router.replace("/home");
     } else {
+      if (result.needVerify) {
+        setNeedVerify(true);
+      }
       setError(result.error ?? "ログインに失敗しました");
       setLoading(false);
     }
+  }
+
+  function handleResend() {
+    resendVerificationEmail(email);
+    setError("確認メールを再送しました。/dev/mailbox で確認できます。");
+    setNeedVerify(false);
   }
 
   return (
@@ -69,7 +80,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="mt-2 text-xs text-center" style={{ color: "var(--danger)" }}>{error}</p>}
+          {error && <p className="mt-2 text-xs text-center" style={{ color: needVerify ? "#b45309" : "var(--danger)" }}>{error}</p>}
+          {needVerify && (
+            <button onClick={handleResend} className="btn-outline w-full mt-2 text-xs">
+              確認メールを再送する
+            </button>
+          )}
 
           <button onClick={handleLogin} disabled={loading} className="btn-primary w-full mt-4 text-sm">
             {loading ? "ログイン中..." : "ログイン"}
@@ -86,7 +102,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-4 text-center text-[10px]" style={{ color: "var(--muted)" }}>
-          デモ用: demo@sloty.app / password123
+          デモ: /dev/mailbox で確認メールを確認できます
         </p>
       </div>
     </div>

@@ -375,6 +375,10 @@ export const JOB_OPTIONS = ["会社員", "学生", "フリーランス", "自営
 export const WORK_STYLE_OPTIONS = ["フルリモート", "ハイブリッド", "出社", "フリー"];
 export const INCOME_RANGE_OPTIONS = ["非公開", "〜300万", "300〜500万", "500〜700万", "700〜1000万", "1000万〜"];
 export const LIFE_TAG_OPTIONS = ["非喫煙", "喫煙", "お酒飲む", "お酒飲まない", "朝型", "夜型", "インドア", "アウトドア"];
+export const GENDER_OPTIONS = ["男性", "女性", "その他", "非公開"];
+export const AREA_TAG_OPTIONS = ["仙台駅周辺", "青葉区", "宮城野区", "太白区", "泉区", "南相馬", "福島"];
+export const CONTACT_STYLE_OPTIONS = ["即レス派", "ゆっくり派", "夜だけ", "平日のみ", "週末のみ"];
+export const NG_TAG_OPTIONS = ["通話NG", "対面NG", "タバコNG", "お酒NG", "深夜NG", "早朝NG"];
 
 // ===== POI（近くの候補地点） =====
 export const DEMO_POIS: { id: string; name: string; category: string; lat: number; lng: number; note: string }[] = [

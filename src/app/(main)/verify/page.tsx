@@ -118,6 +118,33 @@ export default function VerifyPage() {
     setKycReq(getMyKycRequest());
   }
 
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
+
+  function makeSampleSelfie(): string {
+    const c = document.createElement("canvas"); c.width = 200; c.height = 240;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#E8D5F5"; ctx.fillRect(0, 0, 200, 240);
+    ctx.fillStyle = "#B79DFF"; ctx.beginPath(); ctx.arc(100, 100, 60, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#7B8CFF"; ctx.beginPath(); ctx.arc(80, 90, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(120, 90, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#7B8CFF"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(100, 110, 20, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+    ctx.fillStyle = "#555"; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillText("Sample Selfie", 100, 220);
+    return c.toDataURL("image/jpeg", 0.7);
+  }
+  function makeSampleId(): string {
+    const c = document.createElement("canvas"); c.width = 320; c.height = 200;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#D5E8F5"; ctx.fillRect(0, 0, 320, 200);
+    ctx.strokeStyle = "#7B8CFF"; ctx.lineWidth = 2; ctx.strokeRect(10, 10, 300, 180);
+    ctx.fillStyle = "#B79DFF"; ctx.fillRect(20, 30, 80, 100);
+    ctx.fillStyle = "#555"; ctx.font = "bold 14px sans-serif"; ctx.fillText("運転免許証", 130, 50);
+    ctx.font = "11px sans-serif"; ctx.fillText("氏名: テスト太郎", 130, 80);
+    ctx.fillText("SAMPLE", 130, 180);
+    return c.toDataURL("image/jpeg", 0.7);
+  }
+  function setSampleSelfie() { const d = makeSampleSelfie(); saveKycImage("selfie", d); setSelfiePreview(d); }
+  function setSampleId() { const d = makeSampleId(); saveKycImage("id_front", d); setIdFrontPreview(d); saveKycImage("id_back", d); setIdBackPreview(d); }
+
   const canSubmitLv1 = !!selfiePreview;
   const canSubmitLv2 = !!selfiePreview && !!idFrontPreview && livenessLeftDone && livenessRightDone;
   const canSubmit = level === 1 ? canSubmitLv1 : canSubmitLv2;
@@ -140,6 +167,22 @@ export default function VerifyPage() {
     <div className="p-4 pb-6">
       <h1 className="text-xl font-bold">本人確認</h1>
       <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>安全な利用のために本人確認をお願いします</p>
+
+      {/* Test support panel (DEMO only) */}
+      {isDemo && (
+        <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "var(--accent-soft)", border: "1px dashed var(--accent)" }}>
+          <p className="text-xs font-semibold" style={{ color: "var(--accent-soft-text)" }}>テスト支援パネル</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button onClick={setSampleSelfie} className="rounded-lg px-3 py-1.5 text-[11px] font-medium" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}>
+              サンプル自撮りをセット
+            </button>
+            <button onClick={() => { setSampleId(); setLivenessLeftDone(true); setLivenessRightDone(true); }} className="rounded-lg px-3 py-1.5 text-[11px] font-medium" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}>
+              サンプル免許証をセット
+            </button>
+          </div>
+          <p className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>ボタンを押すとサンプル画像が即セットされます</p>
+        </div>
+      )}
 
       {/* Hidden file input */}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
