@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { verifyEmail } from "@/lib/demo-store";
+import { verifyEmail, isProfileComplete, getAuthSession } from "@/lib/demo-store";
+import { setSessionCookie } from "@/lib/session";
 import { Suspense } from "react";
 
 function VerifyEmailInner() {
@@ -17,7 +18,11 @@ function VerifyEmailInner() {
     const result = verifyEmail(token);
     if (result.ok) {
       setStatus("ok");
-      setTimeout(() => router.replace("/home"), 2000);
+      // Set session cookie
+      const profileDone = isProfileComplete();
+      const sess = getAuthSession();
+      setSessionCookie({ userId: sess?.userId ?? "verified", email: sess?.email ?? "", role: "USER", profileComplete: profileDone });
+      setTimeout(() => router.replace(profileDone ? "/home" : "/onboarding/profile"), 2000);
     } else {
       setStatus("error");
       setError(result.error ?? "確認に失敗しました");

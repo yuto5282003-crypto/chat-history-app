@@ -2,14 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getClientSession } from "@/lib/session";
 
 export default function SplashPage() {
   const router = useRouter();
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
+    const session = getClientSession();
+    if (!session) {
+      // Middleware should redirect, but fallback
+      router.replace("/login");
+      return;
+    }
+
     const t1 = setTimeout(() => setFade(true), 1700);
-    const t2 = setTimeout(() => router.replace("/home"), 2000);
+    const t2 = setTimeout(() => {
+      if (!session.profileComplete && session.role !== "DEMO") {
+        router.replace("/onboarding/profile");
+      } else {
+        router.replace("/home");
+      }
+    }, 2000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -38,12 +52,9 @@ export default function SplashPage() {
         </p>
       </div>
 
-      {/* Loading bar */}
       <div className="absolute bottom-16">
         <div className="h-1 w-28 overflow-hidden rounded-full bg-white/30">
-          <div
-            className="h-full rounded-full bg-white animate-[splash_1.8s_ease-in-out]"
-          />
+          <div className="h-full rounded-full bg-white animate-[splash_1.8s_ease-in-out]" />
         </div>
       </div>
 

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser, resendVerificationEmail, getOutbox } from "@/lib/demo-store";
+import { loginUser, resendVerificationEmail, getOutbox, isProfileComplete } from "@/lib/demo-store";
 import { sendEmailFromOutbox } from "@/lib/send-email";
+import { setSessionCookie } from "@/lib/session";
+
+const DEMO_ENTRY_KEY = process.env.NEXT_PUBLIC_DEMO_ENTRY_KEY || "";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,14 +16,34 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [needVerify, setNeedVerify] = useState(false);
 
+  // Demo login modal
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoKey, setDemoKey] = useState("");
+  const [demoError, setDemoError] = useState("");
+
   function handleLogin() {
     setError("");
     setNeedVerify(false);
-    if (!email || !password) { setError("メールアドレスとパスワードを入力してください"); return; }
+    if (!email || !password) {
+      setError("メールアドレスとパスワードを入力してください");
+      return;
+    }
     setLoading(true);
     const result = loginUser(email, password);
     if (result.ok) {
-      router.replace("/home");
+      // Set session cookie for middleware
+      const profileDone = isProfileComplete();
+      setSessionCookie({
+        userId: email,
+        email,
+        role: "USER",
+        profileComplete: profileDone,
+      });
+      if (profileDone) {
+        router.replace("/home");
+      } else {
+        router.replace("/onboarding/profile");
+      }
     } else {
       if (result.needVerify) {
         setNeedVerify(true);
@@ -32,14 +55,29 @@ export default function LoginPage() {
 
   async function handleResend() {
     resendVerificationEmail(email);
-    // Send real email via API
     const outbox = getOutbox();
-    const mail = outbox.find(m => m.to === email && m.subject.includes("確認"));
+    const mail = outbox.find((m) => m.to === email && m.subject.includes("確認"));
     if (mail) {
       await sendEmailFromOutbox(mail.to, mail.subject, mail.body, mail.links);
     }
     setError("確認メールを再送しました。メールを確認してください。");
     setNeedVerify(false);
+  }
+
+  function handleDemoLogin() {
+    setDemoError("");
+    if (demoKey !== DEMO_ENTRY_KEY) {
+      setDemoError("合言葉が正しくありません");
+      return;
+    }
+    // Set DEMO session cookie
+    setSessionCookie({
+      userId: "demo-user-1",
+      email: "demo@sloty.app",
+      role: "DEMO",
+      profileComplete: true,
+    });
+    router.replace("/home");
   }
 
   return (
@@ -64,7 +102,9 @@ export default function LoginPage() {
 
           <div className="mt-4 space-y-3">
             <div>
-              <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>メールアドレス</label>
+              <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                メールアドレス
+              </label>
               <input
                 type="email"
                 className="input mt-1"
@@ -75,7 +115,9 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>パスワード</label>
+              <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                パスワード
+              </label>
               <input
                 type="password"
                 className="input mt-1"
@@ -87,14 +129,25 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="mt-2 text-xs text-center" style={{ color: needVerify ? "#b45309" : "var(--danger)" }}>{error}</p>}
+          {error && (
+            <p
+              className="mt-2 text-xs text-center"
+              style={{ color: needVerify ? "#b45309" : "var(--danger)" }}
+            >
+              {error}
+            </p>
+          )}
           {needVerify && (
             <button onClick={handleResend} className="btn-outline w-full mt-2 text-xs">
               確認メールを再送する
             </button>
           )}
 
-          <button onClick={handleLogin} disabled={loading} className="btn-primary w-full mt-4 text-sm">
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="btn-primary w-full mt-4 text-sm"
+          >
             {loading ? "ログイン中..." : "ログイン"}
           </button>
 
@@ -108,7 +161,64 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Demo login button (only shown when DEMO_ENTRY_KEY is set) */}
+        {DEMO_ENTRY_KEY && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowDemoModal(true)}
+              className="text-xs px-4 py-2 rounded-lg"
+              style={{
+                color: "var(--muted)",
+                border: "1px dashed var(--border)",
+              }}
+            >
+              デモで入る
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Demo entry key modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowDemoModal(false)}
+          />
+          <div
+            className="relative w-full max-w-xs rounded-2xl p-5"
+            style={{ backgroundColor: "var(--card)" }}
+          >
+            <h3 className="text-base font-bold text-center">デモモード</h3>
+            <p className="mt-1 text-xs text-center" style={{ color: "var(--muted)" }}>
+              合言葉を入力してください
+            </p>
+            <input
+              type="text"
+              className="input mt-3"
+              placeholder="合言葉"
+              value={demoKey}
+              onChange={(e) => setDemoKey(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleDemoLogin()}
+              autoFocus
+            />
+            {demoError && (
+              <p className="mt-1 text-xs text-center" style={{ color: "var(--danger)" }}>
+                {demoError}
+              </p>
+            )}
+            <button onClick={handleDemoLogin} className="btn-primary w-full mt-3 text-sm">
+              入る
+            </button>
+            <button
+              onClick={() => setShowDemoModal(false)}
+              className="btn-outline w-full mt-2 text-xs"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1157,3 +1157,47 @@ export function addSupportMessage(name: string, email: string, message: string) 
 // ===== Imahima status =====
 export function getImahimaStatus(): boolean { return load<boolean>("imahima_status", false); }
 export function setImahimaStatus(on: boolean) { save("imahima_status", on); }
+
+// ===== Onboarding Profile =====
+export type OnboardingProfile = {
+  displayName: string;
+  nameKanji: string;
+  nameHiragana: string;
+  nameKatakana: string;
+  isForeigner: boolean;
+  birthdate: string;
+  gender: string;
+  area: string;
+  job: string;
+  interests: string[];
+  bio: string;
+};
+
+const EMPTY_ONBOARDING: OnboardingProfile = {
+  displayName: "", nameKanji: "", nameHiragana: "", nameKatakana: "",
+  isForeigner: false, birthdate: "", gender: "", area: "", job: "",
+  interests: [], bio: "",
+};
+
+export function getOnboardingProfile(): OnboardingProfile {
+  return load<OnboardingProfile>("onboarding_profile", EMPTY_ONBOARDING);
+}
+
+export function saveOnboardingProfile(p: OnboardingProfile) {
+  save("onboarding_profile", p);
+  // Also sync to the legacy DemoProfile
+  const existing = getProfile();
+  existing.displayName = p.displayName;
+  existing.birthdate = p.birthdate;
+  existing.gender = p.gender;
+  existing.job = p.job;
+  existing.hobbyTags = p.interests;
+  existing.bio = p.bio;
+  existing.bioShort = p.bio;
+  saveProfile(existing);
+}
+
+export function isProfileComplete(): boolean {
+  const p = getOnboardingProfile();
+  return !!(p.displayName && p.nameKanji && p.nameHiragana && p.birthdate);
+}

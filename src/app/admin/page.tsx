@@ -8,7 +8,9 @@ import {
   getReports, getRooms, getMessages, getMedia, getCallLogs,
   getTicketLedger, getTicketBalance,
   getAuthUsers, getAuthLog, getSupportMessages,
+  getOnboardingProfile,
 } from "@/lib/demo-store";
+import type { OnboardingProfile } from "@/lib/demo-store";
 import type {
   AdminAuditEntry, KycRequest, KycAuditEntry, KycAssetMeta,
   DemoUser, DemoReport, DemoRoom, DemoMessage, DemoMedia, TicketEntry,
@@ -307,12 +309,19 @@ function AdminUsersTab() {
 
   useEffect(() => { setUsers(getUsers()); setAuthUsers(getAuthUsers()); }, []);
 
+  // Load onboarding profile for search
+  const obProfile = getOnboardingProfile();
+
   const filteredUsers = search.trim()
     ? users.filter(u => {
         const q = normalize(search);
         return normalize(u.displayName).includes(q)
           || normalize(u.loginEmail).includes(q)
-          || normalize(u.id).includes(q);
+          || normalize(u.id).includes(q)
+          || (obProfile.nameKanji && normalize(obProfile.nameKanji).includes(q))
+          || (obProfile.nameHiragana && normalize(obProfile.nameHiragana).includes(q))
+          || (obProfile.nameKatakana && normalize(obProfile.nameKatakana).includes(q))
+          || (obProfile.birthdate && obProfile.birthdate.includes(search.trim()));
       })
     : users;
 
@@ -342,7 +351,7 @@ function AdminUsersTab() {
       <p className="text-[10px]" style={{ color: "var(--muted)" }}>パスワードの平文閲覧は不可（ハッシュ化保存前提）</p>
 
       {/* 検索 */}
-      <input className="input mt-3 text-xs" placeholder="表示名・メール・ユーザーIDで検索（表記揺れ対応）" value={search} onChange={e => setSearch(e.target.value)} />
+      <input className="input mt-3 text-xs" placeholder="表示名・メール・ID・本名・ふりがな・カタカナ・生年月日で検索" value={search} onChange={e => setSearch(e.target.value)} />
 
       <div className="mt-3 space-y-2">
         {filteredUsers.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>該当するユーザーはいません</p>}
@@ -389,6 +398,21 @@ function AdminUsersTab() {
               <p>状態: {USER_STATUS_LABELS[selected.status] ?? selected.status}</p>
               {selected.forceResetFlag && <p style={{ color: "var(--danger)" }}>※ パスワード強制リセット済み</p>}
               <p className="text-[10px] italic">※ パスワードの平文閲覧は不可（仕様）</p>
+              {/* Onboarding Profile */}
+              {obProfile.nameKanji && (
+                <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                  <p className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>プロフィール情報</p>
+                  <p>本名: {obProfile.nameKanji}</p>
+                  {obProfile.nameHiragana && <p>ふりがな: {obProfile.nameHiragana}</p>}
+                  {obProfile.nameKatakana && <p>カタカナ: {obProfile.nameKatakana}</p>}
+                  {obProfile.birthdate && <p>生年月日: {obProfile.birthdate}</p>}
+                  {obProfile.gender && <p>性別: {obProfile.gender}</p>}
+                  {obProfile.area && <p>エリア: {obProfile.area}</p>}
+                  {obProfile.job && <p>職業: {obProfile.job}</p>}
+                  {obProfile.interests.length > 0 && <p>趣味: {obProfile.interests.join(", ")}</p>}
+                  {obProfile.bio && <p>自己紹介: {obProfile.bio}</p>}
+                </div>
+              )}
             </div>
             <div className="mt-3">
               <label className="text-xs font-medium" style={{ color: "var(--muted)" }}>管理者メモ</label>

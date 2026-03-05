@@ -6,6 +6,7 @@ import {
   getAuthSession, logoutUser, sendPasswordResetEmail, sendEmailChangeEmail, getOutbox,
 } from "@/lib/demo-store";
 import { sendEmailFromOutbox } from "@/lib/send-email";
+import { clearSessionCookie } from "@/lib/session";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function AccountPage() {
 
   function handleLogout() {
     logoutUser();
+    clearSessionCookie();
     router.replace("/login");
   }
 
