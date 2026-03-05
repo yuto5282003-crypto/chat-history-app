@@ -39,14 +39,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "メールアドレスまたはパスワードが正しくありません" }, { status: 401 });
     }
 
-    if (!user.emailVerifiedAt) {
-      return NextResponse.json({ error: "メールアドレスが未確認です。確認メールをご確認ください。", needVerify: true }, { status: 403 });
-    }
-
-    // Update last login
+    // Update last login (auto-verify if not yet verified)
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: {
+        lastLoginAt: new Date(),
+        ...(!user.emailVerifiedAt ? { emailVerifiedAt: new Date() } : {}),
+      },
     });
 
     await logEvent(prisma, "login_ok", email, user.id, req);
