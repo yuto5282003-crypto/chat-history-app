@@ -1174,6 +1174,10 @@ export function addSupportMessage(name: string, email: string, message: string) 
 export function getImahimaStatus(): boolean { return load<boolean>("imahima_status", false); }
 export function setImahimaStatus(on: boolean) { save("imahima_status", on); }
 
+// ===== Location enabled =====
+export function getLocationEnabled(): boolean { return load<boolean>("location_enabled", false); }
+export function setLocationEnabled(on: boolean) { save("location_enabled", on); }
+
 // ===== Onboarding Profile =====
 export type OnboardingProfile = {
   displayName: string;
