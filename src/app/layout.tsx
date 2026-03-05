@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
-import SplashScreen from "@/components/SplashScreen";
+import SplashScreen from "@/components/shared/SplashScreen";
 import "./globals.css";
 
 
