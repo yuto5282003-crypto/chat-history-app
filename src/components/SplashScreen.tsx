@@ -3,15 +3,19 @@
 import { useState, useEffect } from "react";
 
 export default function SplashScreen({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [show, setShow] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // セッション内で1回だけ表示
+    setMounted(true);
+
+    // セッション内で既に表示済みならスキップ
     if (sessionStorage.getItem("sloty_splash_shown")) {
-      setShow(false);
       return;
     }
+
+    setShow(true);
     const fadeTimer = setTimeout(() => setFadeOut(true), 1600);
     const hideTimer = setTimeout(() => {
       setShow(false);
@@ -20,7 +24,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, []);
 
-  if (!show) return <>{children}</>;
+  // SSR / マウント前は children だけ返す
+  if (!mounted || !show) return <>{children}</>;
 
   return (
     <>
