@@ -7,6 +7,7 @@ import {
   getCheckinCooldown, setCheckinCooldown, calcFreeMinutes,
   hasPhotos, consumeTickets, addPing, getPingCooldown,
   setPingCooldown, getTicketBalance, getKycLevel, getProfile,
+  getLocationEnabled,
 } from "@/lib/demo-store";
 import type { DemoCheckin } from "@/lib/demo-store";
 import { DEMO_USER, PURPOSE_TEMPLATES, DEMO_NEARBY_CHECKINS, DEMO_POIS } from "@/lib/demo-data";
@@ -41,8 +42,8 @@ export default function NearbyPage() {
   const [cooldown, setCooldown] = useState(0);
   const [freeInfo, setFreeInfo] = useState({ freeMinutes: 0, nextEventTitle: null as string | null, nextEventAt: null as string | null });
   const [tickets, setTickets] = useState(18);
-  const [myLat, setMyLat] = useState(FALLBACK_LAT);
-  const [myLng, setMyLng] = useState(FALLBACK_LNG);
+  const [myLat, setMyLat] = useState<number | null>(null);
+  const [myLng, setMyLng] = useState<number | null>(null);
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
 
   const [duration, setDuration] = useState(15);
@@ -54,6 +55,9 @@ export default function NearbyPage() {
   const [pingDuration, setPingDuration] = useState(30);
   const [pingSent, setPingSent] = useState(false);
   const [pingError, setPingError] = useState("");
+
+  // Location enabled (from profile settings)
+  const [locationOn, setLocationOn] = useState(false);
 
   // POI state
   const [showPoi, setShowPoi] = useState(false);
@@ -75,22 +79,35 @@ export default function NearbyPage() {
     setTickets(getTicketBalance());
   }, []);
 
-  useEffect(() => { reload(); const iv = setInterval(reload, 5000); return () => clearInterval(iv); }, [reload]);
+  useEffect(() => {
+    setLocationOn(getLocationEnabled());
+    reload();
+    const iv = setInterval(reload, 5000);
+    return () => clearInterval(iv);
+  }, [reload]);
+
+  // 位置情報がONの場合、自動的にブラウザから位置情報を取得
+  useEffect(() => {
+    if (locationOn && locStatus === "idle") {
+      requestLocation();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationOn]);
 
   function requestLocation() {
     setLocStatus("loading");
-    if (!navigator.geolocation) { setLocStatus("denied"); return; }
+    if (!navigator.geolocation) { setLocStatus("denied"); showToast("このブラウザは位置情報に対応していません"); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => { setMyLat(pos.coords.latitude); setMyLng(pos.coords.longitude); setLocStatus("ok"); showToast("位置情報を取得しました"); },
-      () => { setMyLat(FALLBACK_LAT); setMyLng(FALLBACK_LNG); setLocStatus("denied"); showToast("位置取得失敗（デモ位置を使用）"); },
-      { timeout: 5000, enableHighAccuracy: false }
+      () => { setLocStatus("denied"); showToast("位置情報の取得に失敗しました。ブラウザの設定を確認してください"); },
+      { timeout: 10000, enableHighAccuracy: true }
     );
   }
 
   function handleCheckin() {
     if (!hasPhotos()) return;
     if (cooldown > 0) return;
-    if (locStatus !== "ok") requestLocation();
+    if (locStatus !== "ok" || myLat === null || myLng === null) { requestLocation(); return; }
     const lat = myLat + (Math.random() - 0.5) * 0.002;
     const lng = myLng + (Math.random() - 0.5) * 0.002;
     addCheckin({
@@ -131,7 +148,9 @@ export default function NearbyPage() {
 
   const filteredPois = showPoi ? DEMO_POIS.filter(p => poiFilter === "all" || p.category === poiFilter) : [];
 
-  const mapMarkers = [
+  const hasLocation = locationOn && locStatus === "ok" && myLat !== null && myLng !== null;
+
+  const mapMarkers = hasLocation ? [
     { id: "me", lat: myLat, lng: myLng, label: "自分", color: "#9b8afb", icon: "★", photoUrl: myPhoto || undefined, subLabel: myCheckin ? "イマヒマ中" : undefined },
     ...nearbyList.map(ci => ({
       id: ci.id, lat: ci.lat, lng: ci.lng, label: ci.displayName,
@@ -144,7 +163,7 @@ export default function NearbyPage() {
       id: poi.id, lat: poi.lat, lng: poi.lng, label: poi.name,
       color: "#6b7280", icon: POI_ICON[poi.category] ?? "📍",
     })),
-  ];
+  ] : [];
 
   return (
     <div className="flex flex-col" style={{ minHeight: "calc(100vh - 64px)" }}>
@@ -174,83 +193,128 @@ export default function NearbyPage() {
 
       {/* Map area */}
       <div className="relative flex-1 mx-4 mt-3 rounded-2xl overflow-hidden shadow-lg" style={{ minHeight: 420, backgroundColor: "#1a1a2e", border: "none" }} data-no-swipe>
-        {/* Status overlay bar (top) */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-3" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
-                style={{ backgroundColor: myCheckin ? "var(--success)" : "var(--accent-soft)", color: myCheckin ? "#fff" : "var(--accent-soft-text)" }}>
-                {myCheckin ? "ON" : "📡"}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-white">{myCheckin ? "イマヒマON" : "近くのチェックイン"}</p>
-                <p className="text-[10px] text-white/60">
-                  {activeCount > 0 ? `${activeCount}人がヒマ` : "チェックインを待っています"}
+        {!locationOn ? (
+          /* 位置情報OFF時のメッセージ */
+          <div className="flex flex-col items-center justify-center text-center px-6" style={{ height: 420 }}>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full mb-4" style={{ backgroundColor: "rgba(155,138,251,0.15)" }}>
+              <span className="text-4xl">📍</span>
+            </div>
+            <p className="text-base font-bold text-white">位置情報がOFFです</p>
+            <p className="mt-2 text-xs text-white/60 leading-relaxed">
+              すれ違い機能を使うには位置情報をONにしてください。<br/>
+              プロフィール設定から変更できます。
+            </p>
+            <Link href="/profile" className="mt-4 rounded-full px-5 py-2.5 text-sm font-medium transition-transform active:scale-95"
+              style={{ backgroundColor: "var(--accent)", color: "var(--accent-fg)" }}>
+              設定を開く
+            </Link>
+          </div>
+        ) : !hasLocation ? (
+          /* 位置情報ON だが取得中/失敗 */
+          <div className="flex flex-col items-center justify-center text-center px-6" style={{ height: 420 }}>
+            {locStatus === "loading" ? (
+              <>
+                <div className="mx-auto h-10 w-10 rounded-full animate-pulse mb-3" style={{ backgroundColor: "var(--accent-soft)" }} />
+                <p className="text-sm text-white">位置情報を取得中...</p>
+              </>
+            ) : (
+              <>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full mb-4" style={{ backgroundColor: "rgba(220,38,38,0.15)" }}>
+                  <span className="text-4xl">⚠️</span>
+                </div>
+                <p className="text-base font-bold text-white">位置情報を取得できませんでした</p>
+                <p className="mt-2 text-xs text-white/60 leading-relaxed">
+                  ブラウザの位置情報を許可してください。
                 </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
-                {tickets}🎫
-              </span>
-              {locStatus === "ok" && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--success)" }} />}
-            </div>
-          </div>
-        </div>
-
-        {/* Map */}
-        <Suspense fallback={
-          <div className="flex items-center justify-center text-sm" style={{ height: 420, color: "var(--muted)" }}>
-            <div className="text-center">
-              <div className="mx-auto h-8 w-8 rounded-full animate-pulse" style={{ backgroundColor: "var(--accent-soft)" }} />
-              <p className="mt-2 text-xs">マップを読み込み中...</p>
-            </div>
-          </div>
-        }>
-          <LeafletMap center={[myLat, myLng]} zoom={15} height={420} markers={mapMarkers}
-            radiusCircle={{ lat: myLat, lng: myLng, radius: 500 }} />
-        </Suspense>
-
-        {/* My avatar (center overlay) */}
-        <div className="absolute z-10 pointer-events-none" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
-          <div className="relative">
-            <div className="h-14 w-14 rounded-full overflow-hidden flex items-center justify-center text-lg font-bold"
-              style={{
-                backgroundColor: myPhoto ? undefined : "var(--accent)",
-                color: "var(--accent-fg)",
-                border: "3px solid var(--accent-fg)",
-                boxShadow: "0 0 20px var(--ring), 0 0 40px rgba(155,138,251,0.2)",
-              }}>
-              {myPhoto ? <img src={myPhoto} alt="" className="h-full w-full object-cover" /> : myInitial}
-            </div>
-            {myCheckin && (
-              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full flex items-center justify-center text-[8px]"
-                style={{ backgroundColor: "var(--success)", color: "#fff", border: "2px solid var(--card)" }}>✓</div>
+                <button onClick={requestLocation} className="mt-4 rounded-full px-5 py-2.5 text-sm font-medium transition-transform active:scale-95"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--accent-fg)" }}>
+                  再取得する
+                </button>
+              </>
             )}
           </div>
-        </div>
+        ) : (
+          /* 位置情報ON & 取得成功 → マップ表示 */
+          <>
+            {/* Status overlay bar (top) */}
+            <div className="absolute top-0 left-0 right-0 z-10 p-3" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
+                    style={{ backgroundColor: myCheckin ? "var(--success)" : "var(--accent-soft)", color: myCheckin ? "#fff" : "var(--accent-soft-text)" }}>
+                    {myCheckin ? "ON" : "📡"}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{myCheckin ? "イマヒマON" : "近くのチェックイン"}</p>
+                    <p className="text-[10px] text-white/60">
+                      {activeCount > 0 ? `${activeCount}人がヒマ` : "チェックインを待っています"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
+                    {tickets}🎫
+                  </span>
+                  {locStatus === "ok" && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--success)" }} />}
+                </div>
+              </div>
+            </div>
 
-        {/* Quick actions (bottom of map) */}
-        <div className="absolute bottom-3 left-0 right-0 z-10 flex justify-center gap-3">
-          <button onClick={() => { setShowPoi(!showPoi); }}
-            className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
-            style={{ backgroundColor: showPoi ? "var(--accent)" : "var(--card)", color: showPoi ? "var(--accent-fg)" : "var(--text)", border: "1px solid var(--border)" }}
-            title="近くの場所">
-            🌏
-          </button>
-          <button onClick={() => { requestLocation(); }}
-            className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
-            style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
-            title="現在地">
-            📍
-          </button>
-          <Link href="/pings"
-            className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
-            style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
-            title="受信箱">
-            💬
-          </Link>
-        </div>
+            {/* Map */}
+            <Suspense fallback={
+              <div className="flex items-center justify-center text-sm" style={{ height: 420, color: "var(--muted)" }}>
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 rounded-full animate-pulse" style={{ backgroundColor: "var(--accent-soft)" }} />
+                  <p className="mt-2 text-xs">マップを読み込み中...</p>
+                </div>
+              </div>
+            }>
+              <LeafletMap center={[myLat, myLng]} zoom={15} height={420} markers={mapMarkers}
+                radiusCircle={{ lat: myLat, lng: myLng, radius: 500 }} />
+            </Suspense>
+
+            {/* My avatar (center overlay) */}
+            <div className="absolute z-10 pointer-events-none" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
+              <div className="relative">
+                <div className="h-14 w-14 rounded-full overflow-hidden flex items-center justify-center text-lg font-bold"
+                  style={{
+                    backgroundColor: myPhoto ? undefined : "var(--accent)",
+                    color: "var(--accent-fg)",
+                    border: "3px solid var(--accent-fg)",
+                    boxShadow: "0 0 20px var(--ring), 0 0 40px rgba(155,138,251,0.2)",
+                  }}>
+                  {myPhoto ? <img src={myPhoto} alt="" className="h-full w-full object-cover" /> : myInitial}
+                </div>
+                {myCheckin && (
+                  <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full flex items-center justify-center text-[8px]"
+                    style={{ backgroundColor: "var(--success)", color: "#fff", border: "2px solid var(--card)" }}>✓</div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick actions (bottom of map) */}
+            <div className="absolute bottom-3 left-0 right-0 z-10 flex justify-center gap-3">
+              <button onClick={() => { setShowPoi(!showPoi); }}
+                className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+                style={{ backgroundColor: showPoi ? "var(--accent)" : "var(--card)", color: showPoi ? "var(--accent-fg)" : "var(--text)", border: "1px solid var(--border)" }}
+                title="近くの場所">
+                🌏
+              </button>
+              <button onClick={() => { requestLocation(); }}
+                className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+                style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
+                title="現在地">
+                📍
+              </button>
+              <Link href="/pings"
+                className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+                style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
+                title="受信箱">
+                💬
+              </Link>
+            </div>
+          </>
+        )}
       </div>
 
       {/* POI filter chips */}
