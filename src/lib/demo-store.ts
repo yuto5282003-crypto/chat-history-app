@@ -1058,7 +1058,7 @@ export function signupUser(email: string, password: string, displayName: string)
     email,
     passwordHash: hashPassword(password),
     displayName,
-    emailVerified: false,
+    emailVerified: true,
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     loginCount: 1,
@@ -1067,8 +1067,25 @@ export function signupUser(email: string, password: string, displayName: string)
   users.push(user);
   save("auth_users", users);
   addAuthLog(user.id, email, "signup");
-  sendVerificationEmail(user.id, email);
-  return { ok: true, needVerify: true };
+  setAuthSession(user.id, email);
+
+  // 管理画面のユーザー一覧にも追加
+  const demoUsers = getUsers();
+  demoUsers.push({
+    id: user.id,
+    displayName,
+    loginEmail: email,
+    loginProvider: "email",
+    kycLevel: 0,
+    reportCount: 0,
+    lastActiveAt: new Date().toISOString(),
+    status: "active",
+    forceResetFlag: false,
+    adminNote: "",
+  });
+  save("users", demoUsers);
+
+  return { ok: true, needVerify: false };
 }
 
 export function loginUser(email: string, password: string): { ok: boolean; error?: string; needVerify?: boolean } {
@@ -1085,9 +1102,12 @@ export function loginUser(email: string, password: string): { ok: boolean; error
     addAuthLog(user.id, email, "failed_login");
     return { ok: false, error: "メールアドレスまたはパスワードが正しくありません" };
   }
-  // Require email verification before login
+  // Auto-verify unverified users on login (skip email verification)
   if (!user.emailVerified) {
-    return { ok: false, error: "メールアドレスの確認が完了していません。確認メールのリンクをクリックしてください。", needVerify: true };
+    const users = getAuthUsers();
+    const u = users.find(x => x.id === user.id);
+    if (u) { u.emailVerified = true; }
+    save("auth_users", users);
   }
   const users = getAuthUsers();
   const u = users.find(x => x.id === user.id);
