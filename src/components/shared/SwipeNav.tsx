@@ -3,7 +3,7 @@
 import { useRef, useCallback, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-const TAB_ORDER = ["/market", "/nearby", "/messages", "/calendar", "/square", "/profile"];
+const TAB_ORDER = ["/home", "/market", "/bookings", "/square", "/mypage"];
 
 type Props = {
   children: ReactNode;
@@ -16,13 +16,9 @@ export default function SwipeNav({ children }: Props) {
   const startY = useRef(0);
   const swiping = useRef(false);
 
-  // Disable swipe on map views or form inputs
-  const isMapActive = typeof window !== "undefined" && document.querySelector(".leaflet-container:hover") !== null;
-
   const currentIndex = TAB_ORDER.findIndex(t => pathname.startsWith(t));
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Skip if touch is on input/select/textarea or map
     const target = e.target as HTMLElement;
     if (target.closest("input, select, textarea, .leaflet-container, [data-no-swipe]")) return;
     startX.current = e.touches[0].clientX;
@@ -37,9 +33,7 @@ export default function SwipeNav({ children }: Props) {
     const dx = e.changedTouches[0].clientX - startX.current;
     const dy = e.changedTouches[0].clientY - startY.current;
 
-    // Must be horizontal swipe (|dx| > 60, |dy| < |dx|)
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
-
     if (currentIndex < 0) return;
 
     if (dx < -60 && currentIndex < TAB_ORDER.length - 1) {
