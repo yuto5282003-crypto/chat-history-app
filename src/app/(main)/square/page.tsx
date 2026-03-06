@@ -12,13 +12,11 @@ export default function SquarePage() {
   const [posts, setPosts] = useState<DemoPost[]>([]);
   const [likes, setLikes] = useState<Record<string, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [tickets, setTickets] = useState(18);
 
   useEffect(() => {
     const p = getPosts();
     setPosts(p);
     setLikeCounts(Object.fromEntries(p.map((x) => [x.id, x.likeCount])));
-    setTickets(getTicketBalance());
   }, []);
 
   const toggleLike = (postId: string) => {
@@ -28,19 +26,27 @@ export default function SquarePage() {
   };
 
   return (
-    <div className="p-4">
+    <div className="px-5 pt-3 pb-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">広場</h1>
-        <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>🎫 {tickets}枚</span>
+        <Link
+          href="/square/new"
+          className="flex items-center gap-1 rounded-full px-4 py-2 text-xs font-semibold"
+          style={{ background: "var(--gradient-main)", color: "#fff", boxShadow: "0 2px 12px rgba(155, 138, 251, 0.25)" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          投稿 <span className="opacity-70">2🎫</span>
+        </Link>
       </div>
 
-      <Link href="/square/new"
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #7B8CFF 0%, #B79DFF 100%)" }}>
-        + 投稿する <span className="rounded-full px-1.5 py-0.5 text-xs" style={{ backgroundColor: "rgba(255,255,255,0.2)" }}>2🎫</span>
-      </Link>
+      <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
+        気になる人を見つけて、時間共有を依頼しよう
+      </p>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-5 space-y-4">
         {posts.map((post) => (
           <SquareCard
             key={post.id}
