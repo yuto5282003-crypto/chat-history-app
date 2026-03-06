@@ -122,7 +122,7 @@ export default function MyPage() {
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}>
           <MenuRow label="出品管理" href="/market/sell" icon="🏪" />
           <MenuRow label="予約管理" href="/bookings" icon="📋" border />
-          <MenuRow label="チケット・課金" href="/profile" icon="🎫" border />
+          <MenuRow label="チケット・課金" href="/profile#tickets" icon="🎫" border />
           <MenuRow label="本人確認" href="/verify" icon="🪪" border />
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function MyPage() {
             )}
           </div>
           <div className="h-px" style={{ backgroundColor: "var(--border)" }} />
-          <div className="flex items-center justify-between px-4 py-3.5">
+          <div id="location" className="flex items-center justify-between px-4 py-3.5">
             <div className="flex items-center gap-3">
               <span className="text-sm">📍</span>
               <div>
