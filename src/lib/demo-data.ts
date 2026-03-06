@@ -462,41 +462,84 @@ export type SquareVisitor = {
   lastActive: string;
 };
 
+/**
+ * Plaza visitor positions are based on landmarks in ParkBackground.
+ * Coordinates are % of viewBox (800x700):
+ * - Fountain center: ~50%, ~48%
+ * - Left bench: ~24%, ~57%
+ * - Right bench: ~77%, ~58%
+ * - Upper bench (near fountain): ~47%, ~42%
+ * - Lower bench: ~50%, ~72%
+ * - Left tree area: ~12%, ~40%
+ * - Right tree area: ~88%, ~43%
+ * - Path intersections: ~38%, ~55% / ~62%, ~55%
+ * - Lower left path: ~26%, ~75%
+ * - Lower right path: ~76%, ~75%
+ */
 export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
   {
+    // Near left bench — sitting/standing by bench
     id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
     bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
-    ratingAvg: 4.8, ratingCount: 31, x: 22, y: 35, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
+    ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
   },
   {
+    // Near fountain — upper right
     id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
     bubble: "作業通話できる人いる？", mode: "either", tags: ["作業", "勉強"], verified: true,
     availability: "30分だけ", area: "仙台駅周辺", bio: "プログラミングと筋トレ",
-    ratingAvg: 4.3, ratingCount: 15, x: 58, y: 25, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
+    ratingAvg: 4.3, ratingCount: 15, x: 58, y: 43, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
   },
   {
+    // Right bench area
     id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
     bubble: "今から散歩", mode: "in_person", tags: ["散歩", "雑談"], verified: false,
     availability: "今からOK", area: "市内", bio: "旅行好き 街探索中",
-    ratingAvg: 4.0, ratingCount: 5, x: 75, y: 55, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
+    ratingAvg: 4.0, ratingCount: 5, x: 78, y: 56, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
   },
   {
+    // Lower bench area
     id: "sv-4", userId: "user-d", displayName: "ゆうた", gender: "男性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-d"],
     bubble: "相談のります", mode: "call", tags: ["相談"], verified: true,
     availability: "19:00以降対応", area: "", bio: "何でも相談のります。エンジニア5年目",
-    ratingAvg: 4.9, ratingCount: 42, x: 35, y: 65, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
+    ratingAvg: 4.9, ratingCount: 42, x: 52, y: 70, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
   },
   {
+    // Near fountain — left side
     id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-e"],
     bubble: "ゲームしよ！", mode: "call", tags: ["ゲーム"], verified: true,
     availability: "今日中OK", area: "", bio: "スプラ・スマブラ一緒にやろう",
-    ratingAvg: 4.6, ratingCount: 20, x: 50, y: 45, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+    ratingAvg: 4.6, ratingCount: 20, x: 42, y: 47, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
+    // Path intersection area — left
+    id: "sv-6", userId: "user-f", displayName: "りょう", gender: "男性",
+    avatarStyle: { hairStyle: 5, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topColor: "#667eea", bottomColor: "#3D3D5C", accessory: 0, expression: 0 },
+    bubble: "ちょい暇", mode: "call", tags: ["雑談", "ゲーム"], verified: true,
+    availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
+    ratingAvg: 4.4, ratingCount: 18, x: 35, y: 37, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+  {
+    // Near right tree — observing from a distance
+    id: "sv-7", userId: "user-g", displayName: "ことね", gender: "女性",
+    avatarStyle: { hairStyle: 4, hairColor: "#8B4513", skinTone: "#FFE0BD", topColor: "#FF6B6B", bottomColor: "#4A4A6A", accessory: 0, expression: 1 },
+    bubble: "カフェ行ける人", mode: "in_person", tags: ["カフェ"], verified: false,
+    availability: "今からOK", area: "新宿", bio: "カフェ巡りが趣味です☕",
+    ratingAvg: 4.2, ratingCount: 8, x: 85, y: 42, lastActive: new Date(Date.now() - 4 * 60_000).toISOString(),
+  },
+  {
+    // Near left tree — slightly apart
+    id: "sv-8", userId: "user-h", displayName: "そうた", gender: "男性",
+    avatarStyle: { hairStyle: 0, hairColor: "#1A1A2E", skinTone: "#F0C8A0", topColor: "#2C2C2C", bottomColor: "#3A3A5E", accessory: 1, expression: 2 },
+    bubble: "30分だけOK", mode: "either", tags: ["相談", "作業"], verified: true,
+    availability: "30分OK", area: "", bio: "フリーランスエンジニア。気軽にどうぞ",
+    ratingAvg: 4.7, ratingCount: 35, x: 15, y: 40, lastActive: new Date(Date.now() - 7 * 60_000).toISOString(),
   },
 ];
 
