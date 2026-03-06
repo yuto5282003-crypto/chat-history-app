@@ -422,6 +422,100 @@ export const DEMO_POIS: { id: string; name: string; category: string; lat: numbe
   { id: "poi-10", name: "和食レストラン", category: "ご飯", lat: 35.6810 + nearbyOffset(), lng: 139.7665 + nearbyOffset(), note: "和食定食・1人OK" },
 ];
 
+// ===== アバター広場データ =====
+export type AvatarStyle = {
+  hairStyle: number;   // 0-5
+  hairColor: string;   // hex
+  skinTone: string;    // hex
+  topColor: string;    // hex (shirt/top)
+  bottomColor: string; // hex
+  accessory: number;   // 0=none, 1=glasses, 2=hat, 3=headphones
+  expression: number;  // 0=neutral, 1=smile, 2=wink, 3=happy
+};
+
+export const DEFAULT_AVATAR_STYLES: Record<string, AvatarStyle> = {
+  "user-a": { hairStyle: 2, hairColor: "#5C3317", skinTone: "#FFDBB4", topColor: "#f093fb", bottomColor: "#4A4A6A", accessory: 0, expression: 1 },
+  "user-b": { hairStyle: 0, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topColor: "#4facfe", bottomColor: "#3D3D5C", accessory: 1, expression: 0 },
+  "user-c": { hairStyle: 3, hairColor: "#8B4513", skinTone: "#FFE0BD", topColor: "#43e97b", bottomColor: "#5C5C8A", accessory: 0, expression: 3 },
+  "user-d": { hairStyle: 1, hairColor: "#1A1A2E", skinTone: "#F0C8A0", topColor: "#fa709a", bottomColor: "#3A3A5E", accessory: 3, expression: 2 },
+  "user-e": { hairStyle: 4, hairColor: "#6B3FA0", skinTone: "#FFDBB4", topColor: "#a18cd1", bottomColor: "#4B4B7A", accessory: 0, expression: 1 },
+};
+
+export type SquareVisitor = {
+  id: string;
+  userId: string;
+  displayName: string;
+  gender: string;
+  avatarStyle: AvatarStyle;
+  bubble: string;
+  mode: "call" | "in_person" | "either";
+  tags: string[];
+  verified: boolean;
+  availability: string;
+  area: string;
+  bio: string;
+  ratingAvg: number;
+  ratingCount: number;
+  /** Position in the plaza as % of width/height (0-100) */
+  x: number;
+  y: number;
+  lastActive: string;
+};
+
+export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
+  {
+    id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
+    bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
+    availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
+    ratingAvg: 4.8, ratingCount: 31, x: 22, y: 35, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
+    bubble: "作業通話できる人いる？", mode: "either", tags: ["作業", "勉強"], verified: true,
+    availability: "30分だけ", area: "仙台駅周辺", bio: "プログラミングと筋トレ",
+    ratingAvg: 4.3, ratingCount: 15, x: 58, y: 25, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
+    bubble: "今から散歩", mode: "in_person", tags: ["散歩", "雑談"], verified: false,
+    availability: "今からOK", area: "市内", bio: "旅行好き 街探索中",
+    ratingAvg: 4.0, ratingCount: 5, x: 75, y: 55, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-4", userId: "user-d", displayName: "ゆうた", gender: "男性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-d"],
+    bubble: "相談のります", mode: "call", tags: ["相談"], verified: true,
+    availability: "19:00以降対応", area: "", bio: "何でも相談のります。エンジニア5年目",
+    ratingAvg: 4.9, ratingCount: 42, x: 35, y: 65, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-e"],
+    bubble: "ゲームしよ！", mode: "call", tags: ["ゲーム"], verified: true,
+    availability: "今日中OK", area: "", bio: "スプラ・スマブラ一緒にやろう",
+    ratingAvg: 4.6, ratingCount: 20, x: 50, y: 45, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+];
+
+// ===== 着せ替えオプション =====
+export const HAIR_STYLE_NAMES = ["ショート", "ミディアム", "ロング", "ボブ", "ポニーテール", "マッシュ"];
+export const HAIR_COLORS = ["#1A1A2E", "#2C2C2C", "#5C3317", "#8B4513", "#D4A574", "#C0392B", "#6B3FA0", "#E8B4B8"];
+export const SKIN_TONES = ["#FFDBB4", "#F5CBA7", "#F0C8A0", "#FFE0BD", "#D4A574", "#C19A6B"];
+export const TOP_COLORS = ["#f093fb", "#4facfe", "#43e97b", "#fa709a", "#a18cd1", "#667eea", "#FF6B6B", "#FFF3E0", "#E0F7FA", "#2C2C2C"];
+export const BOTTOM_COLORS = ["#3A3A5E", "#3D3D5C", "#4A4A6A", "#4B4B7A", "#5C5C8A", "#2C2C2C", "#7B8CFF"];
+export const ACCESSORY_NAMES = ["なし", "メガネ", "帽子", "ヘッドホン"];
+export const EXPRESSION_NAMES = ["ふつう", "にっこり", "ウインク", "わーい"];
+
+export const BUBBLE_TEMPLATES = [
+  "誰か話そー", "ちょい暇", "通話OK", "対面OK",
+  "30分だけ雑談OK", "作業通話できる人いる？", "カフェ行ける人",
+  "今から散歩", "相談のります", "暇つぶし中", "ゲームしよ！",
+  "勉強中…休憩したい", "近くにいる人いる？",
+];
+
 // ===== フレンドカレンダーデモイベント =====
 export function getDemoFriendCalendarEvents(friendId: string) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
