@@ -546,7 +546,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 12: // メンズさっぱり — clean neat short
       return (<>
-        {cap}
         <path d={`M${hx - rx - 1},${hy - 8} Q${hx},${hy - ry - 6} ${hx + rx + 1},${hy - 8}`} fill={color} />
         {/* Very short sides */}
         <rect x={hx - rx - 1} y={hy - 8} width={4} height={10} rx={2} fill={color} />
@@ -557,7 +556,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 13: // メンズ無造作 — messy textured
       return (<>
-        {cap}
         <path d={`M${hx - rx - 2},${hy - 8} Q${hx - 5},${hy - ry - 10} ${hx},${hy - ry - 8} Q${hx + 5},${hy - ry - 12} ${hx + rx + 2},${hy - 8}`} fill={color} />
         {/* Spiky bits */}
         <path d={`M${hx - 8},${hy - ry - 3} L${hx - 10},${hy - ry - 10} L${hx - 4},${hy - ry - 5}`} fill={color} />
@@ -571,7 +569,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 14: // ゆるウェーブボブ — loose wave bob
       return (<>
-        {cap}
         {hairTop()}
         <path d={`M${hx - rx + 3},${a.browLine + 1} Q${hx - 4},${a.browLine + 5} ${hx + rx - 5},${a.browLine + 2}`} fill={color} />
         {/* Wavy sides */}
@@ -582,7 +579,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 15: // 前髪なしロング — long no bangs
       return (<>
-        {cap}
         <path d={`M${hx - rx - 2},${hy - 10} Q${hx},${hy - ry - 8} ${hx + rx + 2},${hy - 10}`} fill={color} />
         {/* No bangs — forehead visible, hair swept to sides */}
         <path d={`M${hx - rx},${hy - ry * 0.1} Q${hx - rx - 3},${hy - 4} ${hx - rx - 2},${hy - 10}`} fill={color} />
@@ -593,7 +589,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 16: // 中性ボブ — neutral bob, slightly asymmetric
       return (<>
-        {cap}
         <path d={`M${hx - rx - 2},${hy - 8} Q${hx},${hy - ry - 7} ${hx + rx + 2},${hy - 8}`} fill={color} />
         {/* Asymmetric bangs — longer on left */}
         <path d={`M${hx - rx + 1},${a.browLine + 3} Q${hx - 5},${a.browLine + 7} ${hx + 2},${a.browLine + 5} Q${hx + 8},${a.browLine + 3} ${hx + rx - 1},${a.browLine}`} fill={color} />
@@ -604,7 +599,6 @@ function renderHairFront(style: number, color: string, colorD: string, colorH: s
       </>);
     case 17: // 中性前髪長め — neutral with long side-swept bangs
       return (<>
-        {cap}
         <path d={`M${hx - rx - 2},${hy - 8} Q${hx},${hy - ry - 7} ${hx + rx + 2},${hy - 8}`} fill={color} />
         {/* Long side-swept bangs covering one eye area */}
         <path d={`M${hx - rx},${hy - 10} Q${hx - 8},${a.eyeLine - 2} ${hx - 2},${a.eyeLine + 2} Q${hx + 5},${a.browLine + 2} ${hx + rx},${a.browLine - 1}`} fill={color} />
