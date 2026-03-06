@@ -8,6 +8,8 @@ import {
   getAuthSession,
   getSlots,
   getKycImage,
+  getProfile,
+  findAuthUserByEmail,
 } from "@/lib/demo-store";
 
 export default function HomePage() {
@@ -20,7 +22,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const session = getAuthSession();
-    if (session) setUserName(session.email.split("@")[0]);
+    const profile = getProfile();
+    if (profile?.displayName) {
+      setUserName(profile.displayName);
+    } else if (session) {
+      const authUser = findAuthUserByEmail(session.email);
+      setUserName(authUser?.displayName || session.email.split("@")[0]);
+    }
     setTickets(getTicketBalance());
     setKycDone(!!getKycImage("selfie"));
     setSlots(getSlots().filter((s) => s.status === "listed").slice(0, 4));
