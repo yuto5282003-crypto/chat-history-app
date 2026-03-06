@@ -164,7 +164,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* ── Recommended Slots ── */}
+      {/* ── Recommended Slots (Tinder style) ── */}
       {slots.length > 0 && (
         <div className="mt-7">
           <div className="flex items-center justify-between">
@@ -176,49 +176,78 @@ export default function HomePage() {
           <div className="mt-3 flex gap-3 overflow-x-auto pb-1" style={{ scrollSnapType: "x mandatory" }}>
             {slots.map((slot) => {
               const start = new Date(slot.startAt);
+              const GRADIENTS = [
+                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+              ];
+              const bgGradient = GRADIENTS[slot.id.charCodeAt(slot.id.length - 1) % GRADIENTS.length];
+              const hasAvatar = slot.seller.avatarUrl && slot.seller.avatarUrl.startsWith("data:");
               return (
                 <Link
                   key={slot.id}
                   href={`/market/slots/${slot.id}`}
-                  className="flex-shrink-0 rounded-2xl overflow-hidden"
+                  className="flex-shrink-0 rounded-2xl overflow-hidden relative"
                   style={{
-                    width: "70%",
-                    minWidth: 220,
+                    width: "75%",
+                    minWidth: 260,
+                    height: 380,
                     scrollSnapAlign: "start",
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                    background: hasAvatar ? undefined : bgGradient,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {/* Slot card header gradient */}
-                  <div
-                    className="px-4 py-3"
-                    style={{
-                      background: "var(--gradient-soft)",
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">{slot.mode === "call" ? "📞" : "🚶"}</span>
-                      <span className="text-sm font-semibold">
-                        {slot.seller.displayName}
-                      </span>
+                  {/* Background photo */}
+                  {hasAvatar && (
+                    <img src={slot.seller.avatarUrl!} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  )}
+                  {/* Placeholder initial when no photo */}
+                  {!hasAvatar && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-[120px] font-bold text-white/20">{slot.seller.displayName[0]}</span>
                     </div>
+                  )}
+                  {/* Bottom gradient overlay */}
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 40%, transparent 60%)" }} />
+                  {/* Top badges */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
+                      {slot.mode === "call" ? "📞 通話" : "🚶 対面"}
+                    </span>
+                    {slot.seller.verificationStatus === "verified" && (
+                      <span className="rounded-full px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm" style={{ backgroundColor: "rgba(52,199,123,0.6)" }}>
+                        ✓ 認証済
+                      </span>
+                    )}
                   </div>
-                  <div className="px-4 py-3">
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>
+                  {/* Bottom info overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <p className="text-xl font-bold text-white">
+                      {slot.seller.displayName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-white/70">
+                      ★{slot.seller.ratingAvg} ({slot.seller.ratingCount})
+                    </p>
+                    <p className="mt-1.5 text-xs text-white/80">
                       {start.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short" })}
                       {" "}
                       {start.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
-                      〜
-                      {new Date(slot.endAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                      〜{new Date(slot.endAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                     </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="rounded-full px-3 py-1 text-xs font-bold text-white" style={{ backgroundColor: "rgba(155,138,251,0.8)", backdropFilter: "blur(4px)" }}>
                         {slot.priceYen}🎫
                       </span>
-                      <span className="text-[10px] rounded-full px-2 py-0.5" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
+                      <span className="rounded-full px-2.5 py-1 text-[10px] text-white/80 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
                         {slot.durationMinutes}分
                       </span>
+                      {slot.areaValue && (
+                        <span className="rounded-full px-2.5 py-1 text-[10px] text-white/80 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                          📍{slot.areaValue}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>

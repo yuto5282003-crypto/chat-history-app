@@ -14,6 +14,20 @@ export const DEMO_USER = {
   cancelRate: 2.1,
 };
 
+// ===== デモアバター（SVG data URI） =====
+function demoAvatar(initial: string, gradient: [string, string]): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${gradient[0]}"/><stop offset="100%" stop-color="${gradient[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="220" font-family="sans-serif" font-size="160" font-weight="bold" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="middle">${initial}</text></svg>`;
+  return `data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(svg))) : Buffer.from(svg).toString("base64")}`;
+}
+
+const AVATAR_HARUKA = demoAvatar("は", ["#f093fb", "#f5576c"]);
+const AVATAR_TAKUYA = demoAvatar("た", ["#4facfe", "#00f2fe"]);
+const AVATAR_MISAKI = demoAvatar("み", ["#43e97b", "#38f9d7"]);
+const AVATAR_YUTA   = demoAvatar("ゆ", ["#fa709a", "#fee140"]);
+const AVATAR_AOI    = demoAvatar("あ", ["#a18cd1", "#fbc2eb"]);
+const AVATAR_YUUKI  = demoAvatar("ゆ", ["#667eea", "#764ba2"]);
+const AVATAR_SAKURA = demoAvatar("さ", ["#ff9a9e", "#fad0c4"]);
+
 // ===== デモスロット =====
 function futureDate(hoursFromNow: number): string {
   return new Date(Date.now() + hoursFromNow * 3600_000).toISOString();
@@ -34,7 +48,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-a",
       displayName: "はるか",
-      avatarUrl: null,
+      avatarUrl: AVATAR_HARUKA,
       verificationStatus: "verified",
       ratingAvg: 4.8,
       ratingCount: 31,
@@ -55,7 +69,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-b",
       displayName: "たくや",
-      avatarUrl: null,
+      avatarUrl: AVATAR_TAKUYA,
       verificationStatus: "verified",
       ratingAvg: 4.3,
       ratingCount: 15,
@@ -76,7 +90,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-c",
       displayName: "みさき",
-      avatarUrl: null,
+      avatarUrl: AVATAR_MISAKI,
       verificationStatus: "none",
       ratingAvg: 4.0,
       ratingCount: 5,
@@ -97,7 +111,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-d",
       displayName: "ゆうた",
-      avatarUrl: null,
+      avatarUrl: AVATAR_YUTA,
       verificationStatus: "verified",
       ratingAvg: 4.9,
       ratingCount: 42,
@@ -118,7 +132,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-e",
       displayName: "あおい",
-      avatarUrl: null,
+      avatarUrl: AVATAR_AOI,
       verificationStatus: "verified",
       ratingAvg: 4.6,
       ratingCount: 20,
@@ -139,7 +153,7 @@ export const DEMO_SLOTS = [
     seller: {
       id: "user-b",
       displayName: "たくや",
-      avatarUrl: null,
+      avatarUrl: AVATAR_TAKUYA,
       verificationStatus: "verified",
       ratingAvg: 4.3,
       ratingCount: 15,
@@ -158,7 +172,7 @@ export const DEMO_POSTS = [
     photos: [],
     likeCount: 12,
     createdAt: new Date(Date.now() - 3 * 60_000).toISOString(),
-    user: { id: "user-a", displayName: "はるか", avatarUrl: null },
+    user: { id: "user-a", displayName: "はるか", avatarUrl: AVATAR_HARUKA },
   },
   {
     id: "post-2",
@@ -168,7 +182,7 @@ export const DEMO_POSTS = [
     photos: [],
     likeCount: 5,
     createdAt: new Date(Date.now() - 45 * 60_000).toISOString(),
-    user: { id: "user-b", displayName: "たくや", avatarUrl: null },
+    user: { id: "user-b", displayName: "たくや", avatarUrl: AVATAR_TAKUYA },
   },
   {
     id: "post-3",
@@ -178,7 +192,7 @@ export const DEMO_POSTS = [
     photos: [],
     likeCount: 8,
     createdAt: new Date(Date.now() - 2 * 3600_000).toISOString(),
-    user: { id: "user-c", displayName: "みさき", avatarUrl: null },
+    user: { id: "user-c", displayName: "みさき", avatarUrl: AVATAR_MISAKI },
   },
   {
     id: "post-4",
@@ -188,7 +202,7 @@ export const DEMO_POSTS = [
     photos: [],
     likeCount: 15,
     createdAt: new Date(Date.now() - 4 * 3600_000).toISOString(),
-    user: { id: "user-d", displayName: "ゆうた", avatarUrl: null },
+    user: { id: "user-d", displayName: "ゆうた", avatarUrl: AVATAR_YUTA },
   },
   {
     id: "post-5",
@@ -198,7 +212,7 @@ export const DEMO_POSTS = [
     photos: [],
     likeCount: 22,
     createdAt: new Date(Date.now() - 6 * 3600_000).toISOString(),
-    user: { id: "user-e", displayName: "あおい", avatarUrl: null },
+    user: { id: "user-e", displayName: "あおい", avatarUrl: AVATAR_AOI },
   },
 ];
 
@@ -207,14 +221,14 @@ export const DEMO_FRIENDS = [
   {
     id: "friend-1",
     displayName: "ゆうき",
-    avatarUrl: null,
+    avatarUrl: AVATAR_YUUKI,
     permissionLevel: "busy_only" as const,
     status: "accepted" as const,
   },
   {
     id: "friend-2",
     displayName: "さくら",
-    avatarUrl: null,
+    avatarUrl: AVATAR_SAKURA,
     permissionLevel: "title" as const,
     status: "accepted" as const,
   },
