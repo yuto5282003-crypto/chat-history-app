@@ -470,45 +470,14 @@ export const DEFAULT_AVATAR_STYLES: Record<string, AvatarStyle> = {
   "user-e": _base({ base: "female", faceShape: 0, eyeType: 0, browType: 0, mouthType: 1, hairStyle: 8, hairColor: "#6B3FA0", skinTone: "#FFDBB4", topType: 0, topColor: "#a18cd1", bottomType: 2, bottomColor: "#4B4B7A", accessory: 6 }),
 };
 
-// ===== アバターギャラリー（GLBモデル対応） =====
-export type AvatarGalleryItem = {
-  id: string;
-  name: string;
-  gender: "male" | "female";
-  /** GLBファイルパス（3Dモデル） */
-  glbPath?: string;
-  /** サムネイル画像パス（広場表示用） */
-  imagePath?: string;
-};
-
-// 女性アバター（GLBモデル）
-const FEMALE_AVATARS: AvatarGalleryItem[] = [
-  { id: "f-001", name: "ひなた", gender: "female", glbPath: "/avatars/glb/001.glb" },
-  { id: "f-002", name: "あかり", gender: "female", glbPath: "/avatars/glb/002glb.glb" },
-  { id: "f-003", name: "みおり", gender: "female", glbPath: "/avatars/glb/003.glb" },
-  { id: "f-004", name: "さやか", gender: "female", glbPath: "/avatars/glb/004.glb" },
-  { id: "f-005", name: "りこ", gender: "female", glbPath: "/avatars/glb/005.glb" },
-  { id: "f-006", name: "ゆい", gender: "female", glbPath: "/avatars/glb/006.glb" },
-  { id: "f-007", name: "はるな", gender: "female", glbPath: "/avatars/glb/女①.glb" },
-];
-
-// 男性アバター（追加予定）
-const MALE_AVATARS: AvatarGalleryItem[] = [
-  { id: "m-001", name: "そうた", gender: "male" },
-  { id: "m-002", name: "りくと", gender: "male" },
-  { id: "m-003", name: "はると", gender: "male" },
-];
-
-export const AVATAR_GALLERY: AvatarGalleryItem[] = [...FEMALE_AVATARS, ...MALE_AVATARS];
-
 export type SquareVisitor = {
   id: string;
   userId: string;
   displayName: string;
   gender: string;
   avatarStyle: AvatarStyle;
-  /** アバターギャラリーのID（GLBモデル参照用） */
-  avatarId?: string;
+  /** Optional CHARAT avatar image path (e.g. "/avatars/avatar-haruka.png") */
+  avatarImage?: string;
   bubble: string;
   mode: "call" | "in_person" | "either";
   tags: string[];
@@ -538,105 +507,76 @@ export type SquareVisitor = {
  * - Lower left path: ~26%, ~75%
  * - Lower right path: ~76%, ~75%
  */
-// ── ランダム広場配置用ヘルパー ──
-const RANDOM_NAMES_F = ["ひなた", "あかり", "みおり", "さやか", "りこ", "ゆい", "はるな", "ことね", "あおい", "みさき", "はるか", "さくら"];
-const RANDOM_NAMES_M = ["そうた", "りくと", "はると", "たくや", "りょう", "ゆうた", "けんと", "かいと"];
-const RANDOM_BUBBLES = [
-  "誰か話そー", "ちょい暇", "通話OK", "対面OK",
-  "30分だけ雑談OK", "作業通話できる人いる？", "カフェ行ける人",
-  "今から散歩", "相談のります", "暇つぶし中", "ゲームしよ！",
+export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
+  {
+    // Near left bench — sitting/standing by bench
+    id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
+    avatarImage: "/avatars/avatar-haruka.png",
+    bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
+    availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
+    ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
+  },
+  {
+    // Near fountain — upper right
+    id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
+    avatarImage: "/avatars/avatar-takuya.png",
+    bubble: "作業通話できる人いる？", mode: "either", tags: ["作業", "勉強"], verified: true,
+    availability: "30分だけ", area: "仙台駅周辺", bio: "プログラミングと筋トレ",
+    ratingAvg: 4.3, ratingCount: 15, x: 58, y: 43, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
+  },
+  {
+    // Right bench area
+    id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
+    avatarImage: "/avatars/avatar-misaki.png",
+    bubble: "今から散歩", mode: "in_person", tags: ["散歩", "雑談"], verified: false,
+    availability: "今からOK", area: "市内", bio: "旅行好き 街探索中",
+    ratingAvg: 4.0, ratingCount: 5, x: 78, y: 56, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
+  },
+  {
+    // Lower bench area
+    id: "sv-4", userId: "user-d", displayName: "ことね", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-d"],
+    avatarImage: "/avatars/avatar-kotone.png",
+    bubble: "相談のります", mode: "call", tags: ["相談"], verified: true,
+    availability: "19:00以降対応", area: "", bio: "何でも相談のります。エンジニア5年目",
+    ratingAvg: 4.9, ratingCount: 42, x: 52, y: 70, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
+  },
+  {
+    // Near fountain — left side
+    id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-e"],
+    bubble: "ゲームしよ！", mode: "call", tags: ["ゲーム"], verified: true,
+    availability: "今日中OK", area: "", bio: "スプラ・スマブラ一緒にやろう",
+    ratingAvg: 4.6, ratingCount: 20, x: 42, y: 47, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
+    // Path intersection area — left
+    id: "sv-6", userId: "user-f", displayName: "りょう", gender: "男性",
+    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 8, browType: 7, mouthType: 3, hairStyle: 13, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topType: 0, topColor: "#667eea", bottomType: 0, bottomColor: "#3D3D5C" }),
+    bubble: "ちょい暇", mode: "call", tags: ["雑談", "ゲーム"], verified: true,
+    availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
+    ratingAvg: 4.4, ratingCount: 18, x: 35, y: 37, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+  {
+    // Near right tree — observing from a distance
+    id: "sv-7", userId: "user-g", displayName: "ことね", gender: "女性",
+    avatarStyle: _base({ base: "female", faceShape: 0, eyeType: 9, browType: 6, mouthType: 1, hairStyle: 14, hairColor: "#8B4513", skinTone: "#FFE0BD", topType: 7, topColor: "#FF6B6B", bottomType: 4, bottomColor: "#4A4A6A", accessory: 10 }),
+    bubble: "カフェ行ける人", mode: "in_person", tags: ["カフェ"], verified: false,
+    availability: "今からOK", area: "新宿", bio: "カフェ巡りが趣味です☕",
+    ratingAvg: 4.2, ratingCount: 8, x: 85, y: 42, lastActive: new Date(Date.now() - 4 * 60_000).toISOString(),
+  },
+  {
+    // Near left tree — slightly apart
+    id: "sv-8", userId: "user-h", displayName: "そうた", gender: "男性",
+    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 6, browType: 5, mouthType: 5, hairStyle: 12, hairColor: "#1A1A2E", skinTone: "#F0C8A0", topType: 2, topColor: "#2C2C2C", bottomType: 0, bottomColor: "#3A3A5E", accessory: 2, cheekType: 2 }),
+    bubble: "30分だけOK", mode: "either", tags: ["相談", "作業"], verified: true,
+    availability: "30分OK", area: "", bio: "フリーランスエンジニア。気軽にどうぞ",
+    ratingAvg: 4.7, ratingCount: 35, x: 15, y: 40, lastActive: new Date(Date.now() - 7 * 60_000).toISOString(),
+  },
 ];
-const RANDOM_TAGS = ["雑談", "ゲーム", "作業", "散歩", "カフェ", "相談", "勉強"];
-const RANDOM_BIOS_F = [
-  "カフェと散歩が好き！気軽に話しかけてね",
-  "旅行好き 街探索中",
-  "カフェ巡りが趣味です",
-  "何でも相談のります",
-  "ゲーム一緒にやろう！",
-  "おしゃべり大好き",
-  "映画とアニメが好き",
-];
-const RANDOM_BIOS_M = [
-  "プログラミングと筋トレ",
-  "デザイナーやってます。雑談なんでも",
-  "フリーランスエンジニア。気軽にどうぞ",
-  "ゲームならいつでもOK",
-  "散歩仲間募集中",
-];
-const RANDOM_AREAS = ["", "渋谷", "新宿", "仙台駅周辺", "池袋", "横浜", "市内"];
-
-// 広場配置の座標（ランドマーク近く）
-const PLAZA_POSITIONS: { x: number; y: number }[] = [
-  { x: 25, y: 54 }, { x: 58, y: 43 }, { x: 78, y: 56 },
-  { x: 52, y: 70 }, { x: 42, y: 47 }, { x: 35, y: 37 },
-  { x: 85, y: 42 }, { x: 15, y: 40 }, { x: 65, y: 65 },
-  { x: 20, y: 68 }, { x: 72, y: 38 }, { x: 48, y: 32 },
-];
-
-function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
-function randomRating() { return +(3.5 + Math.random() * 1.5).toFixed(1); }
-function randomCount() { return Math.floor(5 + Math.random() * 40); }
-
-function generateVisitors(): SquareVisitor[] {
-  const visitors: SquareVisitor[] = [];
-  // 女性アバター（GLBモデル対応）— ランダムに5〜7人配置
-  const femaleCount = 5 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < femaleCount && i < PLAZA_POSITIONS.length; i++) {
-    const name = RANDOM_NAMES_F[i % RANDOM_NAMES_F.length];
-    const avatarData = FEMALE_AVATARS[i % FEMALE_AVATARS.length];
-    const pos = PLAZA_POSITIONS[i];
-    visitors.push({
-      id: `sv-f-${i}`,
-      userId: `user-f-${i}`,
-      displayName: name,
-      gender: "女性",
-      avatarStyle: _base({ base: "female" }),
-      avatarId: avatarData.id,
-      bubble: pickRandom(RANDOM_BUBBLES),
-      mode: pickRandom(["call", "in_person", "either"] as const),
-      tags: [pickRandom(RANDOM_TAGS), pickRandom(RANDOM_TAGS)].filter((v, j, a) => a.indexOf(v) === j),
-      verified: Math.random() > 0.3,
-      availability: pickRandom(["今からOK", "30分だけ", "1時間OK", "今日中OK", "19:00以降"]),
-      area: pickRandom(RANDOM_AREAS),
-      bio: pickRandom(RANDOM_BIOS_F),
-      ratingAvg: randomRating(),
-      ratingCount: randomCount(),
-      x: pos.x + (Math.random() - 0.5) * 4,
-      y: pos.y + (Math.random() - 0.5) * 4,
-      lastActive: new Date(Date.now() - Math.floor(Math.random() * 15) * 60_000).toISOString(),
-    });
-  }
-  // 男性アバター — 2〜3人
-  const maleCount = 2 + Math.floor(Math.random() * 2);
-  for (let i = 0; i < maleCount; i++) {
-    const posIdx = femaleCount + i;
-    if (posIdx >= PLAZA_POSITIONS.length) break;
-    const name = RANDOM_NAMES_M[i % RANDOM_NAMES_M.length];
-    const pos = PLAZA_POSITIONS[posIdx];
-    visitors.push({
-      id: `sv-m-${i}`,
-      userId: `user-m-${i}`,
-      displayName: name,
-      gender: "男性",
-      avatarStyle: _base({ base: "male" }),
-      bubble: pickRandom(RANDOM_BUBBLES),
-      mode: pickRandom(["call", "in_person", "either"] as const),
-      tags: [pickRandom(RANDOM_TAGS)],
-      verified: Math.random() > 0.4,
-      availability: pickRandom(["今からOK", "30分だけ", "1時間OK"]),
-      area: pickRandom(RANDOM_AREAS),
-      bio: pickRandom(RANDOM_BIOS_M),
-      ratingAvg: randomRating(),
-      ratingCount: randomCount(),
-      x: pos.x + (Math.random() - 0.5) * 4,
-      y: pos.y + (Math.random() - 0.5) * 4,
-      lastActive: new Date(Date.now() - Math.floor(Math.random() * 15) * 60_000).toISOString(),
-    });
-  }
-  return visitors;
-}
-
-export const DEMO_SQUARE_VISITORS: SquareVisitor[] = generateVisitors();
 
 // ===== ピグ風着せ替えオプション =====
 export const FACE_SHAPE_NAMES = ["まる", "たまご", "やや角", "ほそめ"];
@@ -703,7 +643,20 @@ export const AVATAR_PRESETS: AvatarPreset[] = [
   { name: "ミステリアス", style: _base({ base: "neutral", faceShape: 1, eyeType: 2, browType: 5, mouthType: 2, hairStyle: 17, hairColor: "#1A1A2E", topType: 0, topColor: "#2C2C2C", bottomType: 0, bottomColor: "#3A3A5E" }) },
 ];
 
-// (avatar gallery moved above SquareVisitor)
+// ===== アバターギャラリー（CHARAT画像ベース） =====
+export type AvatarGalleryItem = {
+  id: string;
+  name: string;
+  gender: "male" | "female";
+  imagePath: string;
+};
+
+export const AVATAR_GALLERY: AvatarGalleryItem[] = [
+  { id: "avatar-haruka", name: "はるか", gender: "female", imagePath: "/avatars/avatar-haruka.png" },
+  { id: "avatar-misaki", name: "みさき", gender: "female", imagePath: "/avatars/avatar-misaki.png" },
+  { id: "avatar-kotone", name: "ことね", gender: "female", imagePath: "/avatars/avatar-kotone.png" },
+  { id: "avatar-takuya", name: "たくや", gender: "male", imagePath: "/avatars/avatar-takuya.png" },
+];
 
 export const BUBBLE_TEMPLATES = [
   "誰か話そー", "ちょい暇", "通話OK", "対面OK",

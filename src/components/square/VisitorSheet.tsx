@@ -54,18 +54,21 @@ export default function VisitorSheet({
                 className="rounded-2xl p-2"
                 style={{ background: "var(--gradient-soft)" }}
               >
-                <div
-                  className="flex items-center justify-center rounded-full text-white font-bold text-2xl"
-                  style={{
-                    width: 72,
-                    height: 72,
-                    background: visitor.gender === "女性"
-                      ? "linear-gradient(135deg, #f093fb, #f5576c)"
-                      : "linear-gradient(135deg, #4facfe, #00f2fe)",
-                  }}
-                >
-                  {visitor.displayName.charAt(0)}
-                </div>
+                {visitor.avatarImage ? (
+                  <img
+                    src={visitor.avatarImage}
+                    alt={visitor.displayName}
+                    style={{ width: 72, height: 72, objectFit: "contain" }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center rounded-full text-white font-bold text-2xl"
+                    style={{ width: 72, height: 72, background: "var(--gradient-main)" }}
+                  >
+                    {visitor.displayName.charAt(0)}
+                  </div>
+                )}
               </div>
             </div>
 

@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AVATAR_GALLERY } from "@/lib/demo-data";
 import type { AvatarGalleryItem } from "@/lib/demo-data";
-
-const GlbAvatarViewer = lazy(() => import("@/components/square/GlbAvatarViewer"));
 
 type GenderFilter = "all" | "male" | "female";
 
@@ -13,8 +11,8 @@ export default function AvatarSelectPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<GenderFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [previewAvatar, setPreviewAvatar] = useState<AvatarGalleryItem | null>(null);
 
+  // Load current avatar selection
   useEffect(() => {
     try {
       const saved = localStorage.getItem("sloty_selected_avatar");
@@ -53,7 +51,7 @@ export default function AvatarSelectPage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 className="text-lg font-bold">アバターを選択</h1>
+        <h1 className="text-lg font-bold">アバター</h1>
       </div>
 
       <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
@@ -78,60 +76,10 @@ export default function AvatarSelectPage() {
         ))}
       </div>
 
-      {/* 3D Preview Modal */}
-      {previewAvatar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-            onClick={() => setPreviewAvatar(null)}
-          />
-          <div
-            className="relative rounded-3xl p-4 w-[90vw] max-w-sm"
-            style={{ backgroundColor: "var(--card)" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-bold">{previewAvatar.name}</h2>
-              <button
-                onClick={() => setPreviewAvatar(null)}
-                className="text-[20px] leading-none"
-                style={{ color: "var(--muted)" }}
-              >
-                x
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <Suspense fallback={
-                <div className="flex items-center justify-center" style={{ width: 280, height: 280 }}>
-                  <span className="text-sm" style={{ color: "var(--muted)" }}>読み込み中...</span>
-                </div>
-              }>
-                <GlbAvatarViewer
-                  glbPath={previewAvatar.glbPath}
-                  name={previewAvatar.name}
-                  size={280}
-                  autoRotate
-                />
-              </Suspense>
-            </div>
-            <button
-              onClick={() => {
-                save(previewAvatar);
-                setPreviewAvatar(null);
-              }}
-              className="mt-4 w-full btn-primary"
-            >
-              このアバターを使う
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Avatar grid */}
       <div className="grid grid-cols-2 gap-3">
         {filtered.map((avatar) => {
           const isSelected = selectedId === avatar.id;
-          const hasGlb = !!avatar.glbPath;
           return (
             <button
               key={avatar.id}
@@ -143,32 +91,15 @@ export default function AvatarSelectPage() {
               }}
             >
               <div
-                className="rounded-2xl p-2 relative"
+                className="rounded-2xl p-2"
                 style={{ background: "var(--gradient-soft)" }}
               >
-                {/* Avatar placeholder circle */}
-                <div
-                  className="flex items-center justify-center rounded-full text-white font-bold"
-                  style={{
-                    width: 100,
-                    height: 100,
-                    background: avatar.gender === "female"
-                      ? "linear-gradient(135deg, #f093fb, #f5576c)"
-                      : "linear-gradient(135deg, #4facfe, #00f2fe)",
-                    fontSize: 40,
-                  }}
-                >
-                  {avatar.name.charAt(0)}
-                </div>
-                {/* 3D badge */}
-                {hasGlb && (
-                  <span
-                    className="absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
-                    style={{ backgroundColor: "#7B8CFF" }}
-                  >
-                    3D
-                  </span>
-                )}
+                <img
+                  src={avatar.imagePath}
+                  alt={avatar.name}
+                  style={{ width: 100, height: 100, objectFit: "contain" }}
+                  draggable={false}
+                />
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[13px] font-semibold">{avatar.name}</span>
@@ -182,19 +113,6 @@ export default function AvatarSelectPage() {
                   {avatar.gender === "female" ? "女性" : "男性"}
                 </span>
               </div>
-              {/* Preview button for 3D models */}
-              {hasGlb && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewAvatar(avatar);
-                  }}
-                  className="text-[10px] font-medium rounded-full px-2.5 py-1 transition-all"
-                  style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}
-                >
-                  3Dプレビュー
-                </button>
-              )}
               {isSelected && (
                 <span
                   className="text-[10px] font-semibold rounded-full px-2 py-0.5"

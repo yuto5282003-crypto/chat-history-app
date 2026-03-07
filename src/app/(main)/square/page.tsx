@@ -158,10 +158,7 @@ export default function SquarePage() {
         {visitors.map((v, idx) => {
           const zIndex = Math.round(v.y + v.dy);
           const avatarSize = 62 + Math.round((v.y / 100) * 16);
-          const isFemale = v.gender === "女性";
-          const gradient = isFemale
-            ? "linear-gradient(135deg, #f093fb, #f5576c)"
-            : "linear-gradient(135deg, #4facfe, #00f2fe)";
+          const hasImage = !!v.avatarImage;
 
           return (
             <button
@@ -193,19 +190,34 @@ export default function SquarePage() {
                 />
 
                 <div className="flex flex-col items-center">
-                  <div
-                    className="flex items-center justify-center rounded-full text-white font-bold animate-avatar-float"
-                    style={{
-                      width: avatarSize,
-                      height: avatarSize,
-                      background: gradient,
-                      fontSize: avatarSize * 0.4,
-                      animationDelay: `${idx * 0.6}s`,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                    }}
-                  >
-                    {v.displayName.charAt(0)}
-                  </div>
+                  {hasImage ? (
+                    <img
+                      src={v.avatarImage}
+                      alt={v.displayName}
+                      className="animate-avatar-float"
+                      style={{
+                        width: avatarSize,
+                        height: avatarSize,
+                        objectFit: "contain",
+                        animationDelay: `${idx * 0.6}s`,
+                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.08))",
+                      }}
+                      draggable={false}
+                    />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center rounded-full text-white font-bold animate-avatar-float"
+                      style={{
+                        width: avatarSize,
+                        height: avatarSize,
+                        background: "var(--gradient-main)",
+                        fontSize: avatarSize * 0.4,
+                        animationDelay: `${idx * 0.6}s`,
+                      }}
+                    >
+                      {v.displayName.charAt(0)}
+                    </div>
+                  )}
                   {/* Foot shadow */}
                   <div
                     className="animate-avatar-shadow"
