@@ -40,8 +40,11 @@ function ChibiModel({
     }
   }, [scene, animations]);
 
-  // Auto-center & auto-scale to fit ~2 units tall
+  // Auto-center, auto-scale, and fix rotation to face front
   useEffect(() => {
+    // Rotate model to face the camera (fix sideways orientation)
+    scene.rotation.y = Math.PI;
+
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -66,16 +69,19 @@ function ChibiModel({
     if (!group) return;
 
     // Idle breathing — gentle Y-axis scale oscillation
-    const breathe = 1 + Math.sin(t * 1.5) * 0.015;
+    const breathe = 1 + Math.sin(t * 1.5) * 0.02;
     group.scale.set(1, breathe, 1);
 
-    // Gentle sway — slight rotation around Y
+    // Gentle sway — slight rotation around Y (more visible)
     group.rotation.y = autoRotate
       ? t * 0.3
-      : Math.sin(t * 0.6) * 0.08;
+      : Math.sin(t * 0.8) * 0.15;
 
-    // Micro-bounce — slight Y translation
-    group.position.y = Math.sin(t * 1.8) * 0.03;
+    // Bouncy hop — livelier Y translation
+    group.position.y = Math.abs(Math.sin(t * 1.2)) * 0.06;
+
+    // Subtle lean — slight X-axis tilt following sway
+    group.rotation.z = Math.sin(t * 0.8) * 0.03;
   });
 
   return (

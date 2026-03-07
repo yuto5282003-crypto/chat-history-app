@@ -135,7 +135,7 @@ export default function SquarePage() {
         data-no-swipe
         className="flex-1 relative mx-2 mb-1 rounded-2xl overflow-hidden"
         style={{
-          minHeight: 520,
+          minHeight: 680,
           boxShadow: "inset 0 0 20px rgba(0,0,0,0.03)",
         }}
       >
@@ -174,8 +174,8 @@ export default function SquarePage() {
           const avatarSize = 62 + Math.round((v.y / 100) * 16);
           const hasImage = !!v.avatarImage;
           const has3D = !!v.model3d;
-          // 3D avatars are larger to showcase the model
-          const avatar3DSize = avatarSize * 1.6;
+          // 3D avatars — slightly larger than image avatars
+          const avatar3DSize = avatarSize * 0.95;
 
           return (
             <button
