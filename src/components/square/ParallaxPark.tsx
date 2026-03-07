@@ -269,7 +269,7 @@ export function NearLayer() {
 
       {/* ══════════════════════════════════════════════════════
            AREA 1 — Urban Café Street (0-1000)
-           Starbucks-style café in a trendy city street
+           Starbucks-style café — full terrace, hedges, string lights
          ══════════════════════════════════════════════════════ */}
 
       {/* ── Road through café area ── */}
@@ -289,120 +289,90 @@ export function NearLayer() {
       </g>
 
       {/* ══════════════════════════════════════════════════════════
-           MAIN STARBUCKS BUILDING — Faithful to reference image
-           Wide modern flat-roof, horizontal slats, center gray tower
+           MAIN STARBUCKS BUILDING — Wide modern, slats, center tower
          ══════════════════════════════════════════════════════════ */}
       <g filter="url(#n-sh2)">
         {/* ── LEFT SECTION: Dark brown horizontal wood slats ── */}
         <rect x="100" y="220" width="320" height="180" fill="#6B5B4F" />
-        {/* Horizontal slat lines */}
         {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i => (
           <rect key={`lslat-${i}`} x="100" y={222+i*10} width="320" height="5" fill={i%2===0 ? "#7A6A5E" : "#5E4E42"} />
         ))}
-        {/* Darker band at bottom of slats */}
         <rect x="100" y="360" width="320" height="40" fill="#4A3E35" />
         {[0,1,2,3].map(i => (
           <rect key={`lslat2-${i}`} x="100" y={362+i*10} width="320" height="5" fill={i%2===0 ? "#554840" : "#403530"} />
         ))}
 
-        {/* "STARBUCKS" text on left section */}
         <text x="250" y="320" textAnchor="middle" fontSize="28" fill="#1E3932" fontWeight="bold" letterSpacing="5">STARBUCKS</text>
 
         {/* Left shutter/drive-thru window area */}
         <rect x="110" y="400" width="100" height="80" fill="#E8E0D0" />
-        {/* Horizontal shutter lines */}
         {[0,1,2,3,4,5,6,7,8,9].map(i => (
           <line key={`shut-${i}`} x1="112" y1={404+i*8} x2="208" y2={404+i*8} stroke="#C8C0B0" strokeWidth="1" />
         ))}
-        {/* Left counter shelf */}
         <rect x="108" y="398" width="106" height="5" rx="1" fill="#A09080" />
-        {/* Small roof over counter */}
         <rect x="105" y="392" width="112" height="8" rx="2" fill="#B0A090" />
 
         {/* ── CENTER TOWER: Tall gray concrete with logo ── */}
         <rect x="420" y="180" width="130" height="300" fill="#808080" />
-        {/* Gray panel texture - lighter inner panel */}
         <rect x="428" y="185" width="114" height="115" fill="#909090" />
-        {/* Panel border lines */}
         <line x1="425" y1="300" x2="545" y2="300" stroke="#707070" strokeWidth="1" />
-        {/* Lower gray panel */}
         <rect x="428" y="305" width="114" height="170" fill="#757575" />
 
         {/* ── Large Starbucks circle logo on tower ── */}
         <circle cx="485" cy="245" r="42" fill="#00704A" />
         <circle cx="485" cy="245" r="38" fill="#1E3932" />
         <circle cx="485" cy="245" r="35" fill="#00704A" />
-        {/* White ring */}
         <circle cx="485" cy="245" r="32" fill="none" stroke="white" strokeWidth="2" />
         <circle cx="485" cy="245" r="24" fill="none" stroke="white" strokeWidth="1" />
-        {/* Siren head */}
         <circle cx="485" cy="232" r="5" fill="white" />
-        {/* Crown */}
         <path d="M480 228 L482 224 L485 226 L488 224 L490 228" fill="white" />
-        {/* Siren body */}
         <path d="M479 237 Q485 255 491 237" stroke="white" strokeWidth="2" fill="none" />
-        {/* Hair/tails flowing */}
         <path d="M476 240 Q472 250 467 252" stroke="white" strokeWidth="2" fill="none" />
         <path d="M494 240 Q498 250 503 252" stroke="white" strokeWidth="2" fill="none" />
-        {/* Wavy hair detail */}
         <path d="M474 235 Q470 242 468 248" stroke="white" strokeWidth="1.5" fill="none" />
         <path d="M496 235 Q500 242 502 248" stroke="white" strokeWidth="1.5" fill="none" />
-        {/* Stars at sides */}
         <circle cx="466" cy="236" r="2" fill="white" />
         <circle cx="504" cy="236" r="2" fill="white" />
 
         {/* ── RIGHT SECTION: Gray/brown horizontal slats ── */}
         <rect x="550" y="220" width="250" height="180" fill="#8A7E72" />
-        {/* Horizontal slat lines */}
         {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i => (
           <rect key={`rslat-${i}`} x="550" y={222+i*10} width="250" height="5" fill={i%2===0 ? "#968A7E" : "#7A6E62"} />
         ))}
-        {/* Darker band at bottom right */}
         <rect x="550" y="360" width="250" height="40" fill="#5A5048" />
         {[0,1,2,3].map(i => (
           <rect key={`rslat2-${i}`} x="550" y={362+i*10} width="250" height="5" fill={i%2===0 ? "#655A52" : "#504540"} />
         ))}
 
-        {/* Dark green accent on far right */}
         <rect x="740" y="400" width="60" height="80" fill="#1E3932" />
 
-        {/* ── GREEN BAND / AWNING across full width ── */}
+        {/* ── GREEN BAND / AWNING ── */}
         <rect x="100" y="395" width="700" height="10" rx="2" fill="#00704A" />
-        {/* Thin green accent line above */}
         <rect x="100" y="392" width="700" height="4" fill="#1E8C5E" />
 
-        {/* ── BROWN ACCENT STRIP above windows ── */}
+        {/* ── BROWN ACCENT STRIP ── */}
         <rect x="100" y="400" width="320" height="8" fill="#8B7355" />
         <rect x="550" y="400" width="250" height="8" fill="#8B7355" />
 
-        {/* ── LARGE GLASS WINDOWS with people silhouettes ── */}
-        {/* Left window group */}
+        {/* ── LARGE GLASS WINDOWS ── */}
         <rect x="220" y="408" width="190" height="72" rx="2" fill="#C8DCD4" />
-        {/* Window frame divisions */}
         <line x1="265" y1="408" x2="265" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
         <line x1="310" y1="408" x2="310" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
         <line x1="355" y1="408" x2="355" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
-        {/* Interior tint */}
         <rect x="222" y="410" width="186" height="68" rx="1" fill="#B8CCC4" opacity=".3" />
         {/* People silhouettes - left window */}
-        {/* Seated person at table */}
         <circle cx="240" cy="445" r="5" fill="#555" opacity=".2" />
         <rect x="236" y="450" width="8" height="18" rx="2" fill="#555" opacity=".15" />
-        {/* Person at counter/table */}
         <circle cx="260" cy="448" r="4" fill="#555" opacity=".18" />
         <rect x="257" y="452" width="6" height="15" rx="2" fill="#555" opacity=".12" />
-        {/* Seated pair */}
         <circle cx="290" cy="443" r="5" fill="#555" opacity=".2" />
         <rect x="286" y="448" width="8" height="20" rx="2" fill="#555" opacity=".15" />
         <circle cx="305" cy="445" r="4.5" fill="#555" opacity=".18" />
         <rect x="301" y="450" width="8" height="18" rx="2" fill="#555" opacity=".13" />
-        {/* Standing person */}
         <circle cx="335" cy="440" r="5" fill="#555" opacity=".2" />
         <rect x="331" y="445" width="8" height="24" rx="2" fill="#555" opacity=".15" />
-        {/* Person at right edge */}
         <circle cx="365" cy="447" r="4" fill="#555" opacity=".18" />
         <rect x="362" y="451" width="6" height="16" rx="2" fill="#555" opacity=".12" />
-        {/* Tables */}
         <rect x="250" y="458" width="20" height="2" rx="1" fill="#888" opacity=".15" />
         <rect x="320" y="456" width="20" height="2" rx="1" fill="#888" opacity=".15" />
 
@@ -412,25 +382,19 @@ export function NearLayer() {
         <rect x="467" y="408" width="45" height="72" rx="2" fill="#A8C4B8" />
         <line x1="442" y1="408" x2="442" y2="480" stroke="#808080" strokeWidth="1.5" />
         <line x1="490" y1="408" x2="490" y2="480" stroke="#808080" strokeWidth="1.5" />
-        {/* Door handles */}
         <rect x="440" y="440" width="5" height="12" rx="2" fill="#B0B0B0" />
         <rect x="487" y="440" width="5" height="12" rx="2" fill="#B0B0B0" />
-        {/* People visible through door */}
         <circle cx="445" cy="448" r="3.5" fill="#555" opacity=".12" />
         <circle cx="488" cy="450" r="3" fill="#555" opacity=".1" />
 
-        {/* Right side entrance pillar */}
         <rect x="512" y="400" width="10" height="80" fill="#707070" />
 
         {/* Right window group */}
         <rect x="555" y="408" width="180" height="72" rx="2" fill="#C8DCD4" />
-        {/* Frame divisions */}
         <line x1="600" y1="408" x2="600" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
         <line x1="645" y1="408" x2="645" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
         <line x1="690" y1="408" x2="690" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
-        {/* Interior tint */}
         <rect x="557" y="410" width="176" height="68" rx="1" fill="#B8CCC4" opacity=".3" />
-        {/* People silhouettes - right window */}
         <circle cx="575" cy="444" r="5" fill="#555" opacity=".2" />
         <rect x="571" y="449" width="8" height="20" rx="2" fill="#555" opacity=".15" />
         <circle cx="610" cy="447" r="4" fill="#555" opacity=".18" />
@@ -441,7 +405,6 @@ export function NearLayer() {
         <rect x="667" y="450" width="7" height="18" rx="2" fill="#555" opacity=".13" />
         <circle cx="710" cy="444" r="4" fill="#555" opacity=".17" />
         <rect x="707" y="448" width="6" height="16" rx="2" fill="#555" opacity=".12" />
-        {/* Tables */}
         <rect x="595" y="458" width="20" height="2" rx="1" fill="#888" opacity=".15" />
         <rect x="660" y="455" width="20" height="2" rx="1" fill="#888" opacity=".15" />
 
@@ -449,25 +412,144 @@ export function NearLayer() {
         <rect x="100" y="478" width="700" height="4" fill="#606060" />
       </g>
 
-      {/* ── Outdoor terrace area in front of building ── */}
-      <rect x="100" y="482" width="700" height="30" rx="2" fill="#C8C0B4" opacity=".2" />
+      {/* ══════════════════════════════════════════════════════════
+           OUTDOOR TERRACE — Starbucks patio with hedges & details
+         ══════════════════════════════════════════════════════════ */}
 
-      {/* ── Outdoor tables with green umbrellas ── */}
-      {[[250,530],[450,525],[650,532]].map(([tx,ty],i) => (
-        <g key={`ct-${i}`}>
-          <ellipse cx={tx} cy={ty+12} rx="12" ry="4" fill="#000" opacity=".05" />
-          <ellipse cx={tx} cy={ty} rx="14" ry="6" fill="#E8DDD0" />
-          <rect x={tx-2} y={ty} width="4" height="12" rx="1" fill="#C8B898" />
-          <ellipse cx={tx-16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
-          <ellipse cx={tx+16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
+      {/* ── Wide terrace floor (stone tile pattern) ── */}
+      <rect x="80" y="482" width="740" height="120" rx="3" fill="#D8D2C8" opacity=".35" />
+      {/* Tile grid lines */}
+      {Array.from({length: 4}).map((_,row) =>
+        Array.from({length: 16}).map((_,col) => (
+          <rect key={`tf-${row}-${col}`} x={85+col*46} y={484+row*28} width="44" height="26" rx="1"
+            fill={((row+col)%2===0) ? "#CCC6BB" : "#D4CFCA"} opacity=".2" />
+        ))
+      )}
+
+      {/* ── Terrace border / low wall ── */}
+      <rect x="80" y="600" width="740" height="6" rx="2" fill="#B0A898" opacity=".4" />
+
+      {/* ── Hedge row along terrace perimeter (left, front, right) ── */}
+      {/* Left hedge */}
+      {[[80,500],[80,530],[80,560],[80,590]].map(([hx,hy],i) => (
+        <ellipse key={`hl-${i}`} cx={hx+8} cy={hy} rx="12" ry="10" fill="#3D7A3D" opacity=".55" />
+      ))}
+      {/* Front hedge (bottom of terrace) */}
+      {[[130,604],[185,604],[240,604],[295,604],[350,604],[405,604],[460,604],[515,604],[570,604],[625,604],[680,604],[735,604],[790,604]].map(([hx,hy],i) => (
+        <ellipse key={`hf-${i}`} cx={hx} cy={hy} rx="26" ry="10" fill="#3D7A3D" opacity=".5" />
+      ))}
+      {/* Right hedge */}
+      {[[820,500],[820,530],[820,560],[820,590]].map(([hx,hy],i) => (
+        <ellipse key={`hr-${i}`} cx={hx} cy={hy} rx="12" ry="10" fill="#3D7A3D" opacity=".55" />
+      ))}
+      {/* Small flowers on hedges */}
+      {[[140,600],[220,601],[340,602],[460,600],[580,601],[700,602],[780,600]].map(([fx,fy],i) => (
+        <circle key={`hfl-${i}`} cx={fx} cy={fy} r="2.5" fill={i%2===0 ? "#F3A7C6" : "#B79DFF"} opacity=".6" />
+      ))}
+
+      {/* ── Outdoor tables with green Starbucks umbrellas (8 tables, grid layout) ── */}
+      {/* Row 1 (closer to building) */}
+      {[[180,510],[320,508],[460,512],[600,510],[740,508]].map(([tx,ty],i) => (
+        <g key={`ct1-${i}`}>
+          {/* Table shadow */}
+          <ellipse cx={tx} cy={ty+14} rx="13" ry="4" fill="#000" opacity=".04" />
+          {/* Table top */}
+          <ellipse cx={tx} cy={ty} rx="15" ry="7" fill="#E8DDD0" />
+          {/* Table leg */}
+          <rect x={tx-2} y={ty} width="4" height="14" rx="1" fill="#C8B898" />
+          {/* Chairs (2 per table) */}
+          <ellipse cx={tx-18} cy={ty+2} rx="6" ry="5" fill="#1E3932" opacity=".5" />
+          <ellipse cx={tx+18} cy={ty+2} rx="6" ry="5" fill="#1E3932" opacity=".5" />
+          {/* Coffee cups on table */}
+          <rect x={tx-5} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".8" />
+          <rect x={tx+2} y={ty-4} width="4" height="5" rx="1.5" fill="#00704A" opacity=".5" />
+          {/* Umbrella pole */}
+          <rect x={tx-1} y={ty-42} width="2" height="40" fill="#707070" />
+          {/* Umbrella canopy */}
+          <ellipse cx={tx} cy={ty-42} rx="24" ry="9" fill="#00704A" opacity=".65" />
+          {/* Umbrella highlight */}
+          <ellipse cx={tx-4} cy={ty-44} rx="10" ry="4" fill="#1E8C5E" opacity=".3" />
+        </g>
+      ))}
+      {/* Row 2 (further from building) */}
+      {[[240,565],[400,562],[560,567],[720,564]].map(([tx,ty],i) => (
+        <g key={`ct2-${i}`}>
+          <ellipse cx={tx} cy={ty+14} rx="13" ry="4" fill="#000" opacity=".04" />
+          <ellipse cx={tx} cy={ty} rx="15" ry="7" fill="#E8DDD0" />
+          <rect x={tx-2} y={ty} width="4" height="14" rx="1" fill="#C8B898" />
+          <ellipse cx={tx-18} cy={ty+2} rx="6" ry="5" fill="#1E3932" opacity=".5" />
+          <ellipse cx={tx+18} cy={ty+2} rx="6" ry="5" fill="#1E3932" opacity=".5" />
           <rect x={tx-4} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".8" />
-          <rect x={tx-1} y={ty-40} width="2" height="38" fill="#707070" />
-          <ellipse cx={tx} cy={ty-40} rx="22" ry="8" fill="#00704A" opacity=".7" />
+          <rect x={tx-1} y={ty-42} width="2" height="40" fill="#707070" />
+          <ellipse cx={tx} cy={ty-42} rx="24" ry="9" fill="#00704A" opacity=".65" />
+          <ellipse cx={tx-4} cy={ty-44} rx="10" ry="4" fill="#1E8C5E" opacity=".3" />
         </g>
       ))}
 
-      {/* ── Modern street lamps ── */}
-      {[[50,400],[850,400],[950,395]].map(([lx,ly],i) => (
+      {/* ── String lights across terrace ── */}
+      {/* Wire 1 */}
+      <path d="M100 488 Q250 500 400 490 Q550 500 700 488 Q770 492 800 488" stroke="#888" strokeWidth="0.8" fill="none" opacity=".3" />
+      {/* Bulbs on wire 1 */}
+      {[140,190,240,290,340,390,440,490,540,590,640,690,740,790].map((bx,i) => (
+        <g key={`lb1-${i}`}>
+          <circle cx={bx} cy={492+Math.sin(i*0.8)*4} r="2.5" fill="#FFF8E0" opacity=".6" />
+          <circle cx={bx} cy={492+Math.sin(i*0.8)*4} r="4" fill="url(#n-glow)" opacity=".3" />
+        </g>
+      ))}
+      {/* Wire 2 */}
+      <path d="M120 540 Q270 552 420 542 Q570 552 720 540 Q780 544 810 540" stroke="#888" strokeWidth="0.8" fill="none" opacity=".25" />
+      {[160,220,280,340,400,460,520,580,640,700,760].map((bx,i) => (
+        <g key={`lb2-${i}`}>
+          <circle cx={bx} cy={544+Math.sin(i*0.9)*3} r="2" fill="#FFF8E0" opacity=".5" />
+          <circle cx={bx} cy={544+Math.sin(i*0.9)*3} r="3.5" fill="url(#n-glow)" opacity=".25" />
+        </g>
+      ))}
+
+      {/* ── Large potted plants at terrace corners ── */}
+      {[[95,486],[810,486]].map(([px,py],i) => (
+        <g key={`lp-${i}`}>
+          {/* Pot */}
+          <rect x={px-8} y={py+12} width="16" height="18" rx="3" fill="#8B6040" />
+          <rect x={px-10} y={py+10} width="20" height="5" rx="2" fill="#9B7050" />
+          {/* Plant */}
+          <ellipse cx={px} cy={py} rx="16" ry="14" fill="#3D8A40" opacity=".7" />
+          <ellipse cx={px-5} cy={py-4} rx="8" ry="7" fill="#4DA050" opacity=".5" />
+        </g>
+      ))}
+
+      {/* ── Small potted plants between tables ── */}
+      {[[140,514],[270,570],[510,514],[660,570],[790,514]].map(([px,py],i) => (
+        <g key={`sp-${i}`}>
+          <rect x={px-4} y={py+4} width="8" height="10" rx="2" fill="#8B6040" />
+          <ellipse cx={px} cy={py} rx="8" ry="7" fill="#3D7A3D" opacity=".6" />
+          {/* Tiny flower */}
+          <circle cx={px+2} cy={py-3} r="2" fill={i%2===0 ? "#F3A7C6" : "#FFD700"} opacity=".7" />
+        </g>
+      ))}
+
+      {/* ── Outdoor menu board (A-frame chalkboard) ── */}
+      <g transform="translate(430,490)">
+        <path d="M0 0 L10 28 L-2 28Z" fill="#3A3020" />
+        <path d="M14 0 L4 28 L16 28Z" fill="#3A3020" />
+        <rect x="1" y="2" width="12" height="20" rx="1" fill="#2A2520" />
+        <text x="7" y="10" textAnchor="middle" fontSize="3.5" fill="#E8D8B8" fontWeight="bold">MENU</text>
+        <rect x="3" y="13" width="8" height="1" rx=".5" fill="#E8D8B8" opacity=".4" />
+        <rect x="3" y="16" width="6" height="1" rx=".5" fill="#E8D8B8" opacity=".3" />
+      </g>
+
+      {/* ── Pickup counter (outdoor order window) ── */}
+      <g transform="translate(108,482)">
+        <rect x="0" y="0" width="100" height="8" rx="2" fill="#00704A" opacity=".8" />
+        <text x="50" y="6" textAnchor="middle" fontSize="4.5" fill="white" fontWeight="bold">MOBILE ORDER</text>
+        <rect x="5" y="8" width="90" height="3" rx="1" fill="#D4C8B8" />
+        {/* Waiting cups */}
+        <rect x="15" y="4" width="4" height="5" rx="1" fill="white" opacity=".7" />
+        <rect x="25" y="4" width="4" height="5" rx="1" fill="white" opacity=".6" />
+        <rect x="70" y="4" width="4" height="5" rx="1" fill="#00704A" opacity=".5" />
+      </g>
+
+      {/* ── Modern street lamps (more of them) ── */}
+      {[[30,400],[50,470],[850,400],[870,470],[950,395]].map(([lx,ly],i) => (
         <g key={`cl-${i}`} transform={`translate(${lx},${ly})`}>
           <rect x="2" y="5" width="4" height="50" rx="2" fill="#707070" />
           <rect x="0" y="52" width="8" height="4" rx="2" fill="#606060" />
@@ -477,8 +559,8 @@ export function NearLayer() {
         </g>
       ))}
 
-      {/* ── Benches ── */}
-      {[[70,500],[880,495]].map(([bx,by],i) => (
+      {/* ── Benches (more, along sidewalk) ── */}
+      {[[30,510],[60,560],[880,505],[910,555]].map(([bx,by],i) => (
         <g key={`cb-${i}`} transform={`translate(${bx},${by})`}>
           <rect x="0" y="5" width="42" height="3" rx="1" fill="#A0A0A0" />
           <rect x="2" y="-2" width="38" height="3" rx="1" fill="#B0B0B0" />
@@ -487,13 +569,65 @@ export function NearLayer() {
         </g>
       ))}
 
-      {/* ── Street trees (trimmed, urban) ── */}
-      {[[30,410,18,15,"n-ta"],[900,400,20,16,"n-tb"],[960,380,18,14,"n-ta"]].map(([x,y,rx,ry,g],i) => (
+      {/* ── Trash / recycling bins near entrance ── */}
+      <g transform="translate(432,597)">
+        <rect x="0" y="0" width="10" height="14" rx="2" fill="#505050" />
+        <rect x="1" y="-2" width="8" height="3" rx="1" fill="#606060" />
+        <rect x="14" y="0" width="10" height="14" rx="2" fill="#2D6B2D" />
+        <rect x="15" y="-2" width="8" height="3" rx="1" fill="#3D7B3D" />
+      </g>
+
+      {/* ── Bicycle rack near terrace ── */}
+      <g transform="translate(860,530)">
+        <rect x="0" y="10" width="50" height="2" rx="1" fill="#808080" />
+        {[0,1,2,3,4].map(i => (
+          <rect key={`br-${i}`} x={3+i*10} y="2" width="2" height="10" rx="1" fill="#909090" />
+        ))}
+        {/* Parked bike */}
+        <circle cx="8" cy="4" r="5" fill="none" stroke="#666" strokeWidth="1" />
+        <circle cx="20" cy="4" r="5" fill="none" stroke="#666" strokeWidth="1" />
+        <line x1="8" y1="4" x2="14" y2="-3" stroke="#666" strokeWidth="1" />
+        <line x1="14" y1="-3" x2="20" y2="4" stroke="#666" strokeWidth="1" />
+      </g>
+
+      {/* ── Street trees (trimmed, urban — more of them) ── */}
+      {[
+        [20,410,18,15,"n-ta"],[60,430,14,12,"n-tb"],
+        [860,405,20,16,"n-tb"],[900,395,18,14,"n-ta"],[950,380,16,13,"n-tb"],
+      ].map(([x,y,rx,ry,g],i) => (
         <g key={`ctr-${i}`}>
+          <ellipse cx={x as number} cy={(y as number)+30} rx="10" ry="3" fill="#000" opacity=".04" />
           <rect x={(x as number)-3} y={y as number} width="6" height="30" rx="2" fill="#8B7355" />
           <ellipse cx={x as number} cy={(y as number)-12} rx={rx as number} ry={ry as number} fill={`url(#${g})`} />
         </g>
       ))}
+
+      {/* ── Decorative tree planters on terrace ── */}
+      {[[130,490],[770,490]].map(([tx,ty],i) => (
+        <g key={`tp-${i}`}>
+          {/* Square planter box */}
+          <rect x={tx-10} y={ty+8} width="20" height="16" rx="2" fill="#808080" />
+          <rect x={tx-8} y={ty+6} width="16" height="4" rx="1" fill="#909090" />
+          {/* Small ornamental tree */}
+          <rect x={tx-2} y={ty-10} width="4" height="20" rx="2" fill="#8B7355" />
+          <ellipse cx={tx} cy={ty-20} rx="14" ry="12" fill="#3D8A40" opacity=".65" />
+          <ellipse cx={tx+4} cy={ty-24} rx="6" ry="5" fill="#4DA050" opacity=".4" />
+        </g>
+      ))}
+
+      {/* ── Starbucks Reserve sign on right wall ── */}
+      <g transform="translate(750,410)">
+        <rect x="0" y="0" width="45" height="16" rx="2" fill="#1E3932" opacity=".8" />
+        <text x="22" y="11" textAnchor="middle" fontSize="5" fill="#C8A870" fontWeight="bold" letterSpacing="1">RESERVE</text>
+        {/* Star icon */}
+        <circle cx="8" cy="8" r="3" fill="none" stroke="#C8A870" strokeWidth="0.8" />
+      </g>
+
+      {/* ── WiFi sign ── */}
+      <g transform="translate(418,488)">
+        <rect x="0" y="0" width="18" height="10" rx="2" fill="white" opacity=".8" />
+        <text x="9" y="7" textAnchor="middle" fontSize="4" fill="#00704A" fontWeight="bold">WiFi</text>
+      </g>
 
       {/* ══════════════════════════════════════════════════════
            AREA 2 — Fountain park (1000-2000)
