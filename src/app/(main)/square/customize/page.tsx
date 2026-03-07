@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
+    <div className="flex items-center justify-center" style={{ width: 120, height: 120 }}>
       <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
     </div>
   ),
@@ -105,8 +105,11 @@ export default function AvatarSelectPage() {
   const filteredAvatars = AVATAR_CATALOG.filter((a) => a.gender === gender);
   const selectedAvatar = AVATAR_CATALOG.find((a) => a.id === selectedId);
 
+  const [previewError, setPreviewError] = useState(false);
+
   const handleSelect = (avatar: AvatarItem) => {
     setSelectedId(avatar.id);
+    setPreviewError(false); // reset error on new selection
   };
 
   const handleSave = () => {
@@ -138,12 +141,32 @@ export default function AvatarSelectPage() {
       >
         {selectedAvatar ? (
           <>
-            <Avatar3D
-              modelUrl={selectedAvatar.modelUrl}
-              size={160}
-              autoRotate
-              animationSpeed={0.8}
-            />
+            {previewError ? (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <div
+                  className="flex items-center justify-center rounded-full"
+                  style={{
+                    width: 64, height: 64,
+                    background: `linear-gradient(135deg, ${selectedAvatar.color}, ${selectedAvatar.color}aa)`,
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <p className="text-[10px]" style={{ color: "var(--muted)" }}>3Dプレビューを読み込めませんでした</p>
+              </div>
+            ) : (
+              <div onError={() => setPreviewError(true)}>
+                <Avatar3D
+                  modelUrl={selectedAvatar.modelUrl}
+                  size={120}
+                  autoRotate
+                  animationSpeed={0.8}
+                />
+              </div>
+            )}
             <p className="mt-2 text-[13px] font-semibold">{selectedAvatar.name}</p>
             {currentModelUrl === selectedAvatar.modelUrl && (
               <span

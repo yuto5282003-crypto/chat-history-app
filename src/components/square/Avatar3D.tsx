@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useRef, useState, useEffect, useCallback, memo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, invalidate } from "@react-three/fiber";
 import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -113,6 +113,8 @@ function ChibiModel({
     group.scale.set(1, 1 + Math.sin(t * 1.5) * 0.015, 1);
     group.rotation.z = Math.sin(walkCycle) * 0.04;
     if (!userRotating) group.rotation.y = Math.sin(t * 0.4) * 0.15;
+
+    invalidate();
   });
 
   return (
@@ -131,6 +133,7 @@ function FallbackModel() {
       ref.current.rotation.y = Math.sin(t * 0.6) * 0.1;
       ref.current.position.y = Math.sin(t * 1.5) * 0.05;
     }
+    invalidate();
   });
   return (
     <group ref={ref}>
@@ -159,6 +162,7 @@ function LoadingSpinner() {
   const ref = useRef<THREE.Mesh>(null!);
   useFrame((state) => {
     if (ref.current) ref.current.rotation.y = state.clock.getElapsedTime() * 2;
+    invalidate();
   });
   return (
     <mesh ref={ref}>
@@ -207,6 +211,16 @@ const Avatar3D = memo(function Avatar3D({
 
   const showFallback = !modelUrl || hasError || modelExists === false;
 
+  // Handle WebGL context creation failure gracefully
+  const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
+    const gl = state.gl;
+    const canvas = gl.domElement;
+    canvas.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      setHasError(true);
+    });
+  }, []);
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!enableLongPressRotate) return;
@@ -244,8 +258,8 @@ const Avatar3D = memo(function Avatar3D({
     };
   }, [isRotating, onRotatingChange]);
 
-  // Determine pixel ratio — cap at 1.5 for performance on mobile
-  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 1.5) : 1;
+  // Determine pixel ratio — cap at 1 for performance on mobile
+  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 1) : 1;
 
   return (
     <div
@@ -271,14 +285,16 @@ const Avatar3D = memo(function Avatar3D({
         camera={{ position: [0, 0.5, 3], fov: 35 }}
         gl={{
           alpha: true,
-          antialias: false, // disable for perf
+          antialias: false,
           powerPreference: "low-power",
-          precision: "mediump",
+          precision: "lowp",
+          failIfMajorPerformanceCaveat: false,
         }}
         dpr={dpr}
         style={{ background: "transparent" }}
         onError={() => setHasError(true)}
-        frameloop="always"
+        onCreated={handleCreated}
+        frameloop="demand"
       >
         <ambientLight intensity={0.8} />
         <directionalLight position={[3, 5, 4]} intensity={0.9} />
@@ -298,11 +314,12 @@ const Avatar3D = memo(function Avatar3D({
 
         <ContactShadows
           position={[0, -1, 0]}
-          opacity={0.25}
-          scale={3}
-          blur={1.5}
+          opacity={0.2}
+          scale={2}
+          blur={1}
           far={2}
           frames={1}
+          resolution={64}
         />
 
         {(isRotating || autoRotate) && (

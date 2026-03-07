@@ -12,8 +12,8 @@ import type { SquareVisitor } from "@/lib/demo-data";
 const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center" style={{ width: 80, height: 80 }}>
-      <div className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
+    <div className="flex items-center justify-center" style={{ width: 64, height: 64 }}>
+      <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
     </div>
   ),
 });
@@ -30,8 +30,8 @@ const LEFT_MARGIN = 0; // no scroll past left edge — building fills viewport
 const AVATAR_DRAG_THRESHOLD = 8;
 const DEFAULT_MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
-const MIN_AVATAR_SIZE = 120;
-const MAX_AVATAR_SIZE = 160;
+const MIN_AVATAR_SIZE = 56;
+const MAX_AVATAR_SIZE = 72;
 
 const AREAS = [
   { name: "カフェ前", icon: "☕", xMin: 0, xMax: 25, xCenter: 12.5 },
