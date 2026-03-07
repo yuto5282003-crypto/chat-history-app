@@ -55,7 +55,7 @@ const GENDER_TABS = [
 const STORAGE_KEY = "sloty_selected_avatar";
 
 /* ── Hook: capture 3D model thumbnails with localStorage cache + staggered loading ── */
-const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v4";
+const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v5";
 const THUMB_SIZE = 128; // 2x of 56px display = sharp enough on retina
 const BATCH_SIZE = 4; // More parallel captures for faster completion
 const BATCH_DELAY = 50; // ms between batches
@@ -101,7 +101,7 @@ function useThumbnailCapture() {
       });
       renderer.setSize(THUMB_SIZE, THUMB_SIZE);
       renderer.setPixelRatio(1);
-      renderer.setClearColor(0x000000, 0);
+      renderer.setClearColor(0xf5f5f5, 1); // Light gray background (JPEG has no alpha)
 
       // Helper: downscale textures for thumbnail rendering (saves GPU memory & speeds up)
       const MAX_THUMB_TEX = 256;
@@ -269,7 +269,10 @@ function AvatarThumbnail({
               transition: "box-shadow 0.3s",
             }}
           >
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: avatar.color }} />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={avatar.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.6}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           </div>
         )}
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
