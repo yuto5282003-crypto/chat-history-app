@@ -279,94 +279,69 @@ export function NearLayer() {
       ))}
 
       {/* ══════════════════════════════════════════════════════════
-           STARBUCKS BUILDING — Matching reference facade
-           Layout (left→right): Brick+wood+glass | black column | glass entrance | black column | brick+white panel
-           Building: x=50 to x=900, y=210 to y=490
+           STARBUCKS BUILDING — x=300-900 (centered for camera visibility)
+           Layout: Brick+wood+glass | column | glass entrance | brick+white panel
          ══════════════════════════════════════════════════════════ */}
       <g filter="url(#n-sh2)">
 
-        {/* ── FLAT ROOF (black trim along top) ── */}
-        <rect x="50" y="208" width="850" height="8" fill="#1A1A1A" />
-        <rect x="50" y="214" width="850" height="4" fill="#2A2A2A" />
+        {/* ── FLAT ROOF (black trim) ── */}
+        <rect x="300" y="248" width="600" height="7" fill="#1A1A1A" />
+        <rect x="300" y="253" width="600" height="3" fill="#2A2A2A" />
 
-        {/* ═══ LEFT SECTION (x=50-420): Dark brick upper + vertical wood lower ═══ */}
+        {/* ═══ LEFT SECTION (x=300-560): Dark brick upper + vertical wood lower ═══ */}
 
-        {/* Dark reddish-brown BRICK wall (upper portion) */}
-        <rect x="50" y="218" width="370" height="140" fill="#4A2E20" />
-        {/* Brick pattern — rows of small rectangles */}
-        {Array.from({length: 14}).map((_,row) =>
-          Array.from({length: 18}).map((_,col) => (
+        {/* Dark reddish-brown BRICK wall (upper) */}
+        <rect x="300" y="256" width="260" height="110" fill="#4A2E20" />
+        {Array.from({length: 11}).map((_,row) =>
+          Array.from({length: 13}).map((_,col) => (
             <rect key={`brk-${row}-${col}`}
-              x={52 + col*20 + (row%2===0 ? 0 : 10)}
-              y={220 + row*10}
+              x={302 + col*20 + (row%2===0 ? 0 : 10)}
+              y={258 + row*10}
               width="18" height="8" rx="0.5"
               fill={((row+col)%3===0) ? "#5A3828" : ((row+col)%3===1) ? "#4E3222" : "#3E2818"}
               opacity=".8"
             />
           ))
         )}
-        {/* Mortar lines (subtle grid) */}
-        {Array.from({length: 15}).map((_,i) => (
-          <line key={`mh-${i}`} x1="50" y1={220+i*10} x2="420" y2={220+i*10} stroke="#3A2015" strokeWidth="0.5" opacity=".3" />
-        ))}
 
-        {/* "STARBUCKS COFFEE" text on brick wall */}
-        <text x="235" y="300" textAnchor="middle" fontSize="22" fill="#D4C8B0" fontWeight="bold" letterSpacing="4" opacity=".9">STARBUCKS COFFEE</text>
+        {/* "STARBUCKS COFFEE" text on brick */}
+        <text x="430" y="325" textAnchor="middle" fontSize="18" fill="#D4C8B0" fontWeight="bold" letterSpacing="3" opacity=".9">STARBUCKS COFFEE</text>
 
-        {/* Vertical CEDAR WOOD slats section (lower portion, x=50-260) */}
-        <rect x="50" y="358" width="210" height="132" fill="#B8885A" />
-        {/* Vertical slat lines */}
-        {Array.from({length: 26}).map((_,i) => (
-          <rect key={`vslat-l-${i}`} x={52+i*8} y="358" width="4" height="132"
+        {/* Vertical CEDAR WOOD slats (lower left, x=300-460) */}
+        <rect x="300" y="366" width="160" height="122" fill="#B8885A" />
+        {Array.from({length: 20}).map((_,i) => (
+          <rect key={`vslat-l-${i}`} x={302+i*8} y="366" width="4" height="122"
             fill={i%2===0 ? "#C8986A" : "#A07848"} />
         ))}
-        {/* Wood grain detail */}
-        {[370,390,420,450].map((gy,i) => (
-          <line key={`wg-${i}`} x1="55" y1={gy} x2="255" y2={gy+3} stroke="#907040" strokeWidth="0.5" opacity=".3" />
-        ))}
 
-        {/* ── Large glass windows ON the wood section (left) ── */}
-        {/* Black window frame */}
-        <rect x="68" y="362" width="180" height="120" rx="2" fill="#1A1A1A" />
-        {/* Glass panes — 4 tall panels */}
-        {[0,1,2,3].map(i => (
-          <rect key={`gw-l-${i}`} x={72+i*44} y="366" width="40" height="112" rx="1"
+        {/* Large glass windows on wood section */}
+        <rect x="312" y="370" width="136" height="110" rx="2" fill="#1A1A1A" />
+        {[0,1,2].map(i => (
+          <rect key={`gw-l-${i}`} x={316+i*44} y="374" width="40" height="102" rx="1"
             fill="#B8D4CC" opacity=".7" />
         ))}
-        {/* Window frame dividers (black) */}
-        {[1,2,3].map(i => (
-          <line key={`wf-l-${i}`} x1={72+i*44} y1="362" x2={72+i*44} y2="482" stroke="#1A1A1A" strokeWidth="3" />
+        {[1,2].map(i => (
+          <line key={`wf-l-${i}`} x1={316+i*44} y1="370" x2={316+i*44} y2="480" stroke="#1A1A1A" strokeWidth="3" />
         ))}
-        {/* Glass reflection highlights */}
-        {[0,1,2,3].map(i => (
-          <line key={`wr-l-${i}`} x1={80+i*44} y1="370" x2={76+i*44} y2="470" stroke="white" strokeWidth="1.5" opacity=".15" />
+        {[0,1,2].map(i => (
+          <line key={`wr-l-${i}`} x1={324+i*44} y1="378" x2={321+i*44} y2="472" stroke="white" strokeWidth="1.5" opacity=".15" />
         ))}
-        {/* People silhouettes inside */}
-        <circle cx="95" cy="440" r="5" fill="#555" opacity=".15" />
-        <rect x="91" y="445" width="8" height="18" rx="2" fill="#555" opacity=".1" />
-        <circle cx="140" cy="435" r="4.5" fill="#555" opacity=".12" />
-        <rect x="137" y="440" width="7" height="16" rx="2" fill="#555" opacity=".08" />
-        <circle cx="185" cy="442" r="4" fill="#555" opacity=".12" />
-        <rect x="182" y="447" width="6" height="14" rx="2" fill="#555" opacity=".08" />
-        <circle cx="225" cy="438" r="5" fill="#555" opacity=".15" />
-        <rect x="221" y="443" width="8" height="16" rx="2" fill="#555" opacity=".1" />
 
-        {/* ── Small high window on brick (left upper) ── */}
-        <rect x="290" y="240" width="100" height="40" rx="1" fill="#1A1A1A" />
-        <rect x="293" y="243" width="94" height="34" rx="1" fill="#B8D4CC" opacity=".5" />
-        <line x1="340" y1="240" x2="340" y2="280" stroke="#1A1A1A" strokeWidth="2" />
+        {/* Small high window on brick */}
+        <rect x="470" y="270" width="75" height="35" rx="1" fill="#1A1A1A" />
+        <rect x="473" y="273" width="69" height="29" rx="1" fill="#B8D4CC" opacity=".5" />
+        <line x1="507" y1="270" x2="507" y2="305" stroke="#1A1A1A" strokeWidth="2" />
 
-        {/* ═══ BLACK STRUCTURAL COLUMN 1 (x=420-440) ═══ */}
-        <rect x="260" y="358" width="10" height="132" fill="#1A1A1A" />
+        {/* Black column */}
+        <rect x="460" y="366" width="8" height="122" fill="#1A1A1A" />
 
-        {/* ── Brick continues to center with wood accent column ── */}
-        <rect x="270" y="358" width="160" height="132" fill="#4A2E20" />
-        {/* Brick pattern on this section */}
-        {Array.from({length: 13}).map((_,row) =>
-          Array.from({length: 8}).map((_,col) => (
+        {/* Brick section to center */}
+        <rect x="468" y="366" width="92" height="122" fill="#4A2E20" />
+        {Array.from({length: 12}).map((_,row) =>
+          Array.from({length: 4}).map((_,col) => (
             <rect key={`brk2-${row}-${col}`}
-              x={272 + col*20 + (row%2===0 ? 0 : 10)}
-              y={360 + row*10}
+              x={470 + col*20 + (row%2===0 ? 0 : 10)}
+              y={368 + row*10}
               width="18" height="8" rx="0.5"
               fill={((row+col)%3===0) ? "#5A3828" : "#3E2818"}
               opacity=".7"
@@ -374,45 +349,36 @@ export function NearLayer() {
           ))
         )}
 
-        {/* ── Wooden accent vertical column (tall, natural cedar) ── */}
-        <rect x="430" y="218" width="16" height="272" fill="#C8986A" />
-        <rect x="432" y="218" width="4" height="272" fill="#D4A878" opacity=".5" />
-        <rect x="440" y="218" width="4" height="272" fill="#A07848" opacity=".5" />
+        {/* Cedar accent column */}
+        <rect x="560" y="256" width="12" height="232" fill="#C8986A" />
+        <rect x="562" y="256" width="3" height="232" fill="#D4A878" opacity=".5" />
 
-        {/* ═══ CENTER GLASS ENTRANCE (x=446-620) ═══ */}
-        {/* Black frame surround */}
-        <rect x="446" y="340" width="174" height="150" fill="#1A1A1A" />
+        {/* ═══ CENTER GLASS ENTRANCE (x=572-700) ═══ */}
+        <rect x="572" y="350" width="128" height="138" fill="#1A1A1A" />
+        <rect x="576" y="354" width="58" height="130" rx="1" fill="#A8C8BC" opacity=".65" />
+        <rect x="640" y="354" width="56" height="130" rx="1" fill="#A8C8BC" opacity=".65" />
+        <line x1="634" y1="354" x2="634" y2="484" stroke="#1A1A1A" strokeWidth="4" />
+        <line x1="640" y1="354" x2="640" y2="484" stroke="#1A1A1A" strokeWidth="3" />
+        <rect x="629" y="410" width="4" height="16" rx="2" fill="#808080" />
+        <rect x="641" y="410" width="4" height="16" rx="2" fill="#808080" />
+        <line x1="592" y1="358" x2="589" y2="478" stroke="white" strokeWidth="1.5" opacity=".12" />
+        <line x1="660" y1="358" x2="657" y2="478" stroke="white" strokeWidth="1.5" opacity=".12" />
+        <rect x="572" y="344" width="128" height="6" fill="#1A1A1A" />
 
-        {/* Glass entrance — large panels */}
-        <rect x="450" y="344" width="80" height="142" rx="1" fill="#A8C8BC" opacity=".65" />
-        <rect x="536" y="344" width="80" height="142" rx="1" fill="#A8C8BC" opacity=".65" />
-        {/* Center door divider */}
-        <line x1="530" y1="344" x2="530" y2="486" stroke="#1A1A1A" strokeWidth="4" />
-        <line x1="536" y1="344" x2="536" y2="486" stroke="#1A1A1A" strokeWidth="4" />
-        {/* Door handles */}
-        <rect x="524" y="410" width="4" height="20" rx="2" fill="#808080" />
-        <rect x="539" y="410" width="4" height="20" rx="2" fill="#808080" />
-        {/* Glass reflections */}
-        <line x1="470" y1="350" x2="465" y2="480" stroke="white" strokeWidth="2" opacity=".12" />
-        <line x1="560" y1="350" x2="555" y2="480" stroke="white" strokeWidth="2" opacity=".12" />
-        {/* Horizontal transom bar */}
-        <rect x="446" y="336" width="174" height="6" fill="#1A1A1A" />
+        {/* Transom window above entrance */}
+        <rect x="572" y="300" width="128" height="44" fill="#1A1A1A" />
+        <rect x="576" y="304" width="120" height="36" rx="1" fill="#B8D4CC" opacity=".5" />
+        <line x1="636" y1="300" x2="636" y2="344" stroke="#1A1A1A" strokeWidth="3" />
 
-        {/* Above entrance: glass transom window */}
-        <rect x="446" y="280" width="174" height="56" fill="#1A1A1A" />
-        <rect x="450" y="284" width="166" height="48" rx="1" fill="#B8D4CC" opacity=".5" />
-        <line x1="533" y1="280" x2="533" y2="336" stroke="#1A1A1A" strokeWidth="3" />
+        {/* ═══ RIGHT SECTION (x=700-900): Brick + white panel ═══ */}
 
-        {/* ═══ RIGHT SECTION (x=620-900): Brick upper + white panel ═══ */}
-
-        {/* Dark brick wall (upper, right section) */}
-        <rect x="620" y="218" width="280" height="150" fill="#4A2E20" />
-        {/* Brick pattern */}
-        {Array.from({length: 15}).map((_,row) =>
-          Array.from({length: 14}).map((_,col) => (
+        {/* Dark brick (upper right) */}
+        <rect x="700" y="256" width="200" height="112" fill="#4A2E20" />
+        {Array.from({length: 11}).map((_,row) =>
+          Array.from({length: 10}).map((_,col) => (
             <rect key={`brk3-${row}-${col}`}
-              x={622 + col*20 + (row%2===0 ? 0 : 10)}
-              y={220 + row*10}
+              x={702 + col*20 + (row%2===0 ? 0 : 10)}
+              y={258 + row*10}
               width="18" height="8" rx="0.5"
               fill={((row+col)%3===0) ? "#5A3828" : ((row+col)%3===1) ? "#4E3222" : "#3E2818"}
               opacity=".8"
@@ -420,145 +386,110 @@ export function NearLayer() {
           ))
         )}
 
-        {/* ── Starbucks GREEN CIRCLE LOGO on right brick section ── */}
-        <circle cx="720" cy="270" r="36" fill="#00704A" />
-        <circle cx="720" cy="270" r="32" fill="#1E3932" />
-        <circle cx="720" cy="270" r="29" fill="#00704A" />
-        <circle cx="720" cy="270" r="26" fill="none" stroke="white" strokeWidth="2" />
-        <circle cx="720" cy="270" r="19" fill="none" stroke="white" strokeWidth="1" />
-        {/* Siren head */}
-        <circle cx="720" cy="258" r="4" fill="white" />
-        {/* Crown */}
-        <path d="M716 255 L717.5 251 L720 253 L722.5 251 L724 255" fill="white" />
-        {/* Siren body */}
-        <path d="M715 263 Q720 278 725 263" stroke="white" strokeWidth="1.5" fill="none" />
-        {/* Hair/tails */}
-        <path d="M712 266 Q709 274 705 276" stroke="white" strokeWidth="1.5" fill="none" />
-        <path d="M728 266 Q731 274 735 276" stroke="white" strokeWidth="1.5" fill="none" />
-        {/* Stars */}
-        <circle cx="704" cy="262" r="1.5" fill="white" />
-        <circle cx="736" cy="262" r="1.5" fill="white" />
+        {/* Starbucks GREEN CIRCLE LOGO */}
+        <circle cx="790" cy="300" r="30" fill="#00704A" />
+        <circle cx="790" cy="300" r="26" fill="#1E3932" />
+        <circle cx="790" cy="300" r="23" fill="#00704A" />
+        <circle cx="790" cy="300" r="21" fill="none" stroke="white" strokeWidth="2" />
+        <circle cx="790" cy="300" r="15" fill="none" stroke="white" strokeWidth="1" />
+        <circle cx="790" cy="290" r="3.5" fill="white" />
+        <path d="M787 287 L788 284 L790 285.5 L792 284 L793 287" fill="white" />
+        <path d="M785 294 Q790 306 795 294" stroke="white" strokeWidth="1.5" fill="none" />
+        <path d="M783 296 Q780 303 777 305" stroke="white" strokeWidth="1.5" fill="none" />
+        <path d="M797 296 Q800 303 803 305" stroke="white" strokeWidth="1.5" fill="none" />
 
         {/* White/cream panel (lower right) */}
-        <rect x="620" y="368" width="280" height="122" fill="#F0EDE8" />
-        {/* Subtle panel shadow */}
-        <rect x="620" y="368" width="280" height="4" fill="#E0DCD4" />
+        <rect x="700" y="368" width="200" height="120" fill="#F0EDE8" />
+        <rect x="700" y="368" width="200" height="4" fill="#E0DCD4" />
 
         {/* Glass windows on white panel */}
-        <rect x="636" y="380" width="110" height="100" rx="1" fill="#1A1A1A" />
-        <rect x="640" y="384" width="48" height="92" rx="1" fill="#B8D4CC" opacity=".65" />
-        <rect x="694" y="384" width="48" height="92" rx="1" fill="#B8D4CC" opacity=".65" />
-        <line x1="688" y1="380" x2="688" y2="480" stroke="#1A1A1A" strokeWidth="3" />
-        {/* Reflection */}
-        <line x1="655" y1="388" x2="652" y2="472" stroke="white" strokeWidth="1.5" opacity=".12" />
-        <line x1="710" y1="388" x2="707" y2="472" stroke="white" strokeWidth="1.5" opacity=".12" />
+        <rect x="712" y="380" width="85" height="96" rx="1" fill="#1A1A1A" />
+        <rect x="716" y="384" width="36" height="88" rx="1" fill="#B8D4CC" opacity=".65" />
+        <rect x="757" y="384" width="36" height="88" rx="1" fill="#B8D4CC" opacity=".65" />
+        <line x1="752" y1="380" x2="752" y2="476" stroke="#1A1A1A" strokeWidth="3" />
 
-        {/* Another glass pane on far right */}
-        <rect x="770" y="380" width="90" height="100" rx="1" fill="#1A1A1A" />
-        <rect x="774" y="384" width="82" height="92" rx="1" fill="#B8D4CC" opacity=".6" />
-        <line x1="815" y1="380" x2="815" y2="480" stroke="#1A1A1A" strokeWidth="2" />
-        <line x1="790" y1="388" x2="787" y2="472" stroke="white" strokeWidth="1.5" opacity=".1" />
+        <rect x="810" y="380" width="75" height="96" rx="1" fill="#1A1A1A" />
+        <rect x="814" y="384" width="67" height="88" rx="1" fill="#B8D4CC" opacity=".6" />
+        <line x1="847" y1="380" x2="847" y2="476" stroke="#1A1A1A" strokeWidth="2" />
 
-        {/* ═══ BLACK HORIZONTAL BAND across full width (accent line) ═══ */}
-        <rect x="50" y="354" width="570" height="6" fill="#1A1A1A" />
-        <rect x="620" y="366" width="280" height="4" fill="#2A2A2A" />
+        {/* Black accent bands */}
+        <rect x="300" y="362" width="260" height="5" fill="#1A1A1A" />
+        <rect x="700" y="366" width="200" height="3" fill="#2A2A2A" />
 
-        {/* ── Base / foundation ── */}
-        <rect x="50" y="488" width="850" height="4" fill="#2A2A2A" />
+        {/* Base */}
+        <rect x="300" y="486" width="600" height="4" fill="#2A2A2A" />
       </g>
 
       {/* ══════════════════════════════════════════════════════════
-           LANDSCAPING — Low hedges along building base + trees in front
+           LANDSCAPING — hedges + trees (shifted to match building x=300-900)
          ══════════════════════════════════════════════════════════ */}
 
-      {/* ── Low green hedges running along the building base ── */}
-      {/* Continuous hedge strip left section */}
-      {Array.from({length: 12}).map((_,i) => (
-        <ellipse key={`hedge-l-${i}`} cx={80+i*20} cy="494" rx="14" ry="8" fill="#3D7A3D" opacity=".6" />
+      {/* Low hedges along building base */}
+      {Array.from({length: 8}).map((_,i) => (
+        <ellipse key={`hedge-l-${i}`} cx={320+i*18} cy="492" rx="12" ry="7" fill="#3D7A3D" opacity=".6" />
       ))}
-      {/* Hedge strip right section */}
-      {Array.from({length: 12}).map((_,i) => (
-        <ellipse key={`hedge-r-${i}`} cx={640+i*20} cy="494" rx="14" ry="8" fill="#3D7A3D" opacity=".6" />
+      {Array.from({length: 10}).map((_,i) => (
+        <ellipse key={`hedge-r-${i}`} cx={710+i*18} cy="492" rx="12" ry="7" fill="#3D7A3D" opacity=".6" />
       ))}
-      {/* Hedge around entrance */}
-      {[430,440,450,615,625,635].map((hx,i) => (
-        <ellipse key={`hedge-e-${i}`} cx={hx} cy="494" rx="10" ry="7" fill="#3D7A3D" opacity=".55" />
-      ))}
-      {/* Small accent flowers on hedges */}
-      {[100,160,220,660,720,780,840].map((fx,i) => (
-        <circle key={`hfl-${i}`} cx={fx} cy={491+Math.sin(i)*2} r="2" fill={i%2===0 ? "#F3A7C6" : "#E8E0D0"} opacity=".6" />
+      {[560,570,580,695,705].map((hx,i) => (
+        <ellipse key={`hedge-e-${i}`} cx={hx} cy="492" rx="9" ry="6" fill="#3D7A3D" opacity=".55" />
       ))}
 
-      {/* ── Trees in front of the building (reference shows trees at building base) ── */}
-      {/* Tree 1 — in front of left wood/glass section */}
-      <g transform="translate(170,440)">
-        <ellipse cx="0" cy="52" rx="12" ry="4" fill="#000" opacity=".05" />
-        <rect x="-3" y="20" width="6" height="34" rx="2" fill="#6B5040" />
-        {/* Branch */}
-        <line x1="0" y1="28" x2="-14" y2="16" stroke="#6B5040" strokeWidth="3" />
-        <line x1="0" y1="22" x2="12" y2="10" stroke="#6B5040" strokeWidth="2.5" />
-        {/* Foliage clusters */}
-        <ellipse cx="0" cy="-5" rx="22" ry="20" fill="#4A8A38" opacity=".75" />
-        <ellipse cx="-14" cy="5" rx="14" ry="12" fill="#5A9A48" opacity=".6" />
-        <ellipse cx="12" cy="0" rx="12" ry="10" fill="#3D7A30" opacity=".5" />
-        <ellipse cx="-4" cy="-14" rx="10" ry="8" fill="#6AAA58" opacity=".45" />
-      </g>
-
-      {/* Tree 2 — between left glass and entrance */}
-      <g transform="translate(380,445)">
-        <ellipse cx="0" cy="48" rx="10" ry="3" fill="#000" opacity=".04" />
-        <rect x="-3" y="18" width="5" height="32" rx="2" fill="#6B5040" />
-        <line x1="0" y1="26" x2="-10" y2="14" stroke="#6B5040" strokeWidth="2.5" />
-        <line x1="0" y1="20" x2="10" y2="8" stroke="#6B5040" strokeWidth="2" />
-        <ellipse cx="0" cy="-4" rx="20" ry="18" fill="#4A8A38" opacity=".7" />
-        <ellipse cx="-10" cy="4" rx="12" ry="10" fill="#5A9A48" opacity=".55" />
+      {/* Trees in front of building */}
+      <g transform="translate(390,445)">
+        <ellipse cx="0" cy="46" rx="10" ry="3" fill="#000" opacity=".04" />
+        <rect x="-3" y="16" width="6" height="32" rx="2" fill="#6B5040" />
+        <line x1="0" y1="24" x2="-12" y2="12" stroke="#6B5040" strokeWidth="2.5" />
+        <line x1="0" y1="18" x2="10" y2="8" stroke="#6B5040" strokeWidth="2" />
+        <ellipse cx="0" cy="-4" rx="20" ry="18" fill="#4A8A38" opacity=".75" />
+        <ellipse cx="-10" cy="4" rx="12" ry="10" fill="#5A9A48" opacity=".6" />
         <ellipse cx="10" cy="-2" rx="10" ry="9" fill="#3D7A30" opacity=".5" />
       </g>
 
-      {/* Tree 3 — right side of entrance */}
-      <g transform="translate(650,442)">
-        <ellipse cx="0" cy="50" rx="11" ry="4" fill="#000" opacity=".05" />
-        <rect x="-3" y="16" width="6" height="36" rx="2" fill="#6B5040" />
+      <g transform="translate(540,448)">
+        <ellipse cx="0" cy="44" rx="9" ry="3" fill="#000" opacity=".04" />
+        <rect x="-2" y="16" width="5" height="30" rx="2" fill="#6B5040" />
+        <line x1="0" y1="22" x2="-8" y2="12" stroke="#6B5040" strokeWidth="2" />
+        <ellipse cx="0" cy="-2" rx="16" ry="14" fill="#4A8A38" opacity=".7" />
+        <ellipse cx="-6" cy="4" rx="8" ry="7" fill="#5A9A48" opacity=".5" />
+      </g>
+
+      <g transform="translate(720,444)">
+        <ellipse cx="0" cy="48" rx="11" ry="3" fill="#000" opacity=".04" />
+        <rect x="-3" y="16" width="6" height="34" rx="2" fill="#6B5040" />
         <line x1="0" y1="24" x2="-12" y2="12" stroke="#6B5040" strokeWidth="2.5" />
-        <line x1="0" y1="18" x2="14" y2="6" stroke="#6B5040" strokeWidth="2.5" />
-        <ellipse cx="0" cy="-6" rx="24" ry="20" fill="#4A8A38" opacity=".75" />
-        <ellipse cx="-14" cy="2" rx="14" ry="11" fill="#5A9A48" opacity=".6" />
-        <ellipse cx="14" cy="-2" rx="12" ry="10" fill="#3D7A30" opacity=".5" />
-        <ellipse cx="2" cy="-16" rx="10" ry="8" fill="#6AAA58" opacity=".4" />
+        <line x1="0" y1="18" x2="12" y2="8" stroke="#6B5040" strokeWidth="2" />
+        <ellipse cx="0" cy="-4" rx="22" ry="18" fill="#4A8A38" opacity=".75" />
+        <ellipse cx="-12" cy="2" rx="12" ry="10" fill="#5A9A48" opacity=".6" />
+        <ellipse cx="12" cy="-2" rx="10" ry="9" fill="#3D7A30" opacity=".5" />
       </g>
 
-      {/* Tree 4 — far right */}
       <g transform="translate(870,448)">
-        <ellipse cx="0" cy="46" rx="10" ry="3" fill="#000" opacity=".04" />
-        <rect x="-2" y="18" width="5" height="30" rx="2" fill="#6B5040" />
-        <line x1="0" y1="24" x2="-10" y2="14" stroke="#6B5040" strokeWidth="2" />
-        <ellipse cx="0" cy="-2" rx="18" ry="16" fill="#4A8A38" opacity=".7" />
-        <ellipse cx="-8" cy="4" rx="10" ry="8" fill="#5A9A48" opacity=".55" />
-        <ellipse cx="8" cy="0" rx="9" ry="8" fill="#3D7A30" opacity=".5" />
+        <ellipse cx="0" cy="44" rx="9" ry="3" fill="#000" opacity=".04" />
+        <rect x="-2" y="18" width="5" height="28" rx="2" fill="#6B5040" />
+        <ellipse cx="0" cy="-2" rx="16" ry="14" fill="#4A8A38" opacity=".65" />
+        <ellipse cx="6" cy="2" rx="8" ry="7" fill="#5A9A48" opacity=".45" />
       </g>
 
-      {/* ── Outdoor terrace floor ── */}
-      <rect x="50" y="492" width="850" height="48" rx="2" fill="#C8C0B4" opacity=".15" />
+      {/* Terrace floor */}
+      <rect x="300" y="490" width="600" height="48" rx="2" fill="#C8C0B4" opacity=".12" />
 
-      {/* ── Outdoor tables with green umbrellas ── */}
-      {[[200,530],[400,528],[600,532],[800,530]].map(([tx,ty],i) => (
+      {/* Outdoor tables */}
+      {[[400,528],[550,526],[700,530],[850,528]].map(([tx,ty],i) => (
         <g key={`ct-${i}`}>
           <ellipse cx={tx} cy={ty+12} rx="12" ry="4" fill="#000" opacity=".04" />
           <ellipse cx={tx} cy={ty} rx="14" ry="6" fill="#E8DDD0" />
           <rect x={tx-2} y={ty} width="4" height="12" rx="1" fill="#C8B898" />
-          {/* Chairs */}
           <ellipse cx={tx-16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".5" />
           <ellipse cx={tx+16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".5" />
-          {/* Coffee cup */}
           <rect x={tx-4} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".75" />
-          {/* Umbrella */}
           <rect x={tx-1} y={ty-38} width="2" height="36" fill="#707070" />
           <ellipse cx={tx} cy={ty-38} rx="22" ry="8" fill="#00704A" opacity=".65" />
         </g>
       ))}
 
-      {/* ── Street lamps ── */}
-      {[[30,430],[950,425]].map(([lx,ly],i) => (
+      {/* Street lamps */}
+      {[[250,430],[950,425]].map(([lx,ly],i) => (
         <g key={`cl-${i}`} transform={`translate(${lx},${ly})`}>
           <rect x="2" y="5" width="4" height="50" rx="2" fill="#707070" />
           <rect x="0" y="52" width="8" height="4" rx="2" fill="#606060" />
@@ -568,8 +499,8 @@ export function NearLayer() {
         </g>
       ))}
 
-      {/* ── Benches ── */}
-      {[[40,520],[920,518]].map(([bx,by],i) => (
+      {/* Benches */}
+      {[[270,520],[920,518]].map(([bx,by],i) => (
         <g key={`cb-${i}`} transform={`translate(${bx},${by})`}>
           <rect x="0" y="5" width="42" height="3" rx="1" fill="#A0A0A0" />
           <rect x="2" y="-2" width="38" height="3" rx="1" fill="#B0B0B0" />
