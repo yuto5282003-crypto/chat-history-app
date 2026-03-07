@@ -23,6 +23,8 @@ type AvatarItem = {
 };
 
 const AVATAR_CATALOG: AvatarItem[] = [
+  // 女性アバター
+  { id: "f-haruka", name: "はるか", modelUrl: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF", gender: "female", color: "#ec4899" },
   { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6" },
   { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa" },
   { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female", color: "#60a5fa" },
@@ -30,6 +32,8 @@ const AVATAR_CATALOG: AvatarItem[] = [
   { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24" },
   { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c" },
   { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171" },
+  // 男性アバター
+  { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea" },
 ];
 
 const GENDER_TABS = [
@@ -42,6 +46,7 @@ const STORAGE_KEY = "sloty_selected_avatar";
 /* ── Lightweight avatar thumbnail for grid (no WebGL) ── */
 function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelected: boolean }) {
   const num = avatar.id.split("-")[1];
+  const isNamed = avatar.id === "f-haruka" || avatar.id === "m-jibun";
   return (
     <div
       className="flex items-center justify-center rounded-xl"
@@ -71,7 +76,7 @@ function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelecte
           </svg>
         </div>
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
-          No.{num}
+          {isNamed ? avatar.name : `No.${num}`}
         </span>
       </div>
     </div>

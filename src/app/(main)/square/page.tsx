@@ -30,8 +30,8 @@ const LEFT_MARGIN = 0; // no scroll past left edge — building fills viewport
 const AVATAR_DRAG_THRESHOLD = 8;
 const DEFAULT_MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
-const MIN_AVATAR_SIZE = 80;
-const MAX_AVATAR_SIZE = 110;
+const MIN_AVATAR_SIZE = 120;
+const MAX_AVATAR_SIZE = 160;
 
 const AREAS = [
   { name: "カフェ前", icon: "☕", xMin: 0, xMax: 25, xCenter: 12.5 },
@@ -645,7 +645,7 @@ export default function SquarePage() {
               {visitors.map((v, idx) => {
                 const zIndex = Math.round(v.posY);
                 const aSize = avatarSizeFromY(v.posY);
-                const avatar3DSize = Math.round(aSize * 0.95);
+                const avatar3DSize = aSize;
                 return (
                   <div
                     key={v.id}
@@ -723,7 +723,7 @@ export default function SquarePage() {
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
                   }}>3D</div>
 
-                  <Avatar3D modelUrl={myModel} size={Math.round(myAvatarSize * 0.95)} autoRotate={false}
+                  <Avatar3D modelUrl={myModel} size={myAvatarSize} autoRotate={false}
                     animationSpeed={myIsWalking ? 1.2 : 0.6} enableLongPressRotate
                     onRotatingChange={(r) => setRotatingAvatarId(r ? "self" : null)} />
 
