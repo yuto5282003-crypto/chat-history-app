@@ -6,6 +6,7 @@ type Props = {
   size: number;
   children: ReactNode;
   onError?: () => void;
+  fallbackImage?: string;
 };
 
 type State = {
@@ -38,7 +39,7 @@ export default class WebGLErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const { size } = this.props;
+      const { size, fallbackImage } = this.props;
       const canRetry = this.state.retryCount < MAX_RETRIES;
 
       return (
@@ -47,31 +48,50 @@ export default class WebGLErrorBoundary extends Component<Props, State> {
           style={{
             width: size,
             height: size,
-            background: "linear-gradient(135deg, rgba(155,138,251,0.15), rgba(155,138,251,0.05))",
+            background: fallbackImage
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(155,138,251,0.15), rgba(155,138,251,0.05))",
           }}
         >
-          <div
-            className="flex items-center justify-center rounded-full mb-1"
-            style={{
-              width: size * 0.4,
-              height: size * 0.4,
-              background: "linear-gradient(135deg, rgba(155,138,251,0.3), rgba(155,138,251,0.15))",
-            }}
-          >
-            <svg
-              width={size * 0.2}
-              height={size * 0.2}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="rgba(155,138,251,0.8)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {fallbackImage ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={fallbackImage}
+              alt=""
+              className="mb-1"
+              style={{
+                width: size * 0.7,
+                height: size * 0.7,
+                objectFit: "contain",
+                borderRadius: "50%",
+                filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
+              }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center rounded-full mb-1"
+              style={{
+                width: size * 0.5,
+                height: size * 0.5,
+                background: "linear-gradient(135deg, #f5c0d0, #c4b5fd)",
+                boxShadow: "0 2px 8px rgba(155,138,251,0.3)",
+              }}
             >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
+              <svg
+                width={size * 0.25}
+                height={size * 0.25}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+          )}
           {canRetry && (
             <button
               onClick={this.handleRetry}

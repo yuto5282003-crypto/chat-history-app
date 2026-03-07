@@ -12,9 +12,6 @@ if (typeof window !== "undefined") {
   registerModelCacheSW();
 }
 
-/* ─── Model existence cache: skip HEAD requests for known URLs ─── */
-const modelExistsCache = new Map<string, boolean>();
-
 /* ─────────────────────────────────────────────
  *  ChibiModel — loads a GLB and adds idle/walk animation
  *  Keeps original quality. No material degradation.
@@ -157,39 +154,6 @@ function ChibiModel({
   );
 }
 
-/* ─── FallbackModel (low-poly) ─── */
-function FallbackModel() {
-  const ref = useRef<THREE.Group>(null!);
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    if (ref.current) {
-      ref.current.rotation.y = Math.sin(t * 0.6) * 0.1;
-      ref.current.position.y = Math.sin(t * 1.5) * 0.05;
-    }
-    invalidate();
-  });
-  return (
-    <group ref={ref}>
-      <mesh position={[0, 0.55, 0]}>
-        <sphereGeometry args={[0.45, 16, 16]} />
-        <meshStandardMaterial color="#f5c0d0" />
-      </mesh>
-      <mesh position={[0, -0.25, 0]}>
-        <capsuleGeometry args={[0.3, 0.5, 8, 8]} />
-        <meshStandardMaterial color="#9b8afb" />
-      </mesh>
-      <mesh position={[-0.15, 0.6, 0.38]}>
-        <sphereGeometry args={[0.07, 8, 8]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
-      <mesh position={[0.15, 0.6, 0.38]}>
-        <sphereGeometry args={[0.07, 8, 8]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
-    </group>
-  );
-}
-
 /* ─── LoadingSpinner ─── */
 function LoadingSpinner() {
   const ref = useRef<THREE.Mesh>(null!);
@@ -226,12 +190,13 @@ function LoadingPlaceholder({ size }: { size: number }) {
  *  KEPT (actually helps):
  *  ✅ Service Worker model cache → 2回目以降は即表示
  *  ✅ IntersectionObserver → 画面外はCanvas作らない（軽量化の本命）
- *  ✅ Model existence cache → HEAD requestの重複排除
  *  ✅ Error Boundary → クラッシュ時に自動リトライ
  *  ✅ frameloop="demand" → 必要な時だけ描画
  *  ✅ mipmap無効化 → GPUメモリ節約（見た目への影響なし）
+ *  ✅ fallbackImage → 3D読込失敗時に2D画像表示（PC対応）
  *
  *  REMOVED (壊してた):
+ *  ❌ HEAD request存在チェック → PCで失敗してアバター消えてた原因
  *  ❌ コンテキストプール制限 → アバター消えてた原因
  *  ❌ DPR制限 → ぼやけてた原因
  *  ❌ フレームスロットリング → カクカクの原因
@@ -247,6 +212,7 @@ const Avatar3D = memo(function Avatar3D({
   animationSpeed = 1,
   enableLongPressRotate = false,
   onRotatingChange,
+  fallbackImage,
 }: {
   modelUrl?: string;
   size?: number;
@@ -255,16 +221,20 @@ const Avatar3D = memo(function Avatar3D({
   animationSpeed?: number;
   enableLongPressRotate?: boolean;
   onRotatingChange?: (rotating: boolean) => void;
+  fallbackImage?: string;
 }) {
   const [hasError, setHasError] = useState(false);
-  const [modelExists, setModelExists] = useState<boolean | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Reset error state when URL changes
+  useEffect(() => {
+    setHasError(false);
+  }, [modelUrl]);
+
   // ── IntersectionObserver: only create Canvas when in/near viewport ──
-  // This is THE most effective optimization. No Canvas = no WebGL context = no GPU load.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -279,32 +249,7 @@ const Avatar3D = memo(function Avatar3D({
     return () => observer.disconnect();
   }, []);
 
-  // ── Model existence check with cache ──
-  useEffect(() => {
-    if (!modelUrl) {
-      setModelExists(false);
-      return;
-    }
-
-    const cached = modelExistsCache.get(modelUrl);
-    if (cached !== undefined) {
-      setModelExists(cached);
-      return;
-    }
-
-    // Try HEAD first, assume exists on failure (let GLB loader handle it)
-    fetch(modelUrl, { method: "HEAD" })
-      .then((res) => {
-        modelExistsCache.set(modelUrl, res.ok);
-        setModelExists(res.ok);
-      })
-      .catch(() => {
-        modelExistsCache.set(modelUrl, true);
-        setModelExists(true);
-      });
-  }, [modelUrl]);
-
-  const showFallback = !modelUrl || hasError || modelExists === false;
+  const showFallback = !modelUrl || hasError;
 
   // ── WebGL context loss/restore handling ──
   const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
@@ -376,8 +321,56 @@ const Avatar3D = memo(function Avatar3D({
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
     >
-      <WebGLErrorBoundary size={size} onError={() => setHasError(true)}>
-        {isVisible ? (
+      {showFallback || !isVisible ? (
+        /* ── 2D HTML fallback: shown when model URL missing, error, or not in viewport ── */
+        <div
+          className="flex items-center justify-center"
+          style={{ width: size, height: size }}
+        >
+          {!isVisible && !showFallback ? (
+            <LoadingPlaceholder size={size} />
+          ) : fallbackImage ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={fallbackImage}
+              alt=""
+              style={{
+                width: size * 0.85,
+                height: size * 0.85,
+                objectFit: "contain",
+                borderRadius: "50%",
+                filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
+              }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center rounded-full"
+              style={{
+                width: size * 0.65,
+                height: size * 0.65,
+                background: "linear-gradient(135deg, #f5c0d0, #c4b5fd)",
+                boxShadow: "0 2px 8px rgba(155,138,251,0.3)",
+              }}
+            >
+              <svg
+                width={size * 0.3}
+                height={size * 0.3}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── 3D Canvas: only mounted when visible and model URL available ── */
+        <WebGLErrorBoundary size={size} fallbackImage={fallbackImage} onError={() => setHasError(true)}>
           <Canvas
             camera={{ position: [0, 0.5, 3], fov: 35 }}
             gl={{
@@ -396,16 +389,12 @@ const Avatar3D = memo(function Avatar3D({
             <directionalLight position={[3, 5, 4]} intensity={0.9} />
 
             <Suspense fallback={<LoadingSpinner />}>
-              {showFallback ? (
-                <FallbackModel />
-              ) : (
-                <ChibiModel
-                  url={modelUrl!}
-                  animationSpeed={animationSpeed}
-                  userRotating={isRotating}
-                  baseRotationY={Math.PI}
-                />
-              )}
+              <ChibiModel
+                url={modelUrl!}
+                animationSpeed={animationSpeed}
+                userRotating={isRotating}
+                baseRotationY={Math.PI}
+              />
             </Suspense>
 
             <ContactShadows
@@ -431,10 +420,8 @@ const Avatar3D = memo(function Avatar3D({
               />
             )}
           </Canvas>
-        ) : (
-          <LoadingPlaceholder size={size} />
-        )}
-      </WebGLErrorBoundary>
+        </WebGLErrorBoundary>
+      )}
 
       {isRotating && (
         <div

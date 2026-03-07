@@ -143,54 +143,61 @@ function useThumbnailCapture() {
         const batch = needed.slice(i, i + BATCH_SIZE);
         for (const avatar of batch) {
           if (disposed) break;
-          try {
-            const gltf = await loader.loadAsync(avatar.modelUrl);
-            if (disposed) break;
+          const MAX_RETRIES = 2;
+          for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+              const gltf = await loader.loadAsync(avatar.modelUrl);
+              if (disposed) break;
 
-            const model = gltf.scene;
-            model.rotation.set(0, Math.PI, 0);
+              const model = gltf.scene;
+              model.rotation.set(0, Math.PI, 0);
 
-            const box = new THREE.Box3();
-            model.traverse((child) => {
-              if ("isMesh" in child && child.isMesh && child.visible) {
-                box.union(new THREE.Box3().setFromObject(child));
-              }
-            });
-            if (box.isEmpty()) box.setFromObject(model);
-
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 2 / maxDim;
-            model.scale.setScalar(scale);
-
-            const sc = center.clone().multiplyScalar(scale);
-            model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
-
-            downscaleTextures(model);
-            scene.add(model);
-            renderer.render(scene, camera);
-            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.8);
-
-            allThumbs[avatar.id] = dataUrl;
-            if (!disposed) {
-              setThumbnails((prev) => ({ ...prev, [avatar.id]: dataUrl }));
-            }
-
-            scene.remove(model);
-            model.traverse((child) => {
-              if ("isMesh" in child && child.isMesh) {
-                const mesh = child as { geometry?: { dispose(): void }; material?: { dispose(): void } | { dispose(): void }[] };
-                mesh.geometry?.dispose();
-                if (Array.isArray(mesh.material)) {
-                  mesh.material.forEach((m) => m.dispose());
-                } else if (mesh.material) {
-                  mesh.material.dispose();
+              const box = new THREE.Box3();
+              model.traverse((child) => {
+                if ("isMesh" in child && child.isMesh && child.visible) {
+                  box.union(new THREE.Box3().setFromObject(child));
                 }
+              });
+              if (box.isEmpty()) box.setFromObject(model);
+
+              const size = box.getSize(new THREE.Vector3());
+              const center = box.getCenter(new THREE.Vector3());
+              const maxDim = Math.max(size.x, size.y, size.z);
+              const scale = 2 / maxDim;
+              model.scale.setScalar(scale);
+
+              const sc = center.clone().multiplyScalar(scale);
+              model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
+
+              downscaleTextures(model);
+              scene.add(model);
+              renderer.render(scene, camera);
+              const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.8);
+
+              allThumbs[avatar.id] = dataUrl;
+              if (!disposed) {
+                setThumbnails((prev) => ({ ...prev, [avatar.id]: dataUrl }));
               }
-            });
-          } catch {
-            // Skip failed models
+
+              scene.remove(model);
+              model.traverse((child) => {
+                if ("isMesh" in child && child.isMesh) {
+                  const mesh = child as { geometry?: { dispose(): void }; material?: { dispose(): void } | { dispose(): void }[] };
+                  mesh.geometry?.dispose();
+                  if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach((m) => m.dispose());
+                  } else if (mesh.material) {
+                    mesh.material.dispose();
+                  }
+                }
+              });
+              break; // Success - exit retry loop
+            } catch {
+              if (attempt < MAX_RETRIES && !disposed) {
+                await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+              }
+              // Skip after all retries exhausted
+            }
           }
         }
 
@@ -264,13 +271,13 @@ function AvatarThumbnail({
             style={{
               width: 56,
               height: 56,
-              background: `linear-gradient(135deg, ${avatar.color}30, ${avatar.color}15)`,
+              background: `linear-gradient(135deg, ${avatar.color}60, ${avatar.color}30)`,
               boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-              border: `2px solid ${avatar.color}40`,
+              border: `2px solid ${avatar.color}50`,
               transition: "box-shadow 0.3s",
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={avatar.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.6}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
@@ -367,6 +374,7 @@ export default function AvatarSelectPage() {
                   size={160}
                   autoRotate
                   animationSpeed={0.8}
+                  fallbackImage={thumbnails[selectedAvatar.id]}
                 />
               </div>
             )}

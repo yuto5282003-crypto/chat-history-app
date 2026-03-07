@@ -677,7 +677,8 @@ export default function SquarePage() {
                           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
                         }}>3D</div>
                         <Avatar3D modelUrl={v.model3d} size={avatar3DSize} autoRotate={false} animationSpeed={0.8}
-                          enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)} />
+                          enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)}
+                          fallbackImage={v.avatarImage} />
                         {rotatingAvatarId !== v.id && (
                           <div className="absolute inset-0 z-[5] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleVisitorTap(v); }} />
                         )}
