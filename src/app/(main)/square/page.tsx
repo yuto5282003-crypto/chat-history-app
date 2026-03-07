@@ -43,6 +43,7 @@ type VisitorAnim = SquareVisitor & {
 export default function SquarePage() {
   const [visitors, setVisitors] = useState<VisitorAnim[]>([]);
   const [selected, setSelected] = useState<SquareVisitor | null>(null);
+  const [rotatingAvatarId, setRotatingAvatarId] = useState<string | null>(null);
   const driftRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const bubbleRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
@@ -180,7 +181,7 @@ export default function SquarePage() {
           return (
             <button
               key={v.id}
-              onClick={() => handleTap(v)}
+              onClick={() => { if (!rotatingAvatarId) handleTap(v); }}
               className="absolute transition-all duration-[4500ms] ease-in-out group"
               style={{
                 left: `${v.x + v.dx * 0.3}%`,
@@ -224,6 +225,10 @@ export default function SquarePage() {
                       size={avatar3DSize}
                       autoRotate={false}
                       animationSpeed={0.8}
+                      enableLongPressRotate
+                      onRotatingChange={(rotating) => {
+                        setRotatingAvatarId(rotating ? v.id : null);
+                      }}
                     />
                     {/* Ground glow for 3D avatar */}
                     <div
