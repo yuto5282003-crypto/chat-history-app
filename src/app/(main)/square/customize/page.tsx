@@ -105,10 +105,11 @@ function useThumbnailCapture() {
 
       // Helper: downscale textures for thumbnail rendering (saves GPU memory & speeds up)
       const MAX_THUMB_TEX = 256;
-      function downscaleTextures(obj: THREE.Object3D) {
-        obj.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material) {
-            const mat = child.material as THREE.MeshStandardMaterial;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function downscaleTextures(obj: any) {
+        obj.traverse((child: any) => {
+          if (child.isMesh && child.material) {
+            const mat = child.material;
             const maps = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap, mat.emissiveMap];
             for (const tex of maps) {
               if (tex && tex.image && (tex.image.width > MAX_THUMB_TEX || tex.image.height > MAX_THUMB_TEX)) {

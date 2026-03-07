@@ -86,9 +86,10 @@ function ChibiModel({
           if (tex) {
             tex.generateMipmaps = false;
             tex.minFilter = THREE.LinearFilter;
-            if (tex.image && (tex.image.width > MAX_TEX || tex.image.height > MAX_TEX)) {
-              tex.image.width = MAX_TEX;
-              tex.image.height = MAX_TEX;
+            const img = tex.image as { width?: number; height?: number } | null;
+            if (img && ((img.width ?? 0) > MAX_TEX || (img.height ?? 0) > MAX_TEX)) {
+              img.width = MAX_TEX;
+              img.height = MAX_TEX;
               tex.needsUpdate = true;
             }
           }
