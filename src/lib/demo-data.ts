@@ -522,7 +522,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     model3d: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF",
     bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
-    ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
+    ratingAvg: 4.8, ratingCount: 31, x: 20, y: 55, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
   },
   // NOTE: あおい(sv-5), りょう(sv-6), そうた(sv-8) — 3Dモデル未対応のため一時非表示。今後段階的に追加。
 ];
