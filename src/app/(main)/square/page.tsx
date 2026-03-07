@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import ParkBackground from "@/components/square/ParkBackground";
 import AvatarFigure from "@/components/square/AvatarFigure";
 import Bubble from "@/components/square/Bubble";
 import VisitorSheet from "@/components/square/VisitorSheet";
 import { DEMO_SQUARE_VISITORS } from "@/lib/demo-data";
 import type { SquareVisitor } from "@/lib/demo-data";
+
+// Dynamic import for Three.js (SSR disabled — WebGL is client-only)
+const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center" style={{ width: 100, height: 100 }}>
+      <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
+    </div>
+  ),
+});
 
 /**
  * SquarePage — SLOTY's isometric miniature garden avatar plaza.
@@ -162,6 +173,9 @@ export default function SquarePage() {
           const zIndex = Math.round(v.y + v.dy);
           const avatarSize = 62 + Math.round((v.y / 100) * 16);
           const hasImage = !!v.avatarImage;
+          const has3D = !!v.model3d;
+          // 3D avatars are larger to showcase the model
+          const avatar3DSize = avatarSize * 1.6;
 
           return (
             <button
@@ -171,14 +185,14 @@ export default function SquarePage() {
               style={{
                 left: `${v.x + v.dx * 0.3}%`,
                 top: `${v.y + v.dy * 0.3}%`,
-                transform: `translate(-50%, -100%) scaleX(${v.facing === "left" ? -1 : 1})`,
-                zIndex,
+                transform: `translate(-50%, -100%)${!has3D && v.facing === "left" ? " scaleX(-1)" : ""}`,
+                zIndex: has3D ? zIndex + 10 : zIndex,
               }}
             >
               {/* Avatar wrapper — relative so Bubble uses bottom:100% */}
               <div className="relative">
                 {/* Bubble — unflipped so text reads correctly */}
-                <div style={{ transform: `scaleX(${v.facing === "left" ? -1 : 1})` }}>
+                <div style={{ transform: `scaleX(${!has3D && v.facing === "left" ? -1 : 1})` }}>
                   <Bubble text={v.bubble} visible={v.showBubble} />
                 </div>
 
@@ -192,7 +206,39 @@ export default function SquarePage() {
                   }}
                 />
 
-                {hasImage ? (
+                {has3D ? (
+                  /* ── 3D GLB model avatar ── */
+                  <div className="flex flex-col items-center">
+                    {/* 3D badge */}
+                    <div
+                      className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
+                      }}
+                    >
+                      3D
+                    </div>
+                    <Avatar3D
+                      modelUrl={v.model3d}
+                      size={avatar3DSize}
+                      autoRotate={false}
+                      animationSpeed={0.8}
+                    />
+                    {/* Ground glow for 3D avatar */}
+                    <div
+                      className="animate-avatar-shadow"
+                      style={{
+                        width: avatar3DSize * 0.5,
+                        height: avatar3DSize * 0.1,
+                        borderRadius: "50%",
+                        background: "radial-gradient(ellipse, rgba(102,126,234,0.25) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
+                        marginTop: -4,
+                        animationDelay: `${idx * 0.6}s`,
+                      }}
+                    />
+                  </div>
+                ) : hasImage ? (
                   /* ── Image-based avatar (CHARAT) ── */
                   <div className="flex flex-col items-center">
                     <img
@@ -233,7 +279,7 @@ export default function SquarePage() {
                 style={{
                   color: "#3A3A4A",
                   textShadow: "0 0 6px rgba(255,255,255,0.95), 0 0 12px rgba(255,255,255,0.5)",
-                  transform: `scaleX(${v.facing === "left" ? -1 : 1})`,
+                  transform: `scaleX(${!has3D && v.facing === "left" ? -1 : 1})`,
                   letterSpacing: "0.02em",
                 }}
               >
