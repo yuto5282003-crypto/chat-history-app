@@ -1,68 +1,34 @@
 "use client";
 
 import { Suspense, useRef, useState, useEffect, useCallback, memo } from "react";
-import { Canvas, useFrame, invalidate, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, invalidate } from "@react-three/fiber";
 import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
-import {
-  acquireContextSlot,
-  releaseContextSlot,
-  getRenderParams,
-  detectPerfTier,
-  onMemoryPressure,
-  registerModelCacheSW,
-} from "@/lib/perf";
+import { registerModelCacheSW } from "@/lib/perf";
 import WebGLErrorBoundary from "./WebGLErrorBoundary";
 
-/* ─── Register Service Worker on first import ─── */
+/* ─── Register Service Worker for model caching (the GOOD optimization) ─── */
 if (typeof window !== "undefined") {
   registerModelCacheSW();
 }
 
-/* ─── Model existence cache ─── */
+/* ─── Model existence cache: skip HEAD requests for known URLs ─── */
 const modelExistsCache = new Map<string, boolean>();
 
-/* ─── Snapshot cache: 2D rendered snapshots of 3D models ─── */
-const snapshotCache = new Map<string, string>();
-
 /* ─────────────────────────────────────────────
- *  FrameThrottler — game-engine style frame budget
- *  Only calls invalidate() at target FPS, not every rAF
- * ───────────────────────────────────────────── */
-function useFrameThrottle(targetFps: number = 30) {
-  const lastFrame = useRef(0);
-  const interval = 1000 / targetFps;
-
-  return useCallback(
-    (now: number) => {
-      if (now - lastFrame.current >= interval) {
-        lastFrame.current = now;
-        return true;
-      }
-      return false;
-    },
-    [interval]
-  );
-}
-
-/* ─────────────────────────────────────────────
- *  ChibiModel — loads GLB with game-engine optimizations
- *  - Texture downscaling based on device tier
- *  - Geometry simplification for small displays
- *  - Frame-budget-aware animation
+ *  ChibiModel — loads a GLB and adds idle/walk animation
+ *  Keeps original quality. No material degradation.
  * ───────────────────────────────────────────── */
 function ChibiModel({
   url,
   animationSpeed = 1,
   userRotating = false,
   baseRotationY = 0,
-  displaySize = 120,
 }: {
   url: string;
   animationSpeed?: number;
   userRotating?: boolean;
   baseRotationY?: number;
-  displaySize?: number;
 }) {
   const { scene, animations } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null!);
@@ -75,7 +41,6 @@ function ChibiModel({
     spine?: THREE.Bone;
     head?: THREE.Bone;
   }>({});
-  const shouldThrottle = useFrameThrottle(displaySize < 80 ? 20 : 30);
 
   useEffect(() => {
     if (animations.length > 0) {
@@ -92,10 +57,12 @@ function ChibiModel({
   useEffect(() => {
     scene.rotation.set(0, baseRotationY, 0);
 
+    // Compute bounding box from visible meshes only for accurate sizing
     const box = new THREE.Box3();
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.visible) {
-        box.union(new THREE.Box3().setFromObject(child));
+        const meshBox = new THREE.Box3().setFromObject(child);
+        box.union(meshBox);
       }
     });
     if (box.isEmpty()) box.setFromObject(scene);
@@ -109,28 +76,13 @@ function ChibiModel({
     const sc = center.multiplyScalar(scale);
     scene.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
 
-    // ── Game-engine texture optimization ──
-    // Downscale textures based on display size (LOD for textures)
-    const maxTexSize = displaySize < 80 ? 256 : displaySize < 150 ? 512 : 1024;
+    // Light texture optimization: disable mipmaps only (saves GPU memory, no visual impact)
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const mat = child.material as THREE.MeshStandardMaterial;
         if (mat.map) {
-          mat.map.minFilter = THREE.LinearFilter;
           mat.map.generateMipmaps = false;
-          // Limit texture size to save GPU memory
-          const img = mat.map.image as { width?: number; height?: number } | undefined;
-          if (img && typeof img.width === "number" && img.width > maxTexSize) {
-            img.width = maxTexSize;
-            img.height = maxTexSize;
-            mat.map.needsUpdate = true;
-          }
-        }
-        // Disable expensive material features for small displays
-        if (displaySize < 100) {
-          mat.envMapIntensity = 0;
-          mat.roughness = 1;
-          mat.metalness = 0;
+          mat.map.minFilter = THREE.LinearFilter;
         }
       }
     });
@@ -154,13 +106,9 @@ function ChibiModel({
       }
     });
     bonesRef.current = bones;
-  }, [scene, baseRotationY, displaySize]);
+  }, [scene, baseRotationY]);
 
   useFrame((state, delta) => {
-    // Frame budget: skip frame if we're over budget
-    const now = performance.now();
-    if (!shouldThrottle(now)) return;
-
     mixerRef.current?.update(delta * animationSpeed);
 
     const t = state.clock.getElapsedTime() * animationSpeed;
@@ -197,24 +145,6 @@ function ChibiModel({
       <primitive object={scene} />
     </group>
   );
-}
-
-/* ─── SnapshotCapture: captures a single frame as 2D image ─── */
-function SnapshotCapture({ onCapture }: { onCapture: (dataUrl: string) => void }) {
-  const { gl, scene, camera } = useThree();
-  const captured = useRef(false);
-
-  useFrame(() => {
-    if (captured.current) return;
-    captured.current = true;
-    gl.render(scene, camera);
-    try {
-      const dataUrl = gl.domElement.toDataURL("image/jpeg", 0.6);
-      onCapture(dataUrl);
-    } catch { /* ignore */ }
-  });
-
-  return null;
 }
 
 /* ─── FallbackModel (low-poly) ─── */
@@ -265,56 +195,39 @@ function LoadingSpinner() {
   );
 }
 
-/* ─── Static placeholder (no WebGL) ─── */
-function StaticPlaceholder({ size, snapshot }: { size: number; snapshot?: string }) {
-  if (snapshot) {
-    return (
-      /* eslint-disable-next-line @next/next/no-img-element */
-      <img
-        src={snapshot}
-        alt=""
-        style={{
-          width: size,
-          height: size,
-          objectFit: "contain",
-          borderRadius: 8,
-        }}
-      />
-    );
-  }
+/* ─── Loading placeholder (lightweight, no WebGL) ─── */
+function LoadingPlaceholder({ size }: { size: number }) {
   return (
     <div
-      className="flex items-center justify-center rounded-xl"
-      style={{
-        width: size,
-        height: size,
-        background: "linear-gradient(135deg, rgba(155,138,251,0.15), rgba(155,138,251,0.05))",
-      }}
+      className="flex items-center justify-center"
+      style={{ width: size, height: size }}
     >
       <div
-        className="animate-pulse rounded-full"
-        style={{
-          width: size * 0.5,
-          height: size * 0.5,
-          background: "linear-gradient(135deg, rgba(155,138,251,0.3), rgba(155,138,251,0.15))",
-        }}
+        className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent"
+        style={{ borderColor: "rgba(155,138,251,0.6)" }}
       />
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────
- *  Avatar3D — game-engine grade component
+ *  Avatar3D — reliable + fast
  *
- *  Techniques borrowed from FPS games:
- *  1. Context pooling (like GPU resource pools)
- *  2. Frame budget throttling (skip frames when over budget)
- *  3. LOD: 2D snapshot when offscreen, 3D when visible
- *  4. Texture LOD based on display size
- *  5. Memory pressure response (auto-downgrade)
- *  6. IntersectionObserver (frustum culling equivalent)
- *  7. Service Worker model cache (like asset streaming)
- *  8. Error boundary with auto-retry (crash recovery)
+ *  KEPT (actually helps):
+ *  ✅ Service Worker model cache → 2回目以降は即表示
+ *  ✅ IntersectionObserver → 画面外はCanvas作らない（軽量化の本命）
+ *  ✅ Model existence cache → HEAD requestの重複排除
+ *  ✅ Error Boundary → クラッシュ時に自動リトライ
+ *  ✅ frameloop="demand" → 必要な時だけ描画
+ *  ✅ mipmap無効化 → GPUメモリ節約（見た目への影響なし）
+ *
+ *  REMOVED (壊してた):
+ *  ❌ コンテキストプール制限 → アバター消えてた原因
+ *  ❌ DPR制限 → ぼやけてた原因
+ *  ❌ フレームスロットリング → カクカクの原因
+ *  ❌ マテリアル劣化 → 見た目おかしくなってた原因
+ *  ❌ テクスチャサイズ強制縮小 → ぼやけの原因
+ *  ❌ メモリ圧迫検知 → 不安定で誤検知する
  * ───────────────────────────────────────────── */
 const Avatar3D = memo(function Avatar3D({
   modelUrl,
@@ -337,23 +250,11 @@ const Avatar3D = memo(function Avatar3D({
   const [modelExists, setModelExists] = useState<boolean | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [canvasReady, setCanvasReady] = useState(false);
-  const [underPressure, setUnderPressure] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const contextAcquired = useRef(false);
 
-  // Get render params based on device tier
-  const renderParams = getRenderParams();
-
-  // ── Memory pressure listener ──
-  useEffect(() => {
-    return onMemoryPressure((pressure) => {
-      setUnderPressure(pressure);
-    });
-  }, []);
-
-  // ── IntersectionObserver: frustum culling ──
+  // ── IntersectionObserver: only create Canvas when in/near viewport ──
+  // This is THE most effective optimization. No Canvas = no WebGL context = no GPU load.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -362,36 +263,11 @@ const Avatar3D = memo(function Avatar3D({
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
-      { rootMargin: "150px", threshold: 0 }
+      { rootMargin: "200px", threshold: 0 }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  // ── Context pool management ──
-  useEffect(() => {
-    if (isVisible && !contextAcquired.current) {
-      const got = acquireContextSlot();
-      if (got) {
-        contextAcquired.current = true;
-        setCanvasReady(true);
-      }
-    }
-
-    if (!isVisible && contextAcquired.current) {
-      // Capture snapshot before releasing context
-      releaseContextSlot();
-      contextAcquired.current = false;
-      setCanvasReady(false);
-    }
-
-    return () => {
-      if (contextAcquired.current) {
-        releaseContextSlot();
-        contextAcquired.current = false;
-      }
-    };
-  }, [isVisible]);
 
   // ── Model existence check with cache ──
   useEffect(() => {
@@ -406,6 +282,7 @@ const Avatar3D = memo(function Avatar3D({
       return;
     }
 
+    // Try HEAD first, assume exists on failure (let GLB loader handle it)
     fetch(modelUrl, { method: "HEAD" })
       .then((res) => {
         modelExistsCache.set(modelUrl, res.ok);
@@ -419,15 +296,7 @@ const Avatar3D = memo(function Avatar3D({
 
   const showFallback = !modelUrl || hasError || modelExists === false;
 
-  // ── Snapshot capture callback ──
-  const handleSnapshot = useCallback(
-    (dataUrl: string) => {
-      if (modelUrl) snapshotCache.set(modelUrl, dataUrl);
-    },
-    [modelUrl]
-  );
-
-  // ── WebGL context loss recovery ──
+  // ── WebGL context loss/restore handling ──
   const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
     const gl = state.gl;
     const canvas = gl.domElement;
@@ -476,16 +345,8 @@ const Avatar3D = memo(function Avatar3D({
     };
   }, [isRotating, onRotatingChange]);
 
-  // DPR capped by device tier
-  const dpr = typeof window !== "undefined"
-    ? Math.min(window.devicePixelRatio, underPressure ? 0.5 : renderParams.dprCap)
-    : 1;
-
-  // Shadow resolution based on tier
-  const shadowRes = underPressure ? 32 : renderParams.shadowResolution;
-
-  // Get cached snapshot for offscreen display
-  const cachedSnapshot = modelUrl ? snapshotCache.get(modelUrl) : undefined;
+  // DPR: use device native (sharp & clear) but cap at 2 to avoid overkill on 3x screens
+  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1;
 
   return (
     <div
@@ -506,16 +367,14 @@ const Avatar3D = memo(function Avatar3D({
       onPointerLeave={handlePointerLeave}
     >
       <WebGLErrorBoundary size={size} onError={() => setHasError(true)}>
-        {canvasReady ? (
+        {isVisible ? (
           <Canvas
             camera={{ position: [0, 0.5, 3], fov: 35 }}
             gl={{
               alpha: true,
-              antialias: renderParams.antialias,
-              powerPreference: "low-power",
-              precision: renderParams.precision,
+              antialias: false,
+              powerPreference: "default",
               failIfMajorPerformanceCaveat: false,
-              preserveDrawingBuffer: true,
             }}
             dpr={dpr}
             style={{ background: "transparent" }}
@@ -530,32 +389,24 @@ const Avatar3D = memo(function Avatar3D({
               {showFallback ? (
                 <FallbackModel />
               ) : (
-                <>
-                  <ChibiModel
-                    url={modelUrl!}
-                    animationSpeed={underPressure ? animationSpeed * 0.5 : animationSpeed}
-                    userRotating={isRotating}
-                    baseRotationY={Math.PI}
-                    displaySize={size}
-                  />
-                  {!snapshotCache.has(modelUrl!) && (
-                    <SnapshotCapture onCapture={handleSnapshot} />
-                  )}
-                </>
+                <ChibiModel
+                  url={modelUrl!}
+                  animationSpeed={animationSpeed}
+                  userRotating={isRotating}
+                  baseRotationY={Math.PI}
+                />
               )}
             </Suspense>
 
-            {!underPressure && (
-              <ContactShadows
-                position={[0, -1, 0]}
-                opacity={0.2}
-                scale={2}
-                blur={1}
-                far={2}
-                frames={1}
-                resolution={shadowRes}
-              />
-            )}
+            <ContactShadows
+              position={[0, -1, 0]}
+              opacity={0.2}
+              scale={2}
+              blur={1}
+              far={2}
+              frames={1}
+              resolution={64}
+            />
 
             {(isRotating || autoRotate) && (
               <OrbitControls
@@ -571,7 +422,7 @@ const Avatar3D = memo(function Avatar3D({
             )}
           </Canvas>
         ) : (
-          <StaticPlaceholder size={size} snapshot={cachedSnapshot} />
+          <LoadingPlaceholder size={size} />
         )}
       </WebGLErrorBoundary>
 
