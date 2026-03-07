@@ -1,8 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import AvatarFigure from "./AvatarFigure";
 import type { SquareVisitor } from "@/lib/demo-data";
+
+const Avatar3D = dynamic(() => import("./Avatar3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center" style={{ width: 72, height: 72 }}>
+      <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
+    </div>
+  ),
+});
 
 /**
  * VisitorSheet — Enhanced bottom sheet for plaza avatar tap.
@@ -49,13 +59,20 @@ export default function VisitorSheet({
         <div className="px-5">
           {/* ── Avatar + identity row ── */}
           <div className="flex items-start gap-4">
-            {/* Avatar — larger, centered */}
+            {/* Avatar — single display: 3D > avatarImage > AvatarFigure */}
             <div className="shrink-0 -mt-1">
               <div
                 className="rounded-2xl p-2"
                 style={{ background: "var(--gradient-soft)" }}
               >
-                {visitor.avatarImage ? (
+                {visitor.model3d ? (
+                  <Avatar3D
+                    modelUrl={visitor.model3d}
+                    size={72}
+                    autoRotate
+                    animationSpeed={0.6}
+                  />
+                ) : visitor.avatarImage ? (
                   <img
                     src={visitor.avatarImage}
                     alt={visitor.displayName}

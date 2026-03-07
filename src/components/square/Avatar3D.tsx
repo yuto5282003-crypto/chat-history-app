@@ -199,9 +199,10 @@ const Avatar3D = memo(function Avatar3D({
       setModelExists(false);
       return;
     }
+    // Try HEAD first, fall back to assuming exists (static files may not support HEAD)
     fetch(modelUrl, { method: "HEAD" })
       .then((res) => setModelExists(res.ok))
-      .catch(() => setModelExists(false));
+      .catch(() => setModelExists(true)); // Assume exists — let GLB loader handle errors
   }, [modelUrl]);
 
   const showFallback = !modelUrl || hasError || modelExists === false;
@@ -209,11 +210,11 @@ const Avatar3D = memo(function Avatar3D({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!enableLongPressRotate) return;
-      e.stopPropagation();
+      // Don't stopPropagation here — let click events bubble for tap detection
       longPressTimer.current = setTimeout(() => {
         setIsRotating(true);
         onRotatingChange?.(true);
-      }, 400); // slightly faster for mobile
+      }, 400);
     },
     [enableLongPressRotate, onRotatingChange]
   );

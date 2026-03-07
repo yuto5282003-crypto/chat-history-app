@@ -520,33 +520,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
     ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
   },
-  {
-    // Near fountain — upper right
-    id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
-    avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
-    avatarImage: "/avatars/avatar-takuya.png",
-    bubble: "作業通話できる人いる？", mode: "either", tags: ["作業", "勉強"], verified: true,
-    availability: "30分だけ", area: "仙台駅周辺", bio: "プログラミングと筋トレ",
-    ratingAvg: 4.3, ratingCount: 15, x: 58, y: 43, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
-  },
-  {
-    // Right bench area
-    id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
-    avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
-    avatarImage: "/avatars/avatar-misaki.png",
-    bubble: "今から散歩", mode: "in_person", tags: ["散歩", "雑談"], verified: false,
-    availability: "今からOK", area: "市内", bio: "旅行好き 街探索中",
-    ratingAvg: 4.0, ratingCount: 5, x: 78, y: 56, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
-  },
-  {
-    // Lower bench area
-    id: "sv-4", userId: "user-d", displayName: "ことね", gender: "女性",
-    avatarStyle: DEFAULT_AVATAR_STYLES["user-d"],
-    avatarImage: "/avatars/avatar-kotone.png",
-    bubble: "相談のります", mode: "call", tags: ["相談"], verified: true,
-    availability: "19:00以降対応", area: "", bio: "何でも相談のります。エンジニア5年目",
-    ratingAvg: 4.9, ratingCount: 42, x: 52, y: 70, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
-  },
+  // NOTE: たくや(sv-2), みさき(sv-3), ことね(sv-4) — removed (旧2Dアニメ調キャラ。今後3Dモデル差し替え予定)
   {
     // Near fountain — left side
     id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
@@ -563,14 +537,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
     ratingAvg: 4.4, ratingCount: 18, x: 35, y: 37, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
   },
-  {
-    // Near right tree — observing from a distance
-    id: "sv-7", userId: "user-g", displayName: "ことね", gender: "女性",
-    avatarStyle: _base({ base: "female", faceShape: 0, eyeType: 9, browType: 6, mouthType: 1, hairStyle: 14, hairColor: "#8B4513", skinTone: "#FFE0BD", topType: 7, topColor: "#FF6B6B", bottomType: 4, bottomColor: "#4A4A6A", accessory: 10 }),
-    bubble: "カフェ行ける人", mode: "in_person", tags: ["カフェ"], verified: false,
-    availability: "今からOK", area: "新宿", bio: "カフェ巡りが趣味です☕",
-    ratingAvg: 4.2, ratingCount: 8, x: 85, y: 42, lastActive: new Date(Date.now() - 4 * 60_000).toISOString(),
-  },
+  // NOTE: ことね(sv-7) — removed (旧2Dアニメ調キャラ。今後3Dモデル差し替え予定)
   {
     // Near left tree — slightly apart
     id: "sv-8", userId: "user-h", displayName: "そうた", gender: "男性",

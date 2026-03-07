@@ -24,6 +24,7 @@ const WALK_SPEED = 10; // % per second
 const APPROACH_STOP_DIST = 7; // stop this far from target (%)
 const NPC_INTERVAL = 4000; // ms between NPC wander decisions
 const NPC_RANGE = 3.5; // max % per NPC step
+// TODO: Replace with chibi+character+3d+model.glb (男の子モデル) when available on Google Drive
 const MY_MODEL = "/models/chibi+girl+3d+model.glb";
 
 /* ─── Types ─── */
@@ -62,11 +63,10 @@ export default function SquarePage() {
   const bubbleRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const npcRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  /* ── Initialize visitors ── */
+  /* ── Initialize visitors — show all (3D model, avatarImage, or AvatarFigure fallback) ── */
   useEffect(() => {
-    const imageVisitors = DEMO_SQUARE_VISITORS.filter((v) => v.avatarImage);
     setVisitors(
-      imageVisitors.map((v, i) => ({
+      DEMO_SQUARE_VISITORS.map((v, i) => ({
         ...v,
         posX: v.x,
         posY: v.y,
@@ -417,7 +417,7 @@ export default function SquarePage() {
                 />
 
                 {has3D ? (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center relative">
                     <div
                       className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
                       style={{
@@ -437,6 +437,16 @@ export default function SquarePage() {
                         setRotatingAvatarId(rotating ? v.id : null)
                       }
                     />
+                    {/* Transparent tap capture — ensures click reaches handleVisitorTap even over Canvas */}
+                    {rotatingAvatarId !== v.id && (
+                      <div
+                        className="absolute inset-0 z-[5] cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVisitorTap(v);
+                        }}
+                      />
+                    )}
                     <div
                       className="animate-avatar-shadow"
                       style={{

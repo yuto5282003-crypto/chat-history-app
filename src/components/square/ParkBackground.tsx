@@ -104,6 +104,27 @@ export default function ParkBackground() {
         <filter id="pk-shadow-sm">
           <feDropShadow dx="1" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.08" />
         </filter>
+        {/* 2.5D depth — stronger shadow for grounded feel */}
+        <filter id="pk-shadow-depth">
+          <feDropShadow dx="3" dy="6" stdDeviation="5" floodColor="#2A4020" floodOpacity="0.15" />
+        </filter>
+        {/* Atmospheric depth overlay — far objects slightly hazier */}
+        <linearGradient id="pk-atmo" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(200,220,240,0.12)" />
+          <stop offset="40%" stopColor="rgba(200,220,240,0)" />
+          <stop offset="100%" stopColor="rgba(80,100,60,0.08)" />
+        </linearGradient>
+        {/* Ground ambient occlusion gradient */}
+        <radialGradient id="pk-ground-ao" cx="50%" cy="45%" r="55%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+          <stop offset="70%" stopColor="rgba(0,0,0,0.03)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+        </radialGradient>
+        {/* Object thickness/depth highlight */}
+        <linearGradient id="pk-thickness" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.2)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.1)" />
+        </linearGradient>
       </defs>
 
       {/* ═══════ SKY ═══════ */}
@@ -140,30 +161,45 @@ export default function ParkBackground() {
       <ellipse cx="650" cy="168" rx="42" ry="19" fill="#88B870" opacity="0.32" />
       <ellipse cx="850" cy="170" rx="35" ry="16" fill="#80B068" opacity="0.28" />
 
-      {/* ═══════ GROUND ═══════ */}
+      {/* ═══════ GROUND — 2.5D depth ═══════ */}
       <rect y="175" width="1000" height="725" fill="url(#pk-grass)" />
 
-      {/* Ground depth layers — isometric feel */}
-      <ellipse cx="500" cy="350" rx="450" ry="140" fill="url(#pk-grass-light)" opacity="0.4" />
-      <ellipse cx="500" cy="500" rx="480" ry="120" fill="url(#pk-grass-dark)" opacity="0.3" />
+      {/* Ground depth layers — stronger isometric feel with perspective fade */}
+      <ellipse cx="500" cy="300" rx="500" ry="100" fill="url(#pk-grass-light)" opacity="0.35" />
+      <ellipse cx="500" cy="400" rx="480" ry="150" fill="url(#pk-grass-light)" opacity="0.25" />
+      <ellipse cx="500" cy="550" rx="500" ry="130" fill="url(#pk-grass-dark)" opacity="0.35" />
+      <ellipse cx="500" cy="700" rx="520" ry="100" fill="url(#pk-grass-dark)" opacity="0.2" />
 
-      {/* Grass texture patches */}
+      {/* Ambient occlusion — darkens edges for grounded 2.5D feel */}
+      <rect y="175" width="1000" height="725" fill="url(#pk-ground-ao)" />
+
+      {/* Grass texture patches — varied opacity for depth */}
       <ellipse cx="150" cy="600" rx="70" ry="18" fill="#6BBF50" opacity="0.25" />
       <ellipse cx="800" cy="650" rx="65" ry="15" fill="#6BBF50" opacity="0.2" />
       <ellipse cx="400" cy="720" rx="80" ry="20" fill="#78C858" opacity="0.18" />
       <ellipse cx="600" cy="300" rx="50" ry="14" fill="#90D878" opacity="0.15" />
+      {/* Additional texture for depth */}
+      <ellipse cx="250" cy="450" rx="60" ry="16" fill="#72C050" opacity="0.12" />
+      <ellipse cx="700" cy="400" rx="55" ry="14" fill="#88D068" opacity="0.10" />
 
-      {/* ═══════ PATHS — wider, more defined ═══════ */}
+      {/* ═══════ PATHS — 2.5D raised with edge thickness ═══════ */}
+      {/* Main horizontal path — shadow underneath for raised feel */}
+      <path
+        d="M0 504 Q150 479 350 492 Q500 500 650 492 Q850 479 1000 504
+           L1000 538 Q850 513 650 526 Q500 534 350 526 Q150 513 0 538Z"
+        fill="rgba(0,0,0,0.06)"
+      />
       {/* Main horizontal path */}
       <path
         d="M0 500 Q150 475 350 488 Q500 496 650 488 Q850 475 1000 500
            L1000 530 Q850 505 650 518 Q500 526 350 518 Q150 505 0 530Z"
         fill="url(#pk-path)" opacity="0.9"
       />
+      {/* Path edge — darker for thickness illusion */}
       <path
         d="M0 530 Q150 505 350 518 Q500 526 650 518 Q850 505 1000 530
-           L1000 535 Q850 510 650 523 Q500 531 350 523 Q150 510 0 535Z"
-        fill="url(#pk-path-edge)" opacity="0.5"
+           L1000 537 Q850 512 650 525 Q500 533 350 525 Q150 512 0 537Z"
+        fill="url(#pk-path-edge)" opacity="0.6"
       />
 
       {/* Vertical center path */}
@@ -191,14 +227,18 @@ export default function ParkBackground() {
         <circle key={`s-${i}`} cx={cx} cy={cy} r="2.5" fill="#D4C8B4" opacity="0.35" />
       ))}
 
-      {/* ═══════ CENTRAL FOUNTAIN — larger, more detailed ═══════ */}
+      {/* ═══════ CENTRAL FOUNTAIN — 2.5D with thickness ═══════ */}
+      {/* Deeper ground shadow for fountain */}
+      <ellipse cx="502" cy="464" rx="100" ry="36" fill="#000" opacity="0.08" />
       <ellipse cx="500" cy="460" rx="95" ry="32" fill="#000" opacity="0.06" />
 
-      {/* Outer rim — stone */}
+      {/* Outer rim — stone with 2.5D thickness */}
+      <ellipse cx="500" cy="440" rx="92" ry="39" fill="#C4C0B8" />
       <ellipse cx="500" cy="435" rx="90" ry="38" fill="#D4D0C8" />
       <ellipse cx="500" cy="430" rx="90" ry="38" fill="#E4E0D8" />
 
-      {/* Inner rim */}
+      {/* Inner rim — slight inset shadow */}
+      <ellipse cx="500" cy="429" rx="79" ry="33" fill="#CCC8C0" />
       <ellipse cx="500" cy="428" rx="78" ry="32" fill="#D8D4CC" />
 
       {/* Water surface */}
@@ -234,16 +274,23 @@ export default function ParkBackground() {
       <circle cx="514" cy="346" r="2" fill="#C5E8F5" opacity="0.5" />
       <circle cx="500" cy="340" r="2.5" fill="#D0EEFA" opacity="0.7" />
 
-      {/* ═══════ GAZEBO — upper right ═══════ */}
-      <g transform="translate(750, 260)" filter="url(#pk-shadow)">
-        {/* Floor/base */}
+      {/* ═══════ GAZEBO — upper right, 2.5D depth ═══════ */}
+      <g transform="translate(750, 260)" filter="url(#pk-shadow-depth)">
+        {/* Ground shadow */}
+        <ellipse cx="2" cy="70" rx="58" ry="22" fill="#000" opacity="0.08" />
+        {/* Floor/base — with thickness */}
+        <ellipse cx="0" cy="68" rx="55" ry="20" fill="#D0C8BC" />
         <ellipse cx="0" cy="65" rx="55" ry="20" fill="#E0D8CC" />
         <ellipse cx="0" cy="62" rx="52" ry="18" fill="#EDE6DC" />
-        {/* Pillars */}
+        {/* Pillars — with subtle side shading */}
+        <rect x="-41" y="10" width="6" height="55" rx="2" fill="#D8D4CC" />
         <rect x="-40" y="10" width="5" height="55" rx="2" fill="#E8E4DC" />
+        <rect x="35" y="10" width="6" height="55" rx="2" fill="#D8D4CC" />
         <rect x="35" y="10" width="5" height="55" rx="2" fill="#E8E4DC" />
+        <rect x="-4" y="8" width="6" height="57" rx="2" fill="#E0DCd4" />
         <rect x="-3" y="8" width="5" height="57" rx="2" fill="#F0ECE4" />
-        {/* Roof — SLOTY lavender */}
+        {/* Roof — SLOTY lavender with thickness */}
+        <path d="M-55 12 L55 12 L50 20 L-50 20Z" fill="#A07090" opacity="0.6" />
         <path d="M-55 12 L0 -18 L55 12Z" fill="url(#pk-gazebo-roof)" />
         <path d="M-55 12 L55 12 L50 18 L-50 18Z" fill="#B080A0" opacity="0.5" />
         {/* Roof ornament */}
@@ -322,23 +369,28 @@ export default function ParkBackground() {
         <circle key={`fb-${i}`} cx={cx} cy={cy} r={3} fill={i%2===0 ? "#F3A7C6" : "#B79DFF"} opacity="0.6" />
       ))}
 
-      {/* ═══════ TREES — varied sizes and positions ═══════ */}
+      {/* ═══════ TREES — 2.5D with depth shadows ═══════ */}
 
       {/* Tree 1 — Large left */}
-      <g filter="url(#pk-shadow-sm)">
+      <g filter="url(#pk-shadow-depth)">
+        <ellipse cx="82" cy="394" rx="20" ry="7" fill="#000" opacity="0.10" />
         <ellipse cx="80" cy="390" rx="16" ry="5" fill="#000" opacity="0.06" />
-        <rect x="73" y="335" width="14" height="58" rx="6" fill="#8B7355" />
+        <rect x="73" y="335" width="14" height="58" rx="6" fill="#7A6348" />
+        <rect x="74" y="335" width="12" height="58" rx="5" fill="#8B7355" />
         <ellipse cx="80" cy="308" rx="48" ry="40" fill="url(#pk-tree-a)" />
+        <ellipse cx="80" cy="316" rx="46" ry="18" fill="#4A8A38" opacity="0.15" />
         <ellipse cx="68" cy="295" rx="22" ry="18" fill="#88CC72" opacity="0.5" />
         <ellipse cx="96" cy="300" rx="18" ry="15" fill="#7CC064" opacity="0.4" />
         <ellipse cx="72" cy="288" rx="12" ry="9" fill="#9FD88A" opacity="0.3" />
       </g>
 
       {/* Tree 2 — Right side */}
-      <g filter="url(#pk-shadow-sm)">
+      <g filter="url(#pk-shadow-depth)">
+        <ellipse cx="922" cy="384" rx="18" ry="6" fill="#000" opacity="0.10" />
         <ellipse cx="920" cy="380" rx="14" ry="4.5" fill="#000" opacity="0.06" />
         <rect x="914" y="330" width="12" height="52" rx="5" fill="#8B7355" />
         <ellipse cx="920" cy="305" rx="42" ry="36" fill="url(#pk-tree-b)" />
+        <ellipse cx="920" cy="314" rx="40" ry="16" fill="#4A8A38" opacity="0.12" />
         <ellipse cx="908" cy="294" rx="18" ry="14" fill="#7CC064" opacity="0.45" />
         <ellipse cx="935" cy="298" rx="16" ry="13" fill="#6DB85C" opacity="0.4" />
       </g>
@@ -393,16 +445,23 @@ export default function ParkBackground() {
       <ellipse cx="310" cy="478" rx="30" ry="8" fill="#4E9240" opacity="0.45" />
       <ellipse cx="690" cy="478" rx="30" ry="8" fill="#4E9240" opacity="0.45" />
 
-      {/* ═══════ BENCHES — isometric style ═══════ */}
+      {/* ═══════ BENCHES — 2.5D with depth shadow ═══════ */}
       {[[200,480],[800,485],[440,340],[560,340],[380,615],[620,620]].map(([x,y],i) => (
         <g key={`bench-${i}`} transform={`translate(${x},${y})`}>
-          <ellipse cx="20" cy="24" rx="22" ry="5" fill="#000" opacity="0.06" />
-          <rect x="0" y="8" width="40" height="5" rx="1.5" fill="#C4956A" />
-          <rect x="0" y="6" width="40" height="3" rx="1" fill="#D4A57A" />
-          <rect x="2" y="0" width="36" height="4" rx="1.5" fill="#C4956A" />
-          <rect x="2" y="-1" width="36" height="3" rx="1" fill="#D4A57A" />
-          <rect x="4" y="13" width="3" height="10" rx="1" fill="#A67B52" />
-          <rect x="33" y="13" width="3" height="10" rx="1" fill="#A67B52" />
+          {/* Ground shadow — larger for 2.5D grounded feel */}
+          <ellipse cx="20" cy="26" rx="24" ry="6" fill="#000" opacity="0.08" />
+          <ellipse cx="20" cy="24" rx="22" ry="5" fill="#000" opacity="0.05" />
+          {/* Seat — with thickness */}
+          <rect x="0" y="9" width="40" height="6" rx="1.5" fill="#B08050" />
+          <rect x="0" y="6" width="40" height="5" rx="1.5" fill="#C4956A" />
+          <rect x="0" y="5" width="40" height="3" rx="1" fill="#D4A57A" />
+          {/* Backrest — with thickness */}
+          <rect x="2" y="1" width="36" height="5" rx="1.5" fill="#B08050" />
+          <rect x="2" y="-1" width="36" height="4" rx="1.5" fill="#C4956A" />
+          <rect x="2" y="-2" width="36" height="3" rx="1" fill="#D4A57A" />
+          {/* Legs */}
+          <rect x="4" y="14" width="3" height="11" rx="1" fill="#A67B52" />
+          <rect x="33" y="14" width="3" height="11" rx="1" fill="#A67B52" />
           <rect x="0" y="2" width="3" height="12" rx="1" fill="#B88B60" />
           <rect x="37" y="2" width="3" height="12" rx="1" fill="#B88B60" />
         </g>
@@ -461,12 +520,18 @@ export default function ParkBackground() {
       <path d="M438 105 Q441 100 444 105" stroke="#888" strokeWidth="1" fill="none" opacity="0.25" />
       <path d="M700 85 Q704 79 708 85" stroke="#888" strokeWidth="1" fill="none" opacity="0.2" />
 
-      {/* Ground shadows from trees */}
+      {/* Ground shadows from trees — stronger for 2.5D grounding */}
+      <ellipse cx="82" cy="374" rx="44" ry="16" fill="#000" opacity="0.06" />
       <ellipse cx="80" cy="370" rx="40" ry="14" fill="#000" opacity="0.04" />
+      <ellipse cx="922" cy="364" rx="40" ry="14" fill="#000" opacity="0.06" />
       <ellipse cx="920" cy="360" rx="36" ry="12" fill="#000" opacity="0.04" />
+      <ellipse cx="282" cy="259" rx="34" ry="12" fill="#000" opacity="0.05" />
       <ellipse cx="280" cy="255" rx="30" ry="10" fill="#000" opacity="0.03" />
+      <ellipse cx="722" cy="256" rx="36" ry="12" fill="#000" opacity="0.05" />
       <ellipse cx="720" cy="252" rx="32" ry="10" fill="#000" opacity="0.03" />
+      <ellipse cx="132" cy="664" rx="42" ry="15" fill="#000" opacity="0.06" />
       <ellipse cx="130" cy="660" rx="38" ry="13" fill="#000" opacity="0.04" />
+      <ellipse cx="872" cy="664" rx="36" ry="12" fill="#000" opacity="0.05" />
       <ellipse cx="870" cy="660" rx="32" ry="10" fill="#000" opacity="0.03" />
 
       {/* Fallen leaves */}
@@ -478,6 +543,12 @@ export default function ParkBackground() {
       <circle cx="500" cy="442" r="10" fill="#E8E4DC" opacity="0.5" />
       <circle cx="500" cy="442" r="6" fill="none" stroke="#B79DFF" strokeWidth="1.2" opacity="0.4" />
       <text x="500" y="445" textAnchor="middle" fontSize="6" fill="#B79DFF" opacity="0.3" fontWeight="bold">S</text>
+
+      {/* ═══════ 2.5D ATMOSPHERIC OVERLAY ═══════ */}
+      {/* Slight atmospheric haze — farther objects feel distant */}
+      <rect y="175" width="1000" height="725" fill="url(#pk-atmo)" />
+      {/* Vignette — subtle darkening at edges for depth focus */}
+      <rect width="1000" height="900" fill="url(#pk-ground-ao)" opacity="0.3" />
     </svg>
   );
 }
