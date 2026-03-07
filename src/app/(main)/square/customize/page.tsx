@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center" style={{ width: 140, height: 140 }}>
+    <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
       <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
     </div>
   ),
@@ -19,16 +19,17 @@ type AvatarItem = {
   name: string;
   modelUrl: string;
   gender: "female" | "male";
+  color: string; // gradient color for thumbnail
 };
 
 const AVATAR_CATALOG: AvatarItem[] = [
-  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female" },
-  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female" },
-  { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female" },
-  { id: "f-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1vNzQX_exuRrf2NscqIZYydaACaAt0uGj", gender: "female" },
-  { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female" },
-  { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female" },
-  { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female" },
+  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6" },
+  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa" },
+  { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female", color: "#60a5fa" },
+  { id: "f-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1vNzQX_exuRrf2NscqIZYydaACaAt0uGj", gender: "female", color: "#34d399" },
+  { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24" },
+  { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c" },
+  { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171" },
 ];
 
 const GENDER_TABS = [
@@ -37,6 +38,45 @@ const GENDER_TABS = [
 ];
 
 const STORAGE_KEY = "sloty_selected_avatar";
+
+/* ── Lightweight avatar thumbnail for grid (no WebGL) ── */
+function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelected: boolean }) {
+  const num = avatar.id.split("-")[1];
+  return (
+    <div
+      className="flex items-center justify-center rounded-xl"
+      style={{
+        width: 90,
+        height: 90,
+        background: isSelected
+          ? `linear-gradient(135deg, ${avatar.color}40, ${avatar.color}20)`
+          : `linear-gradient(135deg, ${avatar.color}18, ${avatar.color}08)`,
+        transition: "background 0.3s",
+      }}
+    >
+      <div className="flex flex-col items-center gap-1">
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{
+            width: 48,
+            height: 48,
+            background: `linear-gradient(135deg, ${avatar.color}, ${avatar.color}aa)`,
+            boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
+            transition: "box-shadow 0.3s",
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
+          No.{num}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function AvatarSelectPage() {
   const router = useRouter();
@@ -86,7 +126,7 @@ export default function AvatarSelectPage() {
         <h1 className="text-lg font-bold">アバター選択</h1>
       </div>
 
-      {/* Preview area */}
+      {/* Preview area — only ONE 3D Canvas here */}
       <div
         className="flex flex-col items-center rounded-2xl py-6 mb-4 relative"
         style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
@@ -153,7 +193,7 @@ export default function AvatarSelectPage() {
         })}
       </div>
 
-      {/* Avatar grid */}
+      {/* Avatar grid — lightweight thumbnails, NO 3D */}
       {filteredAvatars.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 flex-1">
           {filteredAvatars.map((avatar) => {
@@ -178,12 +218,7 @@ export default function AvatarSelectPage() {
                     使用中
                   </span>
                 )}
-                <Avatar3D
-                  modelUrl={avatar.modelUrl}
-                  size={110}
-                  autoRotate={isSelected}
-                  animationSpeed={0.6}
-                />
+                <AvatarThumbnail avatar={avatar} isSelected={isSelected} />
                 <span className="text-[11px] font-medium">{avatar.name}</span>
               </button>
             );
@@ -198,8 +233,13 @@ export default function AvatarSelectPage() {
         </div>
       )}
 
+      {/* Hint text */}
+      <p className="text-center text-[10px] mt-2 mb-1" style={{ color: "var(--muted)" }}>
+        タップで選択 → 上のプレビューで3D確認できるよ
+      </p>
+
       {/* Save button */}
-      <div className="mt-4 sticky bottom-4">
+      <div className="mt-2 sticky bottom-4">
         <button
           onClick={handleSave}
           disabled={!selectedAvatar || currentModelUrl === selectedAvatar?.modelUrl}

@@ -30,8 +30,8 @@ const LEFT_MARGIN = 0; // no scroll past left edge — building fills viewport
 const AVATAR_DRAG_THRESHOLD = 8;
 const DEFAULT_MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
-const MIN_AVATAR_SIZE = 58;
-const MAX_AVATAR_SIZE = 82;
+const MIN_AVATAR_SIZE = 80;
+const MAX_AVATAR_SIZE = 110;
 
 const AREAS = [
   { name: "カフェ前", icon: "☕", xMin: 0, xMax: 25, xCenter: 12.5 },
