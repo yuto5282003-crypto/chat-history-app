@@ -20,31 +20,38 @@ type AvatarItem = {
   modelUrl: string;
   gender: "female" | "male";
   color: string;
+  avatarImage?: string;
 };
+
+/* ── Generate colored SVG avatar placeholder ── */
+function generateAvatarPlaceholder(label: string, gradient: [string, string]): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${gradient[0]}"/><stop offset="100%" stop-color="${gradient[1]}"/></linearGradient></defs><circle cx="100" cy="100" r="100" fill="url(#g)"/><text x="100" y="115" font-family="sans-serif" font-size="64" font-weight="bold" fill="rgba(255,255,255,0.9)" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
+  return `data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(svg))) : ""}`;
+}
 
 const AVATAR_CATALOG: AvatarItem[] = [
   // 女性アバター
-  { id: "f-haruka", name: "はるか", modelUrl: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF", gender: "female", color: "#ec4899" },
-  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6" },
-  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa" },
-  { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female", color: "#60a5fa" },
-  { id: "f-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1vNzQX_exuRrf2NscqIZYydaACaAt0uGj", gender: "female", color: "#34d399" },
-  { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24" },
-  { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c" },
-  { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171" },
+  { id: "f-haruka", name: "はるか", modelUrl: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF", gender: "female", color: "#ec4899", avatarImage: "/avatars/avatar-haruka.png" },
+  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6", avatarImage: generateAvatarPlaceholder("1", ["#f472b6", "#ec4899"]) },
+  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa", avatarImage: generateAvatarPlaceholder("2", ["#a78bfa", "#8b5cf6"]) },
+  { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female", color: "#60a5fa", avatarImage: generateAvatarPlaceholder("3", ["#60a5fa", "#3b82f6"]) },
+  { id: "f-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1vNzQX_exuRrf2NscqIZYydaACaAt0uGj", gender: "female", color: "#34d399", avatarImage: generateAvatarPlaceholder("4", ["#34d399", "#10b981"]) },
+  { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24", avatarImage: generateAvatarPlaceholder("5", ["#fbbf24", "#f59e0b"]) },
+  { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c", avatarImage: generateAvatarPlaceholder("6", ["#fb923c", "#f97316"]) },
+  { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171", avatarImage: generateAvatarPlaceholder("7", ["#f87171", "#ef4444"]) },
   // 女性アバター（新規）
-  { id: "f-008", name: "アバター 8", modelUrl: "/api/model-proxy?id=1WrlLDVaFxwYcTuq_u4MPOgKaFwqmR_KD", gender: "female", color: "#e879f9" },
-  { id: "f-009", name: "アバター 9", modelUrl: "/api/model-proxy?id=1PK_EU_udFtRgp7y5nIHb4GlI64qEu9Rj", gender: "female", color: "#c084fc" },
-  { id: "f-010", name: "アバター 10", modelUrl: "/api/model-proxy?id=1y3KlQj08LDVhue-yO7x_aimzwRVjI90e", gender: "female", color: "#67e8f9" },
+  { id: "f-008", name: "アバター 8", modelUrl: "/api/model-proxy?id=1WrlLDVaFxwYcTuq_u4MPOgKaFwqmR_KD", gender: "female", color: "#e879f9", avatarImage: generateAvatarPlaceholder("8", ["#e879f9", "#d946ef"]) },
+  { id: "f-009", name: "アバター 9", modelUrl: "/api/model-proxy?id=1PK_EU_udFtRgp7y5nIHb4GlI64qEu9Rj", gender: "female", color: "#c084fc", avatarImage: generateAvatarPlaceholder("9", ["#c084fc", "#a855f7"]) },
+  { id: "f-010", name: "アバター 10", modelUrl: "/api/model-proxy?id=1y3KlQj08LDVhue-yO7x_aimzwRVjI90e", gender: "female", color: "#67e8f9", avatarImage: generateAvatarPlaceholder("10", ["#67e8f9", "#22d3ee"]) },
   // 男性アバター
-  { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea" },
-  { id: "m-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=17DOS8dIWcuaveJn2i6bC7uMWWoByZuSo", gender: "male", color: "#60a5fa" },
-  { id: "m-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=19ZNNMNayYT7F9rIVvEi-Mwlh5NwNju8S", gender: "male", color: "#34d399" },
-  { id: "m-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=11zJGTW_nwDEFjHgCQ1xjUCx5aR14GF98", gender: "male", color: "#fbbf24" },
-  { id: "m-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1Pb2X10mLCFmIEWm3-R7oumbaor_JEHG_", gender: "male", color: "#fb923c" },
-  { id: "m-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1C-WnG6zSvxQHxySQ-V0zwEyXAEgu6cXF", gender: "male", color: "#f87171" },
-  { id: "m-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=1CYC2zW5YaKrZOpPbFPgQpWypml0DaEmf", gender: "male", color: "#a78bfa" },
-  { id: "m-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1tusqe8fHJ1kloGLV3-4-aCE7g31K1OkB", gender: "male", color: "#2dd4bf" },
+  { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea", avatarImage: "/avatars/avatar-takuya.png" },
+  { id: "m-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=17DOS8dIWcuaveJn2i6bC7uMWWoByZuSo", gender: "male", color: "#60a5fa", avatarImage: generateAvatarPlaceholder("1", ["#60a5fa", "#3b82f6"]) },
+  { id: "m-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=19ZNNMNayYT7F9rIVvEi-Mwlh5NwNju8S", gender: "male", color: "#34d399", avatarImage: generateAvatarPlaceholder("2", ["#34d399", "#10b981"]) },
+  { id: "m-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=11zJGTW_nwDEFjHgCQ1xjUCx5aR14GF98", gender: "male", color: "#fbbf24", avatarImage: generateAvatarPlaceholder("3", ["#fbbf24", "#f59e0b"]) },
+  { id: "m-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1Pb2X10mLCFmIEWm3-R7oumbaor_JEHG_", gender: "male", color: "#fb923c", avatarImage: generateAvatarPlaceholder("4", ["#fb923c", "#f97316"]) },
+  { id: "m-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1C-WnG6zSvxQHxySQ-V0zwEyXAEgu6cXF", gender: "male", color: "#f87171", avatarImage: generateAvatarPlaceholder("5", ["#f87171", "#ef4444"]) },
+  { id: "m-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=1CYC2zW5YaKrZOpPbFPgQpWypml0DaEmf", gender: "male", color: "#a78bfa", avatarImage: generateAvatarPlaceholder("6", ["#a78bfa", "#8b5cf6"]) },
+  { id: "m-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1tusqe8fHJ1kloGLV3-4-aCE7g31K1OkB", gender: "male", color: "#2dd4bf", avatarImage: generateAvatarPlaceholder("7", ["#2dd4bf", "#14b8a6"]) },
 ];
 
 const GENDER_TABS = [
@@ -250,39 +257,21 @@ function AvatarThumbnail({
       }}
     >
       <div className="flex flex-col items-center gap-1">
-        {capturedImage ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={capturedImage}
-            alt={avatar.name}
-            className="rounded-full"
-            style={{
-              width: 56,
-              height: 56,
-              objectFit: "contain",
-              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-              border: `2px solid ${avatar.color}40`,
-              transition: "box-shadow 0.3s",
-            }}
-          />
-        ) : (
-          <div
-            className="flex items-center justify-center rounded-full"
-            style={{
-              width: 56,
-              height: 56,
-              background: `linear-gradient(135deg, ${avatar.color}60, ${avatar.color}30)`,
-              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-              border: `2px solid ${avatar.color}50`,
-              transition: "box-shadow 0.3s",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={capturedImage || avatar.avatarImage || ""}
+          alt={avatar.name}
+          className="rounded-full"
+          style={{
+            width: 56,
+            height: 56,
+            objectFit: "cover",
+            boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
+            border: `2px solid ${avatar.color}40`,
+            transition: "box-shadow 0.3s",
+            background: `linear-gradient(135deg, ${avatar.color}60, ${avatar.color}30)`,
+          }}
+        />
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
           {label}
         </span>
@@ -374,7 +363,7 @@ export default function AvatarSelectPage() {
                   size={160}
                   autoRotate
                   animationSpeed={0.8}
-                  fallbackImage={thumbnails[selectedAvatar.id]}
+                  fallbackImage={thumbnails[selectedAvatar.id] || selectedAvatar.avatarImage}
                 />
               </div>
             )}

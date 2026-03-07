@@ -226,13 +226,27 @@ const Avatar3D = memo(function Avatar3D({
   const [hasError, setHasError] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset error state when URL changes
   useEffect(() => {
     setHasError(false);
+    setRetryCount(0);
   }, [modelUrl]);
+
+  // Auto-retry on error with exponential backoff
+  useEffect(() => {
+    if (!hasError || retryCount >= MAX_RETRIES || !modelUrl) return;
+    const delay = Math.min(2000 * Math.pow(2, retryCount), 8000);
+    const timer = setTimeout(() => {
+      setHasError(false);
+      setRetryCount((c) => c + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [hasError, retryCount, modelUrl]);
 
   // ── IntersectionObserver: only create Canvas when in/near viewport ──
   useEffect(() => {
@@ -324,7 +338,7 @@ const Avatar3D = memo(function Avatar3D({
       {showFallback || !isVisible ? (
         /* ── 2D HTML fallback: shown when model URL missing, error, or not in viewport ── */
         <div
-          className="flex items-center justify-center"
+          className="flex flex-col items-center justify-center"
           style={{ width: size, height: size }}
         >
           {!isVisible && !showFallback ? (
@@ -366,6 +380,15 @@ const Avatar3D = memo(function Avatar3D({
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
+          )}
+          {hasError && retryCount >= MAX_RETRIES && modelUrl && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setHasError(false); setRetryCount(0); }}
+              className="mt-1 rounded-full px-2 py-0.5 text-[8px] font-bold text-white"
+              style={{ background: "rgba(102,126,234,0.8)" }}
+            >
+              再読み込み
+            </button>
           )}
         </div>
       ) : (
