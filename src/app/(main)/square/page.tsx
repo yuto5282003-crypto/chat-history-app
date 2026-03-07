@@ -380,12 +380,19 @@ export default function SquarePage() {
     const d = avatarDragRef.current;
     d.active = false;
     if (d.moved && dragGhostPos) {
-      // Walk to drop position
-      moveMyAvatar(dragGhostPos.x, dragGhostPos.y);
+      // Instantly place avatar at drop position
+      clearTimeout(moveTimeout.current);
+      setMyPos({ x: dragGhostPos.x, y: dragGhostPos.y });
+      myPosRef.current = { x: dragGhostPos.x, y: dragGhostPos.y };
+      setMyFacing(dragGhostPos.x >= myPosRef.current.x ? "right" : "left");
+      setCameraX(getCameraTarget(dragGhostPos.x));
+      setCameraDur(300);
+      setMyIsWalking(false);
+      setMyWalkMs(0);
     }
     setIsDraggingSelf(false);
     setDragGhostPos(null);
-  }, [dragGhostPos, moveMyAvatar]);
+  }, [dragGhostPos, getCameraTarget]);
 
   /* ── Pointer handlers (swipe + tap) ── */
   const handlePointerDown = useCallback(
@@ -606,25 +613,17 @@ export default function SquarePage() {
                 </div>
               ))}
 
-              {/* ── Drag ghost (drop target indicator) ── */}
+              {/* ── Drag landing shadow (shows where avatar will land) ── */}
               {isDraggingSelf && dragGhostPos && (
                 <div className="absolute pointer-events-none" style={{
                   left: `${dragGhostPos.x}%`, top: `${dragGhostPos.y}%`,
-                  transform: "translate(-50%, -100%)", zIndex: 2000,
+                  transform: "translate(-50%, -50%)", zIndex: 1999,
                 }}>
-                  <div className="flex flex-col items-center">
-                    <div style={{
-                      width: myAvatarSize * 0.7, height: myAvatarSize * 0.7,
-                      borderRadius: "50%", border: "2px dashed rgba(102,126,234,0.6)",
-                      background: "rgba(102,126,234,0.1)",
-                      animation: "tapRipple 1.5s ease-out infinite",
-                    }} />
-                    <div style={{
-                      width: myAvatarSize * 0.4, height: 6, borderRadius: "50%",
-                      background: "radial-gradient(ellipse, rgba(102,126,234,0.3) 0%, transparent 100%)",
-                      marginTop: 2,
-                    }} />
-                  </div>
+                  <div style={{
+                    width: myAvatarSize * 0.6, height: myAvatarSize * 0.15, borderRadius: "50%",
+                    background: "radial-gradient(ellipse, rgba(102,126,234,0.4) 0%, rgba(102,126,234,0.15) 50%, transparent 100%)",
+                    animation: "avatarLandingShadow 1s ease-in-out infinite alternate",
+                  }} />
                 </div>
               )}
 
@@ -680,14 +679,19 @@ export default function SquarePage() {
                 data-avatar="self"
                 className="absolute"
                 style={{
-                  left: `${myPos.x}%`, top: `${myPos.y}%`,
-                  transform: "translate(-50%, -100%)", zIndex: myZIndex,
-                  transition: myWalkMs > 0 ? `left ${myWalkMs}ms ease-in-out, top ${myWalkMs}ms ease-in-out` : "none",
+                  left: `${isDraggingSelf && dragGhostPos ? dragGhostPos.x : myPos.x}%`,
+                  top: `${isDraggingSelf && dragGhostPos ? dragGhostPos.y : myPos.y}%`,
+                  transform: isDraggingSelf ? "translate(-50%, -120%)" : "translate(-50%, -100%)",
+                  zIndex: isDraggingSelf ? 3000 : myZIndex,
+                  transition: isDraggingSelf ? "none" : (myWalkMs > 0 ? `left ${myWalkMs}ms ease-in-out, top ${myWalkMs}ms ease-in-out` : "none"),
                   cursor: isDraggingSelf ? "grabbing" : "grab",
                 }}
                 onPointerDown={handleSelfDragStart}
               >
-                <div className={`relative flex flex-col items-center ${isDraggingSelf ? "opacity-50 scale-90" : ""}`} style={{ transition: "opacity 0.2s, transform 0.2s" }}>
+                <div className={`relative flex flex-col items-center ${isDraggingSelf ? "scale-110" : ""}`} style={{
+                  transition: "transform 0.2s",
+                  filter: isDraggingSelf ? "drop-shadow(0 8px 12px rgba(102,126,234,0.4))" : "none",
+                }}>
                   {/* "今ひま" badge */}
                   {isFree && (
                     <div className="absolute -top-9 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[8px] font-bold text-white whitespace-nowrap z-20 animate-pulse" style={{
@@ -885,6 +889,10 @@ export default function SquarePage() {
           30% { opacity: 0.7; }
           50% { opacity: 0.4; }
           70% { opacity: 0.8; }
+        }
+        @keyframes avatarLandingShadow {
+          0% { transform: scale(0.8); opacity: 0.6; }
+          100% { transform: scale(1.2); opacity: 1; }
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
