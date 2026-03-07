@@ -288,174 +288,186 @@ export function NearLayer() {
         <rect x="58" y="353" width="34" height="34" rx="1" fill="#A0C8E0" opacity=".35" />
       </g>
 
-      {/* ── MAIN STARBUCKS BUILDING — center of café area ── */}
+      {/* ══════════════════════════════════════════════════════════
+           MAIN STARBUCKS BUILDING — Faithful to reference image
+           Wide modern flat-roof, horizontal slats, center gray tower
+         ══════════════════════════════════════════════════════════ */}
       <g filter="url(#n-sh2)">
-        {/* Building body — wide two-story Starbucks */}
-        <rect x="180" y="210" width="380" height="170" rx="6" fill="#00704A" />
-        <rect x="185" y="215" width="370" height="160" rx="4" fill="#1E3932" />
-
-        {/* 2nd floor windows */}
-        {[0,1,2,3,4].map(i => (
-          <rect key={`s2w-${i}`} x={200+i*72} y="225" width="56" height="40" rx="3" fill="#A8D8C8" opacity=".7" />
+        {/* ── LEFT SECTION: Dark brown horizontal wood slats ── */}
+        <rect x="100" y="220" width="320" height="180" fill="#6B5B4F" />
+        {/* Horizontal slat lines */}
+        {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i => (
+          <rect key={`lslat-${i}`} x="100" y={222+i*10} width="320" height="5" fill={i%2===0 ? "#7A6A5E" : "#5E4E42"} />
         ))}
-        {[0,1,2,3,4].map(i => (
-          <line key={`s2m-${i}`} x1={228+i*72} y1="225" x2={228+i*72} y2="265" stroke="#1E3932" strokeWidth="1.5" />
+        {/* Darker band at bottom of slats */}
+        <rect x="100" y="360" width="320" height="40" fill="#4A3E35" />
+        {[0,1,2,3].map(i => (
+          <rect key={`lslat2-${i}`} x="100" y={362+i*10} width="320" height="5" fill={i%2===0 ? "#554840" : "#403530"} />
         ))}
 
-        {/* 1st floor — large glass storefront */}
-        <rect x="200" y="280" width="135" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
-        <rect x="345" y="280" width="80" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
-        <rect x="435" y="280" width="115" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
-        {/* Vertical mullions */}
-        <line x1="267" y1="280" x2="267" y2="365" stroke="#1E3932" strokeWidth="2" />
-        <line x1="385" y1="280" x2="385" y2="365" stroke="#1E3932" strokeWidth="2" />
-        <line x1="492" y1="280" x2="492" y2="365" stroke="#1E3932" strokeWidth="2" />
-        {/* Horizontal mullion */}
-        <line x1="200" y1="320" x2="550" y2="320" stroke="#1E3932" strokeWidth="1.5" />
+        {/* "STARBUCKS" text on left section */}
+        <text x="250" y="320" textAnchor="middle" fontSize="28" fill="#1E3932" fontWeight="bold" letterSpacing="5">STARBUCKS</text>
 
-        {/* Interior warm glow */}
-        <rect x="205" y="285" width="55" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
-        <rect x="350" y="285" width="30" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
-        <rect x="440" y="285" width="45" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
+        {/* Left shutter/drive-thru window area */}
+        <rect x="110" y="400" width="100" height="80" fill="#E8E0D0" />
+        {/* Horizontal shutter lines */}
+        {[0,1,2,3,4,5,6,7,8,9].map(i => (
+          <line key={`shut-${i}`} x1="112" y1={404+i*8} x2="208" y2={404+i*8} stroke="#C8C0B0" strokeWidth="1" />
+        ))}
+        {/* Left counter shelf */}
+        <rect x="108" y="398" width="106" height="5" rx="1" fill="#A09080" />
+        {/* Small roof over counter */}
+        <rect x="105" y="392" width="112" height="8" rx="2" fill="#B0A090" />
 
-        {/* People silhouettes inside */}
-        <circle cx="230" cy="340" r="5" fill="#2A2A2A" opacity=".13" />
-        <rect x="226" y="345" width="8" height="14" rx="2" fill="#2A2A2A" opacity=".1" />
-        <circle cx="370" cy="335" r="5" fill="#2A2A2A" opacity=".13" />
-        <rect x="366" y="340" width="8" height="14" rx="2" fill="#2A2A2A" opacity=".1" />
-        <circle cx="480" cy="338" r="5" fill="#2A2A2A" opacity=".13" />
+        {/* ── CENTER TOWER: Tall gray concrete with logo ── */}
+        <rect x="420" y="180" width="130" height="300" fill="#808080" />
+        {/* Gray panel texture - lighter inner panel */}
+        <rect x="428" y="185" width="114" height="115" fill="#909090" />
+        {/* Panel border lines */}
+        <line x1="425" y1="300" x2="545" y2="300" stroke="#707070" strokeWidth="1" />
+        {/* Lower gray panel */}
+        <rect x="428" y="305" width="114" height="170" fill="#757575" />
 
-        {/* Main entrance (glass double door) */}
-        <rect x="346" y="330" width="78" height="50" rx="3" fill="#1E3932" />
-        <rect x="350" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
-        <rect x="386" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
-        <circle cx="382" cy="358" r="3" fill="#D4A57A" />
-        <circle cx="388" cy="358" r="3" fill="#D4A57A" />
+        {/* ── Large Starbucks circle logo on tower ── */}
+        <circle cx="485" cy="245" r="42" fill="#00704A" />
+        <circle cx="485" cy="245" r="38" fill="#1E3932" />
+        <circle cx="485" cy="245" r="35" fill="#00704A" />
+        {/* White ring */}
+        <circle cx="485" cy="245" r="32" fill="none" stroke="white" strokeWidth="2" />
+        <circle cx="485" cy="245" r="24" fill="none" stroke="white" strokeWidth="1" />
+        {/* Siren head */}
+        <circle cx="485" cy="232" r="5" fill="white" />
+        {/* Crown */}
+        <path d="M480 228 L482 224 L485 226 L488 224 L490 228" fill="white" />
+        {/* Siren body */}
+        <path d="M479 237 Q485 255 491 237" stroke="white" strokeWidth="2" fill="none" />
+        {/* Hair/tails flowing */}
+        <path d="M476 240 Q472 250 467 252" stroke="white" strokeWidth="2" fill="none" />
+        <path d="M494 240 Q498 250 503 252" stroke="white" strokeWidth="2" fill="none" />
+        {/* Wavy hair detail */}
+        <path d="M474 235 Q470 242 468 248" stroke="white" strokeWidth="1.5" fill="none" />
+        <path d="M496 235 Q500 242 502 248" stroke="white" strokeWidth="1.5" fill="none" />
+        {/* Stars at sides */}
+        <circle cx="466" cy="236" r="2" fill="white" />
+        <circle cx="504" cy="236" r="2" fill="white" />
 
-        {/* ── Starbucks round logo ── */}
-        <circle cx="370" cy="218" r="20" fill="#00704A" stroke="#D4A57A" strokeWidth="2.5" />
-        <circle cx="370" cy="218" r="16" fill="#1E3932" />
-        <circle cx="370" cy="218" r="13" fill="none" stroke="#D4A57A" strokeWidth="1" />
-        <circle cx="370" cy="212" r="3.5" fill="#D4A57A" />
-        <path d="M365 216 Q370 228 375 216" stroke="#D4A57A" strokeWidth="1.5" fill="none" />
-        <path d="M362 221 Q360 227 357 225" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
-        <path d="M378 221 Q380 227 383 225" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
-        <circle cx="358" cy="212" r="1" fill="#D4A57A" />
-        <circle cx="382" cy="212" r="1" fill="#D4A57A" />
+        {/* ── RIGHT SECTION: Gray/brown horizontal slats ── */}
+        <rect x="550" y="220" width="250" height="180" fill="#8A7E72" />
+        {/* Horizontal slat lines */}
+        {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i => (
+          <rect key={`rslat-${i}`} x="550" y={222+i*10} width="250" height="5" fill={i%2===0 ? "#968A7E" : "#7A6E62"} />
+        ))}
+        {/* Darker band at bottom right */}
+        <rect x="550" y="360" width="250" height="40" fill="#5A5048" />
+        {[0,1,2,3].map(i => (
+          <rect key={`rslat2-${i}`} x="550" y={362+i*10} width="250" height="5" fill={i%2===0 ? "#655A52" : "#504540"} />
+        ))}
 
-        {/* Store name on fascia */}
-        <rect x="178" y="197" width="384" height="6" rx="2" fill="#00704A" />
-        <rect x="240" y="365" width="260" height="16" rx="3" fill="#1E3932" />
-        <text x="370" y="377" textAnchor="middle" fontSize="10" fill="#FFFFFF" fontWeight="bold" letterSpacing="3">STARBUCKS COFFEE</text>
+        {/* Dark green accent on far right */}
+        <rect x="740" y="400" width="60" height="80" fill="#1E3932" />
+
+        {/* ── GREEN BAND / AWNING across full width ── */}
+        <rect x="100" y="395" width="700" height="10" rx="2" fill="#00704A" />
+        {/* Thin green accent line above */}
+        <rect x="100" y="392" width="700" height="4" fill="#1E8C5E" />
+
+        {/* ── BROWN ACCENT STRIP above windows ── */}
+        <rect x="100" y="400" width="320" height="8" fill="#8B7355" />
+        <rect x="550" y="400" width="250" height="8" fill="#8B7355" />
+
+        {/* ── LARGE GLASS WINDOWS with people silhouettes ── */}
+        {/* Left window group */}
+        <rect x="220" y="408" width="190" height="72" rx="2" fill="#C8DCD4" />
+        {/* Window frame divisions */}
+        <line x1="265" y1="408" x2="265" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        <line x1="310" y1="408" x2="310" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        <line x1="355" y1="408" x2="355" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        {/* Interior tint */}
+        <rect x="222" y="410" width="186" height="68" rx="1" fill="#B8CCC4" opacity=".3" />
+        {/* People silhouettes - left window */}
+        {/* Seated person at table */}
+        <circle cx="240" cy="445" r="5" fill="#555" opacity=".2" />
+        <rect x="236" y="450" width="8" height="18" rx="2" fill="#555" opacity=".15" />
+        {/* Person at counter/table */}
+        <circle cx="260" cy="448" r="4" fill="#555" opacity=".18" />
+        <rect x="257" y="452" width="6" height="15" rx="2" fill="#555" opacity=".12" />
+        {/* Seated pair */}
+        <circle cx="290" cy="443" r="5" fill="#555" opacity=".2" />
+        <rect x="286" y="448" width="8" height="20" rx="2" fill="#555" opacity=".15" />
+        <circle cx="305" cy="445" r="4.5" fill="#555" opacity=".18" />
+        <rect x="301" y="450" width="8" height="18" rx="2" fill="#555" opacity=".13" />
+        {/* Standing person */}
+        <circle cx="335" cy="440" r="5" fill="#555" opacity=".2" />
+        <rect x="331" y="445" width="8" height="24" rx="2" fill="#555" opacity=".15" />
+        {/* Person at right edge */}
+        <circle cx="365" cy="447" r="4" fill="#555" opacity=".18" />
+        <rect x="362" y="451" width="6" height="16" rx="2" fill="#555" opacity=".12" />
+        {/* Tables */}
+        <rect x="250" y="458" width="20" height="2" rx="1" fill="#888" opacity=".15" />
+        <rect x="320" y="456" width="20" height="2" rx="1" fill="#888" opacity=".15" />
+
+        {/* Center entrance — glass double door */}
+        <rect x="410" y="400" width="10" height="80" fill="#707070" />
+        <rect x="420" y="408" width="45" height="72" rx="2" fill="#A8C4B8" />
+        <rect x="467" y="408" width="45" height="72" rx="2" fill="#A8C4B8" />
+        <line x1="442" y1="408" x2="442" y2="480" stroke="#808080" strokeWidth="1.5" />
+        <line x1="490" y1="408" x2="490" y2="480" stroke="#808080" strokeWidth="1.5" />
+        {/* Door handles */}
+        <rect x="440" y="440" width="5" height="12" rx="2" fill="#B0B0B0" />
+        <rect x="487" y="440" width="5" height="12" rx="2" fill="#B0B0B0" />
+        {/* People visible through door */}
+        <circle cx="445" cy="448" r="3.5" fill="#555" opacity=".12" />
+        <circle cx="488" cy="450" r="3" fill="#555" opacity=".1" />
+
+        {/* Right side entrance pillar */}
+        <rect x="512" y="400" width="10" height="80" fill="#707070" />
+
+        {/* Right window group */}
+        <rect x="555" y="408" width="180" height="72" rx="2" fill="#C8DCD4" />
+        {/* Frame divisions */}
+        <line x1="600" y1="408" x2="600" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        <line x1="645" y1="408" x2="645" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        <line x1="690" y1="408" x2="690" y2="480" stroke="#A0B0A8" strokeWidth="1.5" />
+        {/* Interior tint */}
+        <rect x="557" y="410" width="176" height="68" rx="1" fill="#B8CCC4" opacity=".3" />
+        {/* People silhouettes - right window */}
+        <circle cx="575" cy="444" r="5" fill="#555" opacity=".2" />
+        <rect x="571" y="449" width="8" height="20" rx="2" fill="#555" opacity=".15" />
+        <circle cx="610" cy="447" r="4" fill="#555" opacity=".18" />
+        <rect x="607" y="451" width="6" height="16" rx="2" fill="#555" opacity=".12" />
+        <circle cx="640" cy="442" r="5" fill="#555" opacity=".2" />
+        <rect x="636" y="447" width="8" height="22" rx="2" fill="#555" opacity=".15" />
+        <circle cx="670" cy="446" r="4.5" fill="#555" opacity=".18" />
+        <rect x="667" y="450" width="7" height="18" rx="2" fill="#555" opacity=".13" />
+        <circle cx="710" cy="444" r="4" fill="#555" opacity=".17" />
+        <rect x="707" y="448" width="6" height="16" rx="2" fill="#555" opacity=".12" />
+        {/* Tables */}
+        <rect x="595" y="458" width="20" height="2" rx="1" fill="#888" opacity=".15" />
+        <rect x="660" y="455" width="20" height="2" rx="1" fill="#888" opacity=".15" />
+
+        {/* ── Base / foundation line ── */}
+        <rect x="100" y="478" width="700" height="4" fill="#606060" />
       </g>
 
-      {/* ── Green striped awning ── */}
-      <path d="M178 378 L562 378 L556 396 L184 396Z" fill="#00704A" opacity=".8" />
-      {Array.from({length: 20}).map((_,i) => (
-        <rect key={`aw-${i}`} x={182+i*19} y="378" width="9" height="18" rx="1" fill="#1E3932" opacity={i%2===0 ? ".3" : "0"} />
-      ))}
+      {/* ── Outdoor terrace area in front of building ── */}
+      <rect x="100" y="482" width="700" height="30" rx="2" fill="#C8C0B4" opacity=".2" />
 
-      {/* ── Outdoor terrace (paved, urban style) ── */}
-      <rect x="180" y="396" width="380" height="82" rx="3" fill="#C8C0B4" opacity=".25" />
-      {/* Terrace railing */}
-      <line x1="178" y1="396" x2="562" y2="396" stroke="#A09888" strokeWidth="2" />
-      {[190,220,250,280,310,340,370,400,430,460,490,520,550].map((px,i) => (
-        <rect key={`rail-${i}`} x={px} y="396" width="1.5" height="8" fill="#A09888" opacity=".4" />
-      ))}
-
-      {/* ── Outdoor tables (urban café style) ── */}
-      {[[230,420],[350,415],[470,425],[280,450],[420,448]].map(([tx,ty],i) => (
+      {/* ── Outdoor tables with green umbrellas ── */}
+      {[[250,530],[450,525],[650,532]].map(([tx,ty],i) => (
         <g key={`ct-${i}`}>
           <ellipse cx={tx} cy={ty+12} rx="12" ry="4" fill="#000" opacity=".05" />
           <ellipse cx={tx} cy={ty} rx="14" ry="6" fill="#E8DDD0" />
-          <ellipse cx={tx} cy={ty-1} rx="13" ry="5" fill="#F5EDE2" />
           <rect x={tx-2} y={ty} width="4" height="12" rx="1" fill="#C8B898" />
           <ellipse cx={tx-16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
           <ellipse cx={tx+16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
           <rect x={tx-4} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".8" />
-          <rect x={tx-4} y={ty-6} width="5" height="2" rx="1" fill="#00704A" opacity=".5" />
           <rect x={tx-1} y={ty-40} width="2" height="38" fill="#707070" />
           <ellipse cx={tx} cy={ty-40} rx="22" ry="8" fill="#00704A" opacity=".7" />
         </g>
       ))}
 
-      {/* ── RIGHT BUILDING — Bakery / boutique ── */}
-      <g filter="url(#n-sh)">
-        <rect x="620" y="240" width="160" height="140" rx="4" fill="#FAF4EC" />
-        <rect x="615" y="234" width="170" height="10" rx="2" fill="#C87878" />
-        <rect x="635" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="683" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="731" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="670" y="320" width="50" height="60" rx="3" fill="#A07050" />
-        <rect x="638" y="248" width="110" height="16" rx="4" fill="#F8E8D8" />
-        <text x="693" y="260" textAnchor="middle" fontSize="9" fill="#C07070" fontWeight="bold">BAKERY</text>
-      </g>
-
-      {/* ── FAR RIGHT — Tall residential building ── */}
-      <g filter="url(#n-sh2)">
-        <rect x="810" y="200" width="110" height="190" rx="3" fill="url(#n-bldg1)" />
-        {[0,1,2,3,4,5,6].map(row => [0,1,2].map(col => (
-          <rect key={`cbr-${row}-${col}`} x={818+col*34} y={210+row*26} width="28" height="20" rx="1" fill="url(#n-glass)" opacity=".5" />
-        )))}
-        <rect x="845" y="355" width="40" height="35" rx="2" fill="#806050" />
-      </g>
-
-      {/* ── FAR LEFT — Small shop ── */}
-      <g filter="url(#n-sh)">
-        <rect x="130" y="290" width="40" height="100" rx="3" fill="#E0D8D0" />
-        <rect x="133" y="300" width="34" height="25" rx="2" fill="url(#n-glass)" opacity=".6" />
-        <rect x="140" y="345" width="22" height="45" rx="2" fill="#806050" />
-        <rect x="130" y="284" width="40" height="10" rx="2" fill="#D07060" />
-      </g>
-
-      {/* ── Chalkboard menu ── */}
-      <g transform="translate(575,360)">
-        <rect x="0" y="0" width="36" height="50" rx="3" fill="#1E3932" />
-        <rect x="3" y="3" width="30" height="44" rx="2" fill="#0D2318" />
-        <text x="18" y="14" textAnchor="middle" fontSize="4.5" fill="#F5E6D0" fontWeight="bold">MENU</text>
-        <line x1="6" y1="17" x2="30" y2="17" stroke="#D4A57A" strokeWidth=".5" />
-        <text x="18" y="24" textAnchor="middle" fontSize="3.2" fill="#C8B898">Latte ¥480</text>
-        <text x="18" y="29" textAnchor="middle" fontSize="3.2" fill="#C8B898">Mocha ¥520</text>
-        <text x="18" y="34" textAnchor="middle" fontSize="3.2" fill="#C8B898">Frappuccino ¥550</text>
-        <text x="18" y="39" textAnchor="middle" fontSize="3.2" fill="#C8B898">Matcha ¥510</text>
-        <line x1="3" y1="50" x2="-2" y2="64" stroke="#1E3932" strokeWidth="2" />
-        <line x1="33" y1="50" x2="38" y2="64" stroke="#1E3932" strokeWidth="2" />
-      </g>
-
-      {/* ── Flower planters along café front ── */}
-      {[195,270,345,420,495].map((fx,i) => (
-        <g key={`fp-${i}`}>
-          <rect x={fx} y="382" width="28" height="8" rx="3" fill="#505050" />
-          {[0,7,14,21].map((d,j) => (
-            <circle key={j} cx={fx+3+d} cy={380-j%2*2} r="3.5" fill={["#F3A7C6","#FFFFFF","#FFB7D5","#F5E6D0"][j%4]} opacity=".8" />
-          ))}
-          {[3,10,18,25].map((d,j) => (
-            <ellipse key={`lf-${j}`} cx={fx+d} cy={377} rx="3" ry="2" fill="#5DA34A" opacity=".45" />
-          ))}
-        </g>
-      ))}
-
-      {/* ── String lights ── */}
-      <path d="M190 378 Q280 386 370 378 Q460 386 550 378" stroke="#D4A57A" strokeWidth="1.2" fill="none" opacity=".5" />
-      {[196,216,236,256,276,296,316,336,356,376,396,416,436,456,476,496,516,536].map((lx,i) => (
-        <circle key={`sl-${i}`} cx={lx} cy={381+Math.sin(i*.8)*3} r="2" fill="#FFE8B0" opacity=".75" />
-      ))}
-
-      {/* ── Crosswalk ── */}
-      {[0,1,2,3,4,5,6,7,8,9].map(i => (
-        <rect key={`ccw-${i}`} x={350+i*16} y="480" width="10" height="60" rx="1" fill="white" opacity=".25" />
-      ))}
-
-      {/* ── Vending machines ── */}
-      <rect x="130" y="410" width="16" height="28" rx="2" fill="#D04040" />
-      <rect x="133" y="414" width="10" height="10" rx="1" fill="#E8E0D8" opacity=".6" />
-      <rect x="133" y="428" width="4" height="3" rx="1" fill="#FFE0A0" opacity=".5" />
-      <rect x="150" y="410" width="16" height="28" rx="2" fill="#4070D0" />
-      <rect x="153" y="414" width="10" height="10" rx="1" fill="#E8E0D8" opacity=".6" />
-      <rect x="153" y="428" width="4" height="3" rx="1" fill="#FFE0A0" opacity=".5" />
-
       {/* ── Modern street lamps ── */}
-      {[[70,400],[560,395],[780,400],[950,395]].map(([lx,ly],i) => (
+      {[[50,400],[850,400],[950,395]].map(([lx,ly],i) => (
         <g key={`cl-${i}`} transform={`translate(${lx},${ly})`}>
           <rect x="2" y="5" width="4" height="50" rx="2" fill="#707070" />
           <rect x="0" y="52" width="8" height="4" rx="2" fill="#606060" />
@@ -465,16 +477,8 @@ export function NearLayer() {
         </g>
       ))}
 
-      {/* ── Street trees (trimmed, urban) ── */}
-      {[[50,370,22,18,"n-ta"],[620,385,20,16,"n-tb"],[950,365,24,20,"n-ta"]].map(([x,y,rx,ry,g],i) => (
-        <g key={`ctr-${i}`}>
-          <rect x={(x as number)-3} y={y as number} width="6" height="30" rx="2" fill="#8B7355" />
-          <ellipse cx={x as number} cy={(y as number)-12} rx={rx as number} ry={ry as number} fill={`url(#${g})`} />
-        </g>
-      ))}
-
-      {/* ── Benches (modern metal) ── */}
-      {[[85,460],[920,455]].map(([bx,by],i) => (
+      {/* ── Benches ── */}
+      {[[70,500],[880,495]].map(([bx,by],i) => (
         <g key={`cb-${i}`} transform={`translate(${bx},${by})`}>
           <rect x="0" y="5" width="42" height="3" rx="1" fill="#A0A0A0" />
           <rect x="2" y="-2" width="38" height="3" rx="1" fill="#B0B0B0" />
@@ -483,14 +487,13 @@ export function NearLayer() {
         </g>
       ))}
 
-      {/* ── Traffic light ── */}
-      <g transform="translate(340,430)">
-        <rect x="0" y="0" width="5" height="40" rx="1" fill="#606060" />
-        <rect x="-5" y="-20" width="15" height="22" rx="3" fill="#303030" />
-        <circle cx="2.5" cy="-13" r="3" fill="#FF4040" opacity=".6" />
-        <circle cx="2.5" cy="-5" r="3" fill="#FFCC00" opacity=".3" />
-        <circle cx="2.5" cy="3" r="3" fill="#40CC40" opacity=".3" />
-      </g>
+      {/* ── Street trees (trimmed, urban) ── */}
+      {[[30,410,18,15,"n-ta"],[900,400,20,16,"n-tb"],[960,380,18,14,"n-ta"]].map(([x,y,rx,ry,g],i) => (
+        <g key={`ctr-${i}`}>
+          <rect x={(x as number)-3} y={y as number} width="6" height="30" rx="2" fill="#8B7355" />
+          <ellipse cx={x as number} cy={(y as number)-12} rx={rx as number} ry={ry as number} fill={`url(#${g})`} />
+        </g>
+      ))}
 
       {/* ══════════════════════════════════════════════════════
            AREA 2 — Fountain park (1000-2000)
