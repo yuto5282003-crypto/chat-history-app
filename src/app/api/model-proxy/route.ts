@@ -41,14 +41,19 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!response.ok) {
+    // Validate response: Google Drive may return HTML (virus scan page) instead of binary
+    const contentType = response.headers.get("content-type") || "";
+    const isHtml = contentType.includes("text/html");
+
+    if (!response.ok || isHtml) {
       // Fallback: try the googleapis endpoint
       const fallbackUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`;
       const fallbackRes = await fetch(fallbackUrl);
-      if (!fallbackRes.ok) {
+      const fallbackType = fallbackRes.headers.get("content-type") || "";
+      if (!fallbackRes.ok || fallbackType.includes("text/html")) {
         return NextResponse.json(
           { error: "Failed to fetch model" },
-          { status: fallbackRes.status },
+          { status: fallbackRes.ok ? 502 : fallbackRes.status },
         );
       }
       return new NextResponse(fallbackRes.body, {
@@ -61,7 +66,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Stream the response back to the client
+    // Stream the binary response back to the client
     return new NextResponse(response.body, {
       headers: {
         "Content-Type": "model/gltf-binary",

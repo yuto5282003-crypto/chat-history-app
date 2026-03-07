@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect, useCallback, memo } from "react";
+import { Suspense, useRef, useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Canvas, useFrame, invalidate } from "@react-three/fiber";
 import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
@@ -27,7 +27,10 @@ function ChibiModel({
   userRotating?: boolean;
   baseRotationY?: number;
 }) {
-  const { scene, animations } = useGLTF(url);
+  const gltf = useGLTF(url);
+  // Clone the scene to prevent shared state issues when the same model is used in multiple components
+  const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  const animations = gltf.animations;
   const groupRef = useRef<THREE.Group>(null!);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const bonesRef = useRef<{
@@ -227,6 +230,7 @@ const Avatar3D = memo(function Avatar3D({
   const [isRotating, setIsRotating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   const MAX_RETRIES = 3;
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -235,15 +239,19 @@ const Avatar3D = memo(function Avatar3D({
   useEffect(() => {
     setHasError(false);
     setRetryCount(0);
+    setRetryKey(0);
   }, [modelUrl]);
 
-  // Auto-retry on error with exponential backoff
+  // Auto-retry on error with exponential backoff + cache clearing
   useEffect(() => {
     if (!hasError || retryCount >= MAX_RETRIES || !modelUrl) return;
     const delay = Math.min(2000 * Math.pow(2, retryCount), 8000);
     const timer = setTimeout(() => {
+      // Clear drei's useGLTF cache to avoid re-throwing cached errors
+      try { useGLTF.clear(modelUrl); } catch { /* ignore */ }
       setHasError(false);
       setRetryCount((c) => c + 1);
+      setRetryKey((k) => k + 1);
     }, delay);
     return () => clearTimeout(timer);
   }, [hasError, retryCount, modelUrl]);
@@ -383,7 +391,13 @@ const Avatar3D = memo(function Avatar3D({
           )}
           {hasError && retryCount >= MAX_RETRIES && modelUrl && (
             <button
-              onClick={(e) => { e.stopPropagation(); setHasError(false); setRetryCount(0); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                try { useGLTF.clear(modelUrl); } catch { /* ignore */ }
+                setHasError(false);
+                setRetryCount(0);
+                setRetryKey((k) => k + 1);
+              }}
               className="mt-1 rounded-full px-2 py-0.5 text-[8px] font-bold text-white"
               style={{ background: "rgba(102,126,234,0.8)" }}
             >
@@ -393,8 +407,9 @@ const Avatar3D = memo(function Avatar3D({
         </div>
       ) : (
         /* ── 3D Canvas: only mounted when visible and model URL available ── */
-        <WebGLErrorBoundary size={size} fallbackImage={fallbackImage} onError={() => setHasError(true)}>
+        <WebGLErrorBoundary key={`eb-${retryKey}`} size={size} fallbackImage={fallbackImage} onError={() => setHasError(true)}>
           <Canvas
+            key={`cv-${retryKey}`}
             camera={{ position: [0, 0.5, 3], fov: 35 }}
             gl={{
               alpha: true,

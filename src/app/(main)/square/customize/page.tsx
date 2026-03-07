@@ -4,14 +4,22 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
-      <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
-    </div>
-  ),
-});
+const Avatar3D = dynamic(
+  () => import("@/components/square/Avatar3D").then((mod) => {
+    // Preload the first few popular models for faster preview
+    const preloadIds = AVATAR_CATALOG.slice(0, 4);
+    preloadIds.forEach((a) => mod.preloadModel(a.modelUrl));
+    return mod;
+  }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
+      </div>
+    ),
+  },
+);
 
 /* ── Avatar catalog ── */
 type AvatarItem = {

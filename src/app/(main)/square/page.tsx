@@ -11,8 +11,11 @@ import type { SquareVisitor } from "@/lib/demo-data";
 
 const Avatar3D = dynamic(
   () => import("@/components/square/Avatar3D").then((mod) => {
-    // Preload the default model on component load
+    // Preload self model + all NPC models for fast 3D display
     mod.preloadModel(DEFAULT_MY_MODEL);
+    DEMO_SQUARE_VISITORS.forEach((v) => {
+      if (v.model3d) mod.preloadModel(v.model3d);
+    });
     return mod;
   }),
   {
