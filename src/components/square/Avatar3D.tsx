@@ -5,6 +5,13 @@ import { Canvas, useFrame, invalidate } from "@react-three/fiber";
 import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 
+/* ─── Global WebGL context budget ─── */
+const MAX_CONTEXTS = 8; // Most mobile browsers cap at 8-16
+let activeContexts = 0;
+
+/* ─── Model cache: prevent re-fetching same URL ─── */
+const modelExistsCache = new Map<string, boolean>();
+
 /* ─────────────────────────────────────────────
  *  ChibiModel — loads a GLB and adds idle/walk animation
  * ───────────────────────────────────────────── */
@@ -69,7 +76,10 @@ function ChibiModel({
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const mat = child.material as THREE.MeshStandardMaterial;
-        if (mat.map) mat.map.minFilter = THREE.LinearFilter;
+        if (mat.map) {
+          mat.map.minFilter = THREE.LinearFilter;
+          mat.map.generateMipmaps = false;
+        }
       }
     });
 
@@ -181,8 +191,31 @@ function LoadingSpinner() {
   );
 }
 
+/* ─── Static placeholder (no WebGL) ─── */
+function StaticPlaceholder({ size, color = "#9b8afb" }: { size: number; color?: string }) {
+  return (
+    <div
+      className="flex items-center justify-center rounded-xl"
+      style={{
+        width: size,
+        height: size,
+        background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+      }}
+    >
+      <div
+        className="animate-pulse rounded-full"
+        style={{
+          width: size * 0.5,
+          height: size * 0.5,
+          background: `linear-gradient(135deg, ${color}40, ${color}20)`,
+        }}
+      />
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────
- *  Avatar3D — public component with long-press rotation
+ *  Avatar3D — public component with lazy loading & context management
  * ───────────────────────────────────────────── */
 const Avatar3D = memo(function Avatar3D({
   modelUrl,
@@ -204,18 +237,64 @@ const Avatar3D = memo(function Avatar3D({
   const [hasError, setHasError] = useState(false);
   const [modelExists, setModelExists] = useState<boolean | null>(null);
   const [isRotating, setIsRotating] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [canvasReady, setCanvasReady] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // IntersectionObserver: only mount Canvas when visible
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { rootMargin: "100px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Only activate Canvas when visible AND under context budget
+  useEffect(() => {
+    if (isVisible && activeContexts < MAX_CONTEXTS) {
+      activeContexts++;
+      setCanvasReady(true);
+      return () => {
+        activeContexts--;
+        setCanvasReady(false);
+      };
+    } else if (!isVisible && canvasReady) {
+      activeContexts--;
+      setCanvasReady(false);
+    }
+  }, [isVisible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Model existence check with caching
   useEffect(() => {
     if (!modelUrl) {
       setModelExists(false);
       return;
     }
-    // Try HEAD first, fall back to assuming exists (static files may not support HEAD)
+
+    // Check cache first
+    const cached = modelExistsCache.get(modelUrl);
+    if (cached !== undefined) {
+      setModelExists(cached);
+      return;
+    }
+
     fetch(modelUrl, { method: "HEAD" })
-      .then((res) => setModelExists(res.ok))
-      .catch(() => setModelExists(true)); // Assume exists — let GLB loader handle errors
+      .then((res) => {
+        modelExistsCache.set(modelUrl, res.ok);
+        setModelExists(res.ok);
+      })
+      .catch(() => {
+        modelExistsCache.set(modelUrl, true);
+        setModelExists(true);
+      });
   }, [modelUrl]);
 
   const showFallback = !modelUrl || hasError || modelExists === false;
@@ -233,7 +312,6 @@ const Avatar3D = memo(function Avatar3D({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!enableLongPressRotate) return;
-      // Don't stopPropagation here — let click events bubble for tap detection
       longPressTimer.current = setTimeout(() => {
         setIsRotating(true);
         onRotatingChange?.(true);
@@ -288,60 +366,64 @@ const Avatar3D = memo(function Avatar3D({
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
     >
-      <Canvas
-        camera={{ position: [0, 0.5, 3], fov: 35 }}
-        gl={{
-          alpha: true,
-          antialias: false,
-          powerPreference: "low-power",
-          precision: "lowp",
-          failIfMajorPerformanceCaveat: false,
-        }}
-        dpr={dpr}
-        style={{ background: "transparent" }}
-        onError={() => setHasError(true)}
-        onCreated={handleCreated}
-        frameloop="demand"
-      >
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[3, 5, 4]} intensity={0.9} />
+      {canvasReady ? (
+        <Canvas
+          camera={{ position: [0, 0.5, 3], fov: 35 }}
+          gl={{
+            alpha: true,
+            antialias: false,
+            powerPreference: "low-power",
+            precision: "lowp",
+            failIfMajorPerformanceCaveat: false,
+          }}
+          dpr={dpr}
+          style={{ background: "transparent" }}
+          onError={() => setHasError(true)}
+          onCreated={handleCreated}
+          frameloop="demand"
+        >
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[3, 5, 4]} intensity={0.9} />
 
-        <Suspense fallback={<LoadingSpinner />}>
-          {showFallback ? (
-            <FallbackModel />
-          ) : (
-            <ChibiModel
-              url={modelUrl!}
-              animationSpeed={animationSpeed}
-              userRotating={isRotating}
-              baseRotationY={Math.PI}
+          <Suspense fallback={<LoadingSpinner />}>
+            {showFallback ? (
+              <FallbackModel />
+            ) : (
+              <ChibiModel
+                url={modelUrl!}
+                animationSpeed={animationSpeed}
+                userRotating={isRotating}
+                baseRotationY={Math.PI}
+              />
+            )}
+          </Suspense>
+
+          <ContactShadows
+            position={[0, -1, 0]}
+            opacity={0.2}
+            scale={2}
+            blur={1}
+            far={2}
+            frames={1}
+            resolution={64}
+          />
+
+          {(isRotating || autoRotate) && (
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              autoRotate={autoRotate && !isRotating}
+              autoRotateSpeed={1.5}
+              maxPolarAngle={Math.PI / 1.8}
+              minPolarAngle={Math.PI / 3}
+              rotateSpeed={1.0}
+              touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }}
             />
           )}
-        </Suspense>
-
-        <ContactShadows
-          position={[0, -1, 0]}
-          opacity={0.2}
-          scale={2}
-          blur={1}
-          far={2}
-          frames={1}
-          resolution={64}
-        />
-
-        {(isRotating || autoRotate) && (
-          <OrbitControls
-            enableZoom={false}
-            enablePan={false}
-            autoRotate={autoRotate && !isRotating}
-            autoRotateSpeed={1.5}
-            maxPolarAngle={Math.PI / 1.8}
-            minPolarAngle={Math.PI / 3}
-            rotateSpeed={1.0}
-            touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }}
-          />
-        )}
-      </Canvas>
+        </Canvas>
+      ) : (
+        <StaticPlaceholder size={size} />
+      )}
 
       {isRotating && (
         <div

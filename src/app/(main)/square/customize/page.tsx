@@ -43,28 +43,52 @@ const GENDER_TABS = [
 
 const STORAGE_KEY = "sloty_selected_avatar";
 
-/* ── Hook: capture 3D model thumbnails using a single offscreen renderer ── */
+/* ── Hook: capture 3D model thumbnails with localStorage cache + staggered loading ── */
+const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v2";
+const THUMB_SIZE = 96; // Smaller for faster capture
+const BATCH_SIZE = 2; // Capture 2 at a time to avoid blocking
+const BATCH_DELAY = 100; // ms between batches
+
+function loadCachedThumbnails(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(THUMB_CACHE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return {};
+}
+
+function saveCachedThumbnails(thumbs: Record<string, string>) {
+  try {
+    localStorage.setItem(THUMB_CACHE_KEY, JSON.stringify(thumbs));
+  } catch { /* quota exceeded — ignore */ }
+}
+
 function useThumbnailCapture() {
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>(() => loadCachedThumbnails());
   const started = useRef(false);
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
 
+    const cached = loadCachedThumbnails();
+    // Only capture missing thumbnails
+    const needed = AVATAR_CATALOG.filter((a) => !cached[a.id]);
+    if (needed.length === 0) return;
+
     let disposed = false;
 
-    async function captureAll() {
+    async function captureInBatches() {
       const THREE = await import("three");
       const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         preserveDrawingBuffer: true,
-        antialias: true,
+        antialias: false,
         powerPreference: "low-power",
       });
-      renderer.setSize(128, 128);
+      renderer.setSize(THUMB_SIZE, THUMB_SIZE);
       renderer.setPixelRatio(1);
       renderer.setClearColor(0x000000, 0);
 
@@ -79,64 +103,78 @@ function useThumbnailCapture() {
       scene.add(dirLight);
 
       const loader = new GLTFLoader();
+      const allThumbs = { ...cached };
 
-      for (const avatar of AVATAR_CATALOG) {
+      for (let i = 0; i < needed.length; i += BATCH_SIZE) {
         if (disposed) break;
-        try {
-          const gltf = await loader.loadAsync(avatar.modelUrl);
+
+        const batch = needed.slice(i, i + BATCH_SIZE);
+        for (const avatar of batch) {
           if (disposed) break;
+          try {
+            const gltf = await loader.loadAsync(avatar.modelUrl);
+            if (disposed) break;
 
-          const model = gltf.scene;
-          model.rotation.set(0, Math.PI, 0);
+            const model = gltf.scene;
+            model.rotation.set(0, Math.PI, 0);
 
-          // Compute bounding box from visible meshes
-          const box = new THREE.Box3();
-          model.traverse((child) => {
-            if ("isMesh" in child && child.isMesh && child.visible) {
-              box.union(new THREE.Box3().setFromObject(child));
-            }
-          });
-          if (box.isEmpty()) box.setFromObject(model);
-
-          const size = box.getSize(new THREE.Vector3());
-          const center = box.getCenter(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scale = 2 / maxDim;
-          model.scale.setScalar(scale);
-
-          const sc = center.clone().multiplyScalar(scale);
-          model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
-
-          scene.add(model);
-          renderer.render(scene, camera);
-          const dataUrl = renderer.domElement.toDataURL("image/png");
-
-          if (!disposed) {
-            setThumbnails((prev) => ({ ...prev, [avatar.id]: dataUrl }));
-          }
-
-          scene.remove(model);
-          // Dispose model resources
-          model.traverse((child) => {
-            if ("isMesh" in child && child.isMesh) {
-              const mesh = child as { geometry?: { dispose(): void }; material?: { dispose(): void } | { dispose(): void }[] };
-              mesh.geometry?.dispose();
-              if (Array.isArray(mesh.material)) {
-                mesh.material.forEach((m) => m.dispose());
-              } else if (mesh.material) {
-                mesh.material.dispose();
+            const box = new THREE.Box3();
+            model.traverse((child) => {
+              if ("isMesh" in child && child.isMesh && child.visible) {
+                box.union(new THREE.Box3().setFromObject(child));
               }
+            });
+            if (box.isEmpty()) box.setFromObject(model);
+
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 2 / maxDim;
+            model.scale.setScalar(scale);
+
+            const sc = center.clone().multiplyScalar(scale);
+            model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
+
+            scene.add(model);
+            renderer.render(scene, camera);
+            // Use JPEG for smaller cache footprint
+            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.7);
+
+            allThumbs[avatar.id] = dataUrl;
+            if (!disposed) {
+              setThumbnails((prev) => ({ ...prev, [avatar.id]: dataUrl }));
             }
-          });
-        } catch {
-          // Skip failed models
+
+            scene.remove(model);
+            model.traverse((child) => {
+              if ("isMesh" in child && child.isMesh) {
+                const mesh = child as { geometry?: { dispose(): void }; material?: { dispose(): void } | { dispose(): void }[] };
+                mesh.geometry?.dispose();
+                if (Array.isArray(mesh.material)) {
+                  mesh.material.forEach((m) => m.dispose());
+                } else if (mesh.material) {
+                  mesh.material.dispose();
+                }
+              }
+            });
+          } catch {
+            // Skip failed models
+          }
+        }
+
+        // Yield between batches to keep UI responsive
+        if (i + BATCH_SIZE < needed.length && !disposed) {
+          await new Promise((r) => setTimeout(r, BATCH_DELAY));
         }
       }
 
-      if (!disposed) renderer.dispose();
+      if (!disposed) {
+        saveCachedThumbnails(allThumbs);
+        renderer.dispose();
+      }
     }
 
-    captureAll();
+    captureInBatches();
 
     return () => {
       disposed = true;

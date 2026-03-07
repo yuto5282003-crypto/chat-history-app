@@ -6,11 +6,29 @@ export const runtime = "edge";
  * Google Drive file proxy for 3D GLB models.
  * Fetches the file server-side to bypass browser CORS restrictions.
  * Usage: /api/model-proxy?id=GOOGLE_DRIVE_FILE_ID
+ *
+ * Optimizations:
+ * - Aggressive caching (30 days browser, 30 days CDN)
+ * - ETag-based conditional requests
+ * - Stale-while-revalidate for instant cache hits
  */
 export async function GET(request: NextRequest) {
   const fileId = request.nextUrl.searchParams.get("id");
   if (!fileId) {
     return NextResponse.json({ error: "Missing file ID" }, { status: 400 });
+  }
+
+  // Support conditional requests — return 304 if client has cached version
+  const ifNoneMatch = request.headers.get("if-none-match");
+  const etag = `"glb-${fileId}"`;
+  if (ifNoneMatch === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: {
+        ETag: etag,
+        "Cache-Control": "public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400",
+      },
+    });
   }
 
   // Google Drive direct download URL (with confirm=t to skip virus scan page)
@@ -36,8 +54,9 @@ export async function GET(request: NextRequest) {
       return new NextResponse(fallbackRes.body, {
         headers: {
           "Content-Type": "model/gltf-binary",
-          "Cache-Control": "public, max-age=604800, s-maxage=604800",
+          "Cache-Control": "public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400",
           "Access-Control-Allow-Origin": "*",
+          ETag: etag,
         },
       });
     }
@@ -46,8 +65,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(response.body, {
       headers: {
         "Content-Type": "model/gltf-binary",
-        "Cache-Control": "public, max-age=604800, s-maxage=604800",
+        "Cache-Control": "public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400",
         "Access-Control-Allow-Origin": "*",
+        ETag: etag,
       },
     });
   } catch (e) {

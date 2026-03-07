@@ -9,14 +9,21 @@ import VisitorSheet from "@/components/square/VisitorSheet";
 import { DEMO_SQUARE_VISITORS } from "@/lib/demo-data";
 import type { SquareVisitor } from "@/lib/demo-data";
 
-const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center" style={{ width: 64, height: 64 }}>
-      <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
-    </div>
-  ),
-});
+const Avatar3D = dynamic(
+  () => import("@/components/square/Avatar3D").then((mod) => {
+    // Preload the default model on component load
+    mod.preloadModel(DEFAULT_MY_MODEL);
+    return mod;
+  }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center" style={{ width: 64, height: 64 }}>
+        <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
+      </div>
+    ),
+  }
+);
 
 /* ─── Constants ─── */
 const WORLD_SCALE = 4; // 4 areas, 4× viewport width
