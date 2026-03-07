@@ -26,6 +26,7 @@ const PROXIMITY_DIST = 6;
 const NPC_INTERVAL = 4000;
 const NPC_RANGE = 2.5;
 const SWIPE_THRESHOLD = 10;
+const LEFT_MARGIN = 200; // extra px users can scroll past the left edge to see café
 const AVATAR_DRAG_THRESHOLD = 8;
 const MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
@@ -180,7 +181,7 @@ export default function SquarePage() {
     (worldPercentX: number) => {
       if (!viewportW) return 0;
       const avatarPx = (worldPercentX / 100) * worldW;
-      return Math.max(0, Math.min(avatarPx - viewportW / 2, maxCamX));
+      return Math.max(-LEFT_MARGIN, Math.min(avatarPx - viewportW / 2, maxCamX));
     },
     [viewportW, worldW, maxCamX]
   );
@@ -426,7 +427,7 @@ export default function SquarePage() {
       d.lastX = e.clientX;
       if (Math.abs(totalDx) > SWIPE_THRESHOLD) {
         d.moved = true;
-        setCameraX(Math.max(0, Math.min(d.startCamX - totalDx, maxCamX)));
+        setCameraX(Math.max(-LEFT_MARGIN, Math.min(d.startCamX - totalDx, maxCamX)));
         setCameraDur(0);
       }
     },
@@ -447,7 +448,7 @@ export default function SquarePage() {
         handleGroundTapAt(e.clientX, e.clientY);
       } else {
         const momentum = d.velocity * 8;
-        setCameraX(Math.max(0, Math.min(cameraXRef.current - momentum, maxCamX)));
+        setCameraX(Math.max(-LEFT_MARGIN, Math.min(cameraXRef.current - momentum, maxCamX)));
         setCameraDur(300);
       }
     },
