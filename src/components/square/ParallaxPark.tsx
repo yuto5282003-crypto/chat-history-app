@@ -227,17 +227,30 @@ export function NearLayer() {
       </defs>
 
       {/* ═══ GROUND ═══ */}
-      {/* Grass for café and park areas (0-2000) */}
-      <rect y="175" width="2000" height="725" fill="url(#n-grass)" />
+      {/* Paved ground for café area (0-1000) — urban sidewalk/tiles */}
+      <rect y="175" width="1000" height="725" fill="#D0CCC4" />
+      {/* Grass for park area (1000-2000) */}
+      <rect x="1000" y="175" width="1000" height="725" fill="url(#n-grass)" />
       {/* Paved ground for city + station areas (2000-4000) */}
       <rect x="2000" y="175" width="2000" height="725" fill="#C4C0B8" />
-      {/* Transition from grass to pavement */}
+      {/* Transition café paved → park grass */}
+      <rect x="950" y="175" width="100" height="725" fill="url(#n-grass)" opacity=".5" />
+      {/* Transition park grass → city */}
       <rect x="1950" y="175" width="100" height="725" fill="url(#n-grass)" opacity=".5" />
 
-      {/* Grass texture patches (café+park only) */}
+      {/* Café area sidewalk tile pattern */}
+      {Array.from({length: 20}).map((_,row) =>
+        Array.from({length: 25}).map((_,col) => (
+          <rect key={`ct-${row}-${col}`} x={col*40} y={180+row*36} width="38" height="34" rx="1" fill={((row+col)%2===0) ? "#D8D4CC" : "#CBC7BF"} opacity=".3" />
+        ))
+      )}
+      {/* Café area decorative brick border along buildings */}
+      <rect x="0" y="490" width="1000" height="48" fill="url(#n-sidewalk)" opacity=".5" />
+
+      {/* Grass texture patches (park area only) */}
       {[
-        [300,500,120,30,.2],[800,600,100,25,.18],[1500,420,140,35,.2],
-        [500,350,80,22,.12],[1800,300,90,24,.12],[1200,700,130,32,.15],
+        [1500,420,140,35,.2],[1800,300,90,24,.12],[1200,700,130,32,.15],
+        [1100,500,100,25,.18],[1300,350,80,22,.12],
       ].map(([cx,cy,rx,ry,o],i) => (
         <ellipse key={`gt-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#n-gl)" opacity={o} />
       ))}
@@ -255,194 +268,229 @@ export function NearLayer() {
       <rect x="2000" y="488" width="2000" height="50" fill="url(#n-sidewalk)" opacity=".6" />
 
       {/* ══════════════════════════════════════════════════════
-           AREA 1 — Starbucks-style Café (0-1000)
+           AREA 1 — Urban Café Street (0-1000)
+           Starbucks-style café in a trendy city street
          ══════════════════════════════════════════════════════ */}
 
-      {/* ── Main café building — large Starbucks-style storefront ── */}
+      {/* ── Road through café area ── */}
+      <rect x="0" y="480" width="1000" height="60" rx="2" fill="url(#n-asphalt)" opacity=".5" />
+      {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
+        <rect key={`ccl-${i}`} x={20+i*75} y="508" width="40" height="3" rx="1" fill="#E8E0D0" opacity=".35" />
+      ))}
+
+      {/* ── LEFT BUILDING — Tall apartment/office (behind café) ── */}
       <g filter="url(#n-sh2)">
-        {/* Building body — signature dark green */}
-        <rect x="150" y="190" width="400" height="190" rx="6" fill="#00704A" />
-        {/* Secondary green layer for depth */}
-        <rect x="155" y="195" width="390" height="180" rx="4" fill="#1E3932" />
+        <rect x="20" y="180" width="100" height="210" rx="3" fill="url(#n-bldg2)" />
+        {[0,1,2,3,4,5,6,7].map(row => [0,1,2].map(col => (
+          <rect key={`cba-${row}-${col}`} x={28+col*30} y={188+row*25} width="24" height="18" rx="1" fill="#A0C8E0" opacity=".5" />
+        )))}
+        <rect x="55" y="350" width="40" height="40" rx="2" fill="#708090" />
+        <rect x="58" y="353" width="34" height="34" rx="1" fill="#A0C8E0" opacity=".35" />
+      </g>
 
-        {/* Large floor-to-ceiling glass storefront */}
-        <rect x="170" y="220" width="110" height="100" rx="4" fill="#A8D8C8" opacity=".85" />
-        <rect x="290" y="220" width="110" height="100" rx="4" fill="#A8D8C8" opacity=".85" />
-        <rect x="410" y="220" width="110" height="100" rx="4" fill="#A8D8C8" opacity=".85" />
-        {/* Window mullions (vertical) */}
-        <line x1="225" y1="220" x2="225" y2="320" stroke="#1E3932" strokeWidth="2" />
-        <line x1="345" y1="220" x2="345" y2="320" stroke="#1E3932" strokeWidth="2" />
-        <line x1="465" y1="220" x2="465" y2="320" stroke="#1E3932" strokeWidth="2" />
-        {/* Window mullions (horizontal) */}
-        <line x1="170" y1="270" x2="280" y2="270" stroke="#1E3932" strokeWidth="1.5" />
-        <line x1="290" y1="270" x2="400" y2="270" stroke="#1E3932" strokeWidth="1.5" />
-        <line x1="410" y1="270" x2="520" y2="270" stroke="#1E3932" strokeWidth="1.5" />
-        {/* Interior warm glow through windows */}
-        <rect x="173" y="223" width="50" height="45" rx="2" fill="#FFF8E0" opacity=".12" />
-        <rect x="293" y="223" width="50" height="45" rx="2" fill="#FFF8E0" opacity=".12" />
-        <rect x="413" y="223" width="50" height="45" rx="2" fill="#FFF8E0" opacity=".12" />
-        {/* People silhouettes inside (coffee shop ambiance) */}
-        <circle cx="195" cy="295" r="5" fill="#2A2A2A" opacity=".15" />
-        <rect x="191" y="300" width="8" height="12" rx="2" fill="#2A2A2A" opacity=".12" />
-        <circle cx="330" cy="290" r="5" fill="#2A2A2A" opacity=".15" />
-        <rect x="326" y="295" width="8" height="15" rx="2" fill="#2A2A2A" opacity=".12" />
-        <circle cx="445" cy="293" r="5" fill="#2A2A2A" opacity=".15" />
-        <rect x="441" y="298" width="8" height="13" rx="2" fill="#2A2A2A" opacity=".12" />
+      {/* ── MAIN STARBUCKS BUILDING — center of café area ── */}
+      <g filter="url(#n-sh2)">
+        {/* Building body — wide two-story Starbucks */}
+        <rect x="180" y="210" width="380" height="170" rx="6" fill="#00704A" />
+        <rect x="185" y="215" width="370" height="160" rx="4" fill="#1E3932" />
 
-        {/* Main entrance door (glass double door) */}
-        <rect x="305" y="330" width="80" height="50" rx="3" fill="#1E3932" />
-        <rect x="309" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
-        <rect x="347" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
-        <circle cx="340" cy="358" r="3" fill="#D4A57A" />
-        <circle cx="350" cy="358" r="3" fill="#D4A57A" />
+        {/* 2nd floor windows */}
+        {[0,1,2,3,4].map(i => (
+          <rect key={`s2w-${i}`} x={200+i*72} y="225" width="56" height="40" rx="3" fill="#A8D8C8" opacity=".7" />
+        ))}
+        {[0,1,2,3,4].map(i => (
+          <line key={`s2m-${i}`} x1={228+i*72} y1="225" x2={228+i*72} y2="265" stroke="#1E3932" strokeWidth="1.5" />
+        ))}
 
-        {/* ── Starbucks-style round logo (siren) ── */}
-        <circle cx="345" cy="200" r="22" fill="#00704A" stroke="#D4A57A" strokeWidth="2.5" />
-        <circle cx="345" cy="200" r="18" fill="#1E3932" />
-        <circle cx="345" cy="200" r="15" fill="none" stroke="#D4A57A" strokeWidth="1" />
-        {/* Simplified siren/mermaid silhouette */}
-        <circle cx="345" cy="193" r="4" fill="#D4A57A" />
-        <path d="M340 197 Q345 210 350 197" stroke="#D4A57A" strokeWidth="1.5" fill="none" />
-        <path d="M337 203 Q335 210 332 208" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
-        <path d="M353 203 Q355 210 358 208" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
-        {/* Stars */}
-        <circle cx="333" cy="193" r="1.2" fill="#D4A57A" />
-        <circle cx="357" cy="193" r="1.2" fill="#D4A57A" />
+        {/* 1st floor — large glass storefront */}
+        <rect x="200" y="280" width="135" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
+        <rect x="345" y="280" width="80" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
+        <rect x="435" y="280" width="115" height="85" rx="4" fill="#A8D8C8" opacity=".85" />
+        {/* Vertical mullions */}
+        <line x1="267" y1="280" x2="267" y2="365" stroke="#1E3932" strokeWidth="2" />
+        <line x1="385" y1="280" x2="385" y2="365" stroke="#1E3932" strokeWidth="2" />
+        <line x1="492" y1="280" x2="492" y2="365" stroke="#1E3932" strokeWidth="2" />
+        {/* Horizontal mullion */}
+        <line x1="200" y1="320" x2="550" y2="320" stroke="#1E3932" strokeWidth="1.5" />
 
-        {/* Store name text */}
-        <rect x="230" y="175" width="230" height="18" rx="4" fill="#1E3932" />
-        <text x="345" y="189" textAnchor="middle" fontSize="12" fill="#FFFFFF" fontWeight="bold" letterSpacing="4">STARBUCKS COFFEE</text>
+        {/* Interior warm glow */}
+        <rect x="205" y="285" width="55" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
+        <rect x="350" y="285" width="30" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
+        <rect x="440" y="285" width="45" height="30" rx="2" fill="#FFF8E0" opacity=".12" />
 
-        {/* Roof accent line */}
-        <rect x="148" y="186" width="404" height="6" rx="2" fill="#00704A" />
+        {/* People silhouettes inside */}
+        <circle cx="230" cy="340" r="5" fill="#2A2A2A" opacity=".13" />
+        <rect x="226" y="345" width="8" height="14" rx="2" fill="#2A2A2A" opacity=".1" />
+        <circle cx="370" cy="335" r="5" fill="#2A2A2A" opacity=".13" />
+        <rect x="366" y="340" width="8" height="14" rx="2" fill="#2A2A2A" opacity=".1" />
+        <circle cx="480" cy="338" r="5" fill="#2A2A2A" opacity=".13" />
+
+        {/* Main entrance (glass double door) */}
+        <rect x="346" y="330" width="78" height="50" rx="3" fill="#1E3932" />
+        <rect x="350" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
+        <rect x="386" y="333" width="34" height="44" rx="2" fill="#88C8B0" opacity=".6" />
+        <circle cx="382" cy="358" r="3" fill="#D4A57A" />
+        <circle cx="388" cy="358" r="3" fill="#D4A57A" />
+
+        {/* ── Starbucks round logo ── */}
+        <circle cx="370" cy="218" r="20" fill="#00704A" stroke="#D4A57A" strokeWidth="2.5" />
+        <circle cx="370" cy="218" r="16" fill="#1E3932" />
+        <circle cx="370" cy="218" r="13" fill="none" stroke="#D4A57A" strokeWidth="1" />
+        <circle cx="370" cy="212" r="3.5" fill="#D4A57A" />
+        <path d="M365 216 Q370 228 375 216" stroke="#D4A57A" strokeWidth="1.5" fill="none" />
+        <path d="M362 221 Q360 227 357 225" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
+        <path d="M378 221 Q380 227 383 225" stroke="#D4A57A" strokeWidth="1.2" fill="none" />
+        <circle cx="358" cy="212" r="1" fill="#D4A57A" />
+        <circle cx="382" cy="212" r="1" fill="#D4A57A" />
+
+        {/* Store name on fascia */}
+        <rect x="178" y="197" width="384" height="6" rx="2" fill="#00704A" />
+        <rect x="240" y="365" width="260" height="16" rx="3" fill="#1E3932" />
+        <text x="370" y="377" textAnchor="middle" fontSize="10" fill="#FFFFFF" fontWeight="bold" letterSpacing="3">STARBUCKS COFFEE</text>
       </g>
 
       {/* ── Green striped awning ── */}
-      <path d="M148 378 L552 378 L546 398 L154 398Z" fill="#00704A" opacity=".8" />
-      {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19].map(i => (
-        <rect key={`aw-${i}`} x={152+i*20} y="378" width="10" height="20" rx="1" fill="#1E3932" opacity={i%2===0 ? ".3" : "0"} />
+      <path d="M178 378 L562 378 L556 396 L184 396Z" fill="#00704A" opacity=".8" />
+      {Array.from({length: 20}).map((_,i) => (
+        <rect key={`aw-${i}`} x={182+i*19} y="378" width="9" height="18" rx="1" fill="#1E3932" opacity={i%2===0 ? ".3" : "0"} />
       ))}
-      <path d="M154 398 L546 398 L542 404 L158 404Z" fill="#1E3932" opacity=".5" />
 
-      {/* ── Outdoor wooden terrace ── */}
-      <rect x="150" y="404" width="400" height="110" rx="4" fill="#D4B896" opacity=".4" />
-      {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (
-        <line key={`dk-${i}`} x1={150+i*34} y1="404" x2={150+i*34} y2="514" stroke="#C4A886" strokeWidth="1" opacity=".2" />
+      {/* ── Outdoor terrace (paved, urban style) ── */}
+      <rect x="180" y="396" width="380" height="82" rx="3" fill="#C8C0B4" opacity=".25" />
+      {/* Terrace railing */}
+      <line x1="178" y1="396" x2="562" y2="396" stroke="#A09888" strokeWidth="2" />
+      {[190,220,250,280,310,340,370,400,430,460,490,520,550].map((px,i) => (
+        <rect key={`rail-${i}`} x={px} y="396" width="1.5" height="8" fill="#A09888" opacity=".4" />
       ))}
-      {/* Deck border */}
-      <rect x="148" y="404" width="404" height="3" rx="1" fill="#A0885A" opacity=".3" />
 
-      {/* ── Outdoor tables with Starbucks green umbrellas ── */}
-      {[[210,435],[340,428],[470,438],[250,475],[400,470]].map(([tx,ty],i) => (
+      {/* ── Outdoor tables (urban café style) ── */}
+      {[[230,420],[350,415],[470,425],[280,450],[420,448]].map(([tx,ty],i) => (
         <g key={`ct-${i}`}>
-          {/* Table shadow */}
-          <ellipse cx={tx} cy={ty+15} rx="14" ry="5" fill="#000" opacity=".06" />
-          {/* Round table */}
-          <ellipse cx={tx} cy={ty} rx="15" ry="7" fill="#E8DDD0" />
-          <ellipse cx={tx} cy={ty-1} rx="14" ry="6" fill="#F5EDE2" />
-          <rect x={tx-2} y={ty} width="4" height="14" rx="1" fill="#C8B898" />
-          {/* Starbucks green chairs (modern round) */}
-          <ellipse cx={tx-17} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
-          <ellipse cx={tx+17} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
-          {/* Coffee cups on table */}
-          <rect x={tx-5} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".8" />
-          <rect x={tx-5} y={ty-6} width="5" height="2" rx="1" fill="#00704A" opacity=".5" />
-          <rect x={tx+1} y={ty-4} width="4" height="5" rx="1.2" fill="white" opacity=".7" />
-          {/* Green umbrella */}
-          <rect x={tx-1} y={ty-42} width="2" height="40" fill="#8B7355" />
-          <ellipse cx={tx} cy={ty-42} rx="24" ry="9" fill="#00704A" opacity=".7" />
-          <ellipse cx={tx} cy={ty-43} rx="22" ry="8" fill="#1E3932" opacity=".3" />
+          <ellipse cx={tx} cy={ty+12} rx="12" ry="4" fill="#000" opacity=".05" />
+          <ellipse cx={tx} cy={ty} rx="14" ry="6" fill="#E8DDD0" />
+          <ellipse cx={tx} cy={ty-1} rx="13" ry="5" fill="#F5EDE2" />
+          <rect x={tx-2} y={ty} width="4" height="12" rx="1" fill="#C8B898" />
+          <ellipse cx={tx-16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
+          <ellipse cx={tx+16} cy={ty+1} rx="5" ry="5" fill="#1E3932" opacity=".6" />
+          <rect x={tx-4} y={ty-5} width="5" height="6" rx="1.5" fill="white" opacity=".8" />
+          <rect x={tx-4} y={ty-6} width="5" height="2" rx="1" fill="#00704A" opacity=".5" />
+          <rect x={tx-1} y={ty-40} width="2" height="38" fill="#707070" />
+          <ellipse cx={tx} cy={ty-40} rx="22" ry="8" fill="#00704A" opacity=".7" />
         </g>
       ))}
 
-      {/* ── A-frame menu board (chalkboard style) ── */}
-      <g transform="translate(560,350)">
-        <rect x="0" y="0" width="40" height="55" rx="3" fill="#1E3932" />
-        <rect x="3" y="3" width="34" height="49" rx="2" fill="#0D2318" />
-        <text x="20" y="16" textAnchor="middle" fontSize="5" fill="#F5E6D0" fontWeight="bold">TODAY&apos;S</text>
-        <text x="20" y="23" textAnchor="middle" fontSize="5" fill="#F5E6D0" fontWeight="bold">MENU</text>
-        <line x1="7" y1="26" x2="33" y2="26" stroke="#D4A57A" strokeWidth=".5" />
-        <text x="20" y="34" textAnchor="middle" fontSize="3.5" fill="#C8B898">☆ Latte ¥480</text>
-        <text x="20" y="39" textAnchor="middle" fontSize="3.5" fill="#C8B898">☆ Mocha ¥520</text>
-        <text x="20" y="44" textAnchor="middle" fontSize="3.5" fill="#C8B898">☆ Frappuccino ¥550</text>
-        <text x="20" y="49" textAnchor="middle" fontSize="3.5" fill="#C8B898">☆ Matcha ¥510</text>
-        <line x1="4" y1="55" x2="-3" y2="72" stroke="#1E3932" strokeWidth="2.5" />
-        <line x1="36" y1="55" x2="43" y2="72" stroke="#1E3932" strokeWidth="2.5" />
-      </g>
-
-      {/* ── Green flower planters along café front ── */}
-      {[170,245,320,395,470].map((fx,i) => (
-        <g key={`fp-${i}`}>
-          <rect x={fx} y="373" width="30" height="10" rx="4" fill="#1E3932" />
-          {[0,8,16,24].map((d,j) => (
-            <circle key={j} cx={fx+3+d} cy={370-j%2*2} r="4" fill={["#F3A7C6","#FFFFFF","#FFB7D5","#F5E6D0"][j%4]} opacity=".8" />
-          ))}
-          {[3,11,19,27].map((d,j) => (
-            <ellipse key={`lf-${j}`} cx={fx+d} cy={367} rx="3.5" ry="2.5" fill="#5DA34A" opacity=".45" />
-          ))}
-        </g>
-      ))}
-
-      {/* ── Warm string lights ── */}
-      <path d="M160 378 Q260 388 360 378 Q460 388 540 378" stroke="#D4A57A" strokeWidth="1.2" fill="none" opacity=".6" />
-      {[170,192,214,236,258,280,302,324,346,368,390,412,434,456,478,500,522].map((lx,i) => (
-        <circle key={`sl-${i}`} cx={lx} cy={381+Math.sin(i*.8)*3} r="2.5" fill="#FFE8B0" opacity=".8" />
-      ))}
-
-      {/* ── Side building (bakery/sweets shop with Starbucks synergy) ── */}
+      {/* ── RIGHT BUILDING — Bakery / boutique ── */}
       <g filter="url(#n-sh)">
-        <rect x="620" y="250" width="150" height="120" rx="4" fill="#FAF4EC" />
-        <path d="M615 252 L695 222 L775 252Z" fill="#C87878" />
-        <rect x="635" y="270" width="35" height="30" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="680" y="270" width="35" height="30" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="725" y="270" width="30" height="30" rx="2" fill="url(#n-glass)" opacity=".75" />
-        <rect x="665" y="320" width="45" height="50" rx="3" fill="#A07050" />
-        <rect x="633" y="240" width="100" height="16" rx="4" fill="#F8E8D8" />
-        <text x="683" y="252" textAnchor="middle" fontSize="8" fill="#C07070" fontWeight="bold">BAKERY</text>
-        {/* Cute bread icon */}
-        <ellipse cx="740" cy="248" rx="6" ry="4" fill="#E8C898" />
+        <rect x="620" y="240" width="160" height="140" rx="4" fill="#FAF4EC" />
+        <rect x="615" y="234" width="170" height="10" rx="2" fill="#C87878" />
+        <rect x="635" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
+        <rect x="683" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
+        <rect x="731" y="260" width="38" height="35" rx="2" fill="url(#n-glass)" opacity=".75" />
+        <rect x="670" y="320" width="50" height="60" rx="3" fill="#A07050" />
+        <rect x="638" y="248" width="110" height="16" rx="4" fill="#F8E8D8" />
+        <text x="693" y="260" textAnchor="middle" fontSize="9" fill="#C07070" fontWeight="bold">BAKERY</text>
       </g>
 
-      {/* ── Drive-through / Takeout window ── */}
-      <g transform="translate(80,340)">
-        <rect x="0" y="0" width="55" height="38" rx="4" fill="#00704A" />
-        <rect x="4" y="4" width="47" height="14" rx="2" fill="#88C8B0" opacity=".5" />
-        <text x="27" y="30" textAnchor="middle" fontSize="6" fill="#F5E6D0" fontWeight="bold">DRIVE THRU</text>
-        {/* Arrow */}
-        <path d="M25 35 L27 40 L29 35" stroke="#D4A57A" strokeWidth="1" fill="none" />
+      {/* ── FAR RIGHT — Tall residential building ── */}
+      <g filter="url(#n-sh2)">
+        <rect x="810" y="200" width="110" height="190" rx="3" fill="url(#n-bldg1)" />
+        {[0,1,2,3,4,5,6].map(row => [0,1,2].map(col => (
+          <rect key={`cbr-${row}-${col}`} x={818+col*34} y={210+row*26} width="28" height="20" rx="1" fill="url(#n-glass)" opacity=".5" />
+        )))}
+        <rect x="845" y="355" width="40" height="35" rx="2" fill="#806050" />
       </g>
 
-      {/* ── Trees — café ── */}
-      {[[45,360,38,32,"n-ta"],[830,365,34,28,"n-tb"],[780,310,30,25,"n-ta"]].map(([x,y,rx,ry,g],i) => (
-        <g key={`ctr-${i}`}>
-          <rect x={(x as number)-4} y={y as number} width="8" height="38" rx="3" fill="#8B7355" />
-          <ellipse cx={x as number} cy={(y as number)-16} rx={rx as number} ry={ry as number} fill={`url(#${g})`} />
+      {/* ── FAR LEFT — Small shop ── */}
+      <g filter="url(#n-sh)">
+        <rect x="130" y="290" width="40" height="100" rx="3" fill="#E0D8D0" />
+        <rect x="133" y="300" width="34" height="25" rx="2" fill="url(#n-glass)" opacity=".6" />
+        <rect x="140" y="345" width="22" height="45" rx="2" fill="#806050" />
+        <rect x="130" y="284" width="40" height="10" rx="2" fill="#D07060" />
+      </g>
+
+      {/* ── Chalkboard menu ── */}
+      <g transform="translate(575,360)">
+        <rect x="0" y="0" width="36" height="50" rx="3" fill="#1E3932" />
+        <rect x="3" y="3" width="30" height="44" rx="2" fill="#0D2318" />
+        <text x="18" y="14" textAnchor="middle" fontSize="4.5" fill="#F5E6D0" fontWeight="bold">MENU</text>
+        <line x1="6" y1="17" x2="30" y2="17" stroke="#D4A57A" strokeWidth=".5" />
+        <text x="18" y="24" textAnchor="middle" fontSize="3.2" fill="#C8B898">Latte ¥480</text>
+        <text x="18" y="29" textAnchor="middle" fontSize="3.2" fill="#C8B898">Mocha ¥520</text>
+        <text x="18" y="34" textAnchor="middle" fontSize="3.2" fill="#C8B898">Frappuccino ¥550</text>
+        <text x="18" y="39" textAnchor="middle" fontSize="3.2" fill="#C8B898">Matcha ¥510</text>
+        <line x1="3" y1="50" x2="-2" y2="64" stroke="#1E3932" strokeWidth="2" />
+        <line x1="33" y1="50" x2="38" y2="64" stroke="#1E3932" strokeWidth="2" />
+      </g>
+
+      {/* ── Flower planters along café front ── */}
+      {[195,270,345,420,495].map((fx,i) => (
+        <g key={`fp-${i}`}>
+          <rect x={fx} y="382" width="28" height="8" rx="3" fill="#505050" />
+          {[0,7,14,21].map((d,j) => (
+            <circle key={j} cx={fx+3+d} cy={380-j%2*2} r="3.5" fill={["#F3A7C6","#FFFFFF","#FFB7D5","#F5E6D0"][j%4]} opacity=".8" />
+          ))}
+          {[3,10,18,25].map((d,j) => (
+            <ellipse key={`lf-${j}`} cx={fx+d} cy={377} rx="3" ry="2" fill="#5DA34A" opacity=".45" />
+          ))}
         </g>
       ))}
 
-      {/* ── Starbucks green benches ── */}
-      {[[65,465],[910,455]].map(([bx,by],i) => (
-        <g key={`cb-${i}`} transform={`translate(${bx},${by})`}>
-          <rect x="0" y="5" width="42" height="3" rx="1" fill="#1E3932" />
-          <rect x="2" y="-2" width="38" height="3" rx="1" fill="#00704A" />
-          <rect x="4" y="8" width="3" height="11" rx="1" fill="#1E3932" />
-          <rect x="35" y="8" width="3" height="11" rx="1" fill="#1E3932" />
-        </g>
+      {/* ── String lights ── */}
+      <path d="M190 378 Q280 386 370 378 Q460 386 550 378" stroke="#D4A57A" strokeWidth="1.2" fill="none" opacity=".5" />
+      {[196,216,236,256,276,296,316,336,356,376,396,416,436,456,476,496,516,536].map((lx,i) => (
+        <circle key={`sl-${i}`} cx={lx} cy={381+Math.sin(i*.8)*3} r="2" fill="#FFE8B0" opacity=".75" />
       ))}
 
-      {/* ── Vintage lamp posts ── */}
-      {[[95,385],[570,375],[860,380]].map(([lx,ly],i) => (
+      {/* ── Crosswalk ── */}
+      {[0,1,2,3,4,5,6,7,8,9].map(i => (
+        <rect key={`ccw-${i}`} x={350+i*16} y="480" width="10" height="60" rx="1" fill="white" opacity=".25" />
+      ))}
+
+      {/* ── Vending machines ── */}
+      <rect x="130" y="410" width="16" height="28" rx="2" fill="#D04040" />
+      <rect x="133" y="414" width="10" height="10" rx="1" fill="#E8E0D8" opacity=".6" />
+      <rect x="133" y="428" width="4" height="3" rx="1" fill="#FFE0A0" opacity=".5" />
+      <rect x="150" y="410" width="16" height="28" rx="2" fill="#4070D0" />
+      <rect x="153" y="414" width="10" height="10" rx="1" fill="#E8E0D8" opacity=".6" />
+      <rect x="153" y="428" width="4" height="3" rx="1" fill="#FFE0A0" opacity=".5" />
+
+      {/* ── Modern street lamps ── */}
+      {[[70,400],[560,395],[780,400],[950,395]].map(([lx,ly],i) => (
         <g key={`cl-${i}`} transform={`translate(${lx},${ly})`}>
-          <rect x="3" y="10" width="3" height="42" rx="1" fill="#5A4A38" />
-          <rect x="1" y="48" width="7" height="4" rx="1.5" fill="#4A3A28" />
-          <path d="M-2 10 Q4.5 2 11 10" fill="#F0E8D8" />
-          <circle cx="4.5" cy="7" r="7" fill="url(#n-glow)" />
-          <circle cx="4.5" cy="7" r="3.5" fill="#FFF8E0" opacity=".8" />
+          <rect x="2" y="5" width="4" height="50" rx="2" fill="#707070" />
+          <rect x="0" y="52" width="8" height="4" rx="2" fill="#606060" />
+          <rect x="-6" y="0" width="20" height="6" rx="3" fill="#909090" />
+          <rect x="-4" y="4" width="16" height="2" rx="1" fill="#FFF8E0" opacity=".5" />
+          <circle cx="4" cy="3" r="7" fill="url(#n-glow)" />
         </g>
       ))}
 
-      {/* Terrace path */}
-      <path d="M340 404 Q345 440 350 480 Q355 502 370 516 L386 510 Q371 498 366 475 Q361 435 356 400Z" fill="url(#n-path)" opacity=".6" />
+      {/* ── Street trees (trimmed, urban) ── */}
+      {[[50,370,22,18,"n-ta"],[620,385,20,16,"n-tb"],[950,365,24,20,"n-ta"]].map(([x,y,rx,ry,g],i) => (
+        <g key={`ctr-${i}`}>
+          <rect x={(x as number)-3} y={y as number} width="6" height="30" rx="2" fill="#8B7355" />
+          <ellipse cx={x as number} cy={(y as number)-12} rx={rx as number} ry={ry as number} fill={`url(#${g})`} />
+        </g>
+      ))}
+
+      {/* ── Benches (modern metal) ── */}
+      {[[85,460],[920,455]].map(([bx,by],i) => (
+        <g key={`cb-${i}`} transform={`translate(${bx},${by})`}>
+          <rect x="0" y="5" width="42" height="3" rx="1" fill="#A0A0A0" />
+          <rect x="2" y="-2" width="38" height="3" rx="1" fill="#B0B0B0" />
+          <rect x="4" y="8" width="3" height="10" rx="1" fill="#808080" />
+          <rect x="35" y="8" width="3" height="10" rx="1" fill="#808080" />
+        </g>
+      ))}
+
+      {/* ── Traffic light ── */}
+      <g transform="translate(340,430)">
+        <rect x="0" y="0" width="5" height="40" rx="1" fill="#606060" />
+        <rect x="-5" y="-20" width="15" height="22" rx="3" fill="#303030" />
+        <circle cx="2.5" cy="-13" r="3" fill="#FF4040" opacity=".6" />
+        <circle cx="2.5" cy="-5" r="3" fill="#FFCC00" opacity=".3" />
+        <circle cx="2.5" cy="3" r="3" fill="#40CC40" opacity=".3" />
+      </g>
 
       {/* ══════════════════════════════════════════════════════
            AREA 2 — Fountain park (1000-2000)
