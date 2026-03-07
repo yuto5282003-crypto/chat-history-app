@@ -55,8 +55,8 @@ const GENDER_TABS = [
 const STORAGE_KEY = "sloty_selected_avatar";
 
 /* ── Hook: capture 3D model thumbnails with localStorage cache + staggered loading ── */
-const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v2";
-const THUMB_SIZE = 96; // Smaller for faster capture
+const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v3";
+const THUMB_SIZE = 192; // Higher res for sharp thumbnails on retina displays
 const BATCH_SIZE = 2; // Capture 2 at a time to avoid blocking
 const BATCH_DELAY = 100; // ms between batches
 
@@ -96,7 +96,7 @@ function useThumbnailCapture() {
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         preserveDrawingBuffer: true,
-        antialias: false,
+        antialias: true,
         powerPreference: "low-power",
       });
       renderer.setSize(THUMB_SIZE, THUMB_SIZE);
@@ -148,8 +148,8 @@ function useThumbnailCapture() {
 
             scene.add(model);
             renderer.render(scene, camera);
-            // Use JPEG for smaller cache footprint
-            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.7);
+            // Use JPEG with higher quality for sharp thumbnails
+            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.85);
 
             allThumbs[avatar.id] = dataUrl;
             if (!disposed) {

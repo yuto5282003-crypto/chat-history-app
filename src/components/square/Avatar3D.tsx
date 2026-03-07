@@ -372,7 +372,7 @@ const Avatar3D = memo(function Avatar3D({
             camera={{ position: [0, 0.5, 3], fov: 35 }}
             gl={{
               alpha: true,
-              antialias: false,
+              antialias: true,
               powerPreference: "default",
               failIfMajorPerformanceCaveat: false,
             }}
