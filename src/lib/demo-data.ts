@@ -476,7 +476,7 @@ export type SquareVisitor = {
   displayName: string;
   gender: string;
   avatarStyle: AvatarStyle;
-  /** Optional CHARAT avatar image path (e.g. "/avatars/avatar-haruka.svg") */
+  /** Optional CHARAT avatar image path (e.g. "/avatars/avatar-haruka.png") */
   avatarImage?: string;
   bubble: string;
   mode: "call" | "in_person" | "either";
@@ -512,7 +512,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     // Near left bench — sitting/standing by bench
     id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
-    avatarImage: "/avatars/avatar-haruka.svg",
+    avatarImage: "/avatars/avatar-haruka.png",
     bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
     ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
@@ -521,7 +521,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     // Near fountain — upper right
     id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
-    avatarImage: "/avatars/avatar-takuya.svg",
+    avatarImage: "/avatars/avatar-takuya.png",
     bubble: "作業通話できる人いる？", mode: "either", tags: ["作業", "勉強"], verified: true,
     availability: "30分だけ", area: "仙台駅周辺", bio: "プログラミングと筋トレ",
     ratingAvg: 4.3, ratingCount: 15, x: 58, y: 43, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
@@ -530,7 +530,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     // Right bench area
     id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
-    avatarImage: "/avatars/avatar-misaki.svg",
+    avatarImage: "/avatars/avatar-misaki.png",
     bubble: "今から散歩", mode: "in_person", tags: ["散歩", "雑談"], verified: false,
     availability: "今からOK", area: "市内", bio: "旅行好き 街探索中",
     ratingAvg: 4.0, ratingCount: 5, x: 78, y: 56, lastActive: new Date(Date.now() - 1 * 60_000).toISOString(),
@@ -539,7 +539,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     // Lower bench area
     id: "sv-4", userId: "user-d", displayName: "ことね", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-d"],
-    avatarImage: "/avatars/avatar-kotone.svg",
+    avatarImage: "/avatars/avatar-kotone.png",
     bubble: "相談のります", mode: "call", tags: ["相談"], verified: true,
     availability: "19:00以降対応", area: "", bio: "何でも相談のります。エンジニア5年目",
     ratingAvg: 4.9, ratingCount: 42, x: 52, y: 70, lastActive: new Date(Date.now() - 12 * 60_000).toISOString(),
