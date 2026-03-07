@@ -32,8 +32,19 @@ const AVATAR_CATALOG: AvatarItem[] = [
   { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24" },
   { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c" },
   { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171" },
+  // 女性アバター（新規）
+  { id: "f-008", name: "アバター 8", modelUrl: "/api/model-proxy?id=1WrlLDVaFxwYcTuq_u4MPOgKaFwqmR_KD", gender: "female", color: "#e879f9" },
+  { id: "f-009", name: "アバター 9", modelUrl: "/api/model-proxy?id=1PK_EU_udFtRgp7y5nIHb4GlI64qEu9Rj", gender: "female", color: "#c084fc" },
+  { id: "f-010", name: "アバター 10", modelUrl: "/api/model-proxy?id=1y3KlQj08LDVhue-yO7x_aimzwRVjI90e", gender: "female", color: "#67e8f9" },
   // 男性アバター
   { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea" },
+  { id: "m-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=17DOS8dIWcuaveJn2i6bC7uMWWoByZuSo", gender: "male", color: "#60a5fa" },
+  { id: "m-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=19ZNNMNayYT7F9rIVvEi-Mwlh5NwNju8S", gender: "male", color: "#34d399" },
+  { id: "m-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=11zJGTW_nwDEFjHgCQ1xjUCx5aR14GF98", gender: "male", color: "#fbbf24" },
+  { id: "m-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1Pb2X10mLCFmIEWm3-R7oumbaor_JEHG_", gender: "male", color: "#fb923c" },
+  { id: "m-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1C-WnG6zSvxQHxySQ-V0zwEyXAEgu6cXF", gender: "male", color: "#f87171" },
+  { id: "m-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=1CYC2zW5YaKrZOpPbFPgQpWypml0DaEmf", gender: "male", color: "#a78bfa" },
+  { id: "m-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1tusqe8fHJ1kloGLV3-4-aCE7g31K1OkB", gender: "male", color: "#2dd4bf" },
 ];
 
 const GENDER_TABS = [
