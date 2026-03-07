@@ -6,9 +6,8 @@ import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-thre
 import * as THREE from "three";
 
 /* ─────────────────────────────────────────────
- *  ChibiModel — loads a GLB and adds idle animations
- *  Tripo AI GLB models typically don't include skeletal anims,
- *  so we add programmatic breathing / sway / bounce.
+ *  ChibiModel — loads a GLB and adds walking animation
+ *  Finds bones/limbs in the model and animates them procedurally.
  * ───────────────────────────────────────────── */
 
 function ChibiModel({
@@ -23,6 +22,15 @@ function ChibiModel({
   const { scene, animations } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null!);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const bonesRef = useRef<{
+    leftArm?: THREE.Bone;
+    rightArm?: THREE.Bone;
+    leftLeg?: THREE.Bone;
+    rightLeg?: THREE.Bone;
+    spine?: THREE.Bone;
+    head?: THREE.Bone;
+  }>({});
+  const meshPartsRef = useRef<THREE.Object3D[]>([]);
 
   // Play embedded animations if the GLB has them
   useEffect(() => {
@@ -40,10 +48,11 @@ function ChibiModel({
     }
   }, [scene, animations]);
 
-  // Auto-center, auto-scale, and fix rotation to face front
+  // Auto-center, auto-scale, find bones for walking animation
   useEffect(() => {
-    // Rotate model to face the camera (fix sideways orientation)
-    scene.rotation.y = Math.PI;
+    // Try multiple rotations to find front-facing orientation
+    // Most chibi models exported from Tripo AI face +Z or -Z
+    scene.rotation.set(0, 0, 0);
 
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
@@ -56,6 +65,36 @@ function ChibiModel({
     // Re-center after scaling
     const scaledCenter = center.multiplyScalar(scale);
     scene.position.set(-scaledCenter.x, -scaledCenter.y + (size.y * scale) / 2 - 1, -scaledCenter.z);
+
+    // Traverse scene to find bones for limb animation
+    const bones: typeof bonesRef.current = {};
+    const parts: THREE.Object3D[] = [];
+
+    scene.traverse((child) => {
+      const name = child.name.toLowerCase();
+      if (child instanceof THREE.Bone) {
+        if (name.includes("left") && (name.includes("arm") || name.includes("hand") || name.includes("upper_arm"))) {
+          bones.leftArm = child;
+        } else if (name.includes("right") && (name.includes("arm") || name.includes("hand") || name.includes("upper_arm"))) {
+          bones.rightArm = child;
+        } else if (name.includes("left") && (name.includes("leg") || name.includes("thigh") || name.includes("upper_leg"))) {
+          bones.leftLeg = child;
+        } else if (name.includes("right") && (name.includes("leg") || name.includes("thigh") || name.includes("upper_leg"))) {
+          bones.rightLeg = child;
+        } else if (name.includes("spine") || name.includes("torso") || name.includes("chest")) {
+          bones.spine = child;
+        } else if (name.includes("head") || name.includes("neck")) {
+          bones.head = child;
+        }
+      }
+      // Collect mesh parts for fallback limb detection
+      if (child instanceof THREE.Mesh) {
+        parts.push(child);
+      }
+    });
+
+    bonesRef.current = bones;
+    meshPartsRef.current = parts;
   }, [scene]);
 
   useFrame((state, delta) => {
@@ -68,20 +107,56 @@ function ChibiModel({
     const group = groupRef.current;
     if (!group) return;
 
-    // Idle breathing — gentle Y-axis scale oscillation
-    const breathe = 1 + Math.sin(t * 1.5) * 0.02;
+    const bones = bonesRef.current;
+    const hasBones = !!(bones.leftArm || bones.leftLeg);
+    const walkCycle = t * 2.5; // Walking speed
+
+    if (hasBones) {
+      // ── Bone-based walking animation ──
+      const swing = Math.sin(walkCycle);
+      const swingAlt = Math.sin(walkCycle + Math.PI);
+
+      // Arms swing opposite to legs
+      if (bones.leftArm) {
+        bones.leftArm.rotation.x = swing * 0.4;
+      }
+      if (bones.rightArm) {
+        bones.rightArm.rotation.x = swingAlt * 0.4;
+      }
+      // Legs walk
+      if (bones.leftLeg) {
+        bones.leftLeg.rotation.x = swingAlt * 0.35;
+      }
+      if (bones.rightLeg) {
+        bones.rightLeg.rotation.x = swing * 0.35;
+      }
+      // Spine sway
+      if (bones.spine) {
+        bones.spine.rotation.z = Math.sin(walkCycle) * 0.03;
+        bones.spine.rotation.y = Math.sin(walkCycle * 0.5) * 0.02;
+      }
+      // Head bob
+      if (bones.head) {
+        bones.head.rotation.x = Math.sin(walkCycle * 2) * 0.02;
+      }
+    }
+
+    // ── Whole-body walking motion ──
+    // Walking bob (double frequency for step-step rhythm)
+    const stepBob = Math.abs(Math.sin(walkCycle)) * 0.04;
+    group.position.y = stepBob;
+
+    // Breathing
+    const breathe = 1 + Math.sin(t * 1.5) * 0.015;
     group.scale.set(1, breathe, 1);
 
-    // Gentle sway — slight rotation around Y (more visible)
+    // Gentle body sway while walking
+    group.rotation.z = Math.sin(walkCycle) * 0.04;
+
+    // Face direction — slow gentle turn
     group.rotation.y = autoRotate
       ? t * 0.3
-      : Math.sin(t * 0.8) * 0.15;
-
-    // Bouncy hop — livelier Y translation
-    group.position.y = Math.abs(Math.sin(t * 1.2)) * 0.06;
-
-    // Subtle lean — slight X-axis tilt following sway
-    group.rotation.z = Math.sin(t * 0.8) * 0.03;
+      : Math.sin(t * 0.4) * 0.2;
   });
 
   return (
