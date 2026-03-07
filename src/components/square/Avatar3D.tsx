@@ -76,13 +76,22 @@ function ChibiModel({
     const sc = center.multiplyScalar(scale);
     scene.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
 
-    // Light texture optimization: disable mipmaps only (saves GPU memory, no visual impact)
+    // Texture optimization: disable mipmaps + cap at 512px (preview is 160px, no need for 1K+)
+    const MAX_TEX = 512;
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const mat = child.material as THREE.MeshStandardMaterial;
-        if (mat.map) {
-          mat.map.generateMipmaps = false;
-          mat.map.minFilter = THREE.LinearFilter;
+        const maps = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap, mat.emissiveMap];
+        for (const tex of maps) {
+          if (tex) {
+            tex.generateMipmaps = false;
+            tex.minFilter = THREE.LinearFilter;
+            if (tex.image && (tex.image.width > MAX_TEX || tex.image.height > MAX_TEX)) {
+              tex.image.width = MAX_TEX;
+              tex.image.height = MAX_TEX;
+              tex.needsUpdate = true;
+            }
+          }
         }
       }
     });
@@ -405,7 +414,7 @@ const Avatar3D = memo(function Avatar3D({
               blur={1}
               far={2}
               frames={1}
-              resolution={64}
+              resolution={32}
             />
 
             {(isRotating || autoRotate) && (

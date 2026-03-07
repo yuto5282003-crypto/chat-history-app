@@ -55,10 +55,10 @@ const GENDER_TABS = [
 const STORAGE_KEY = "sloty_selected_avatar";
 
 /* ── Hook: capture 3D model thumbnails with localStorage cache + staggered loading ── */
-const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v3";
-const THUMB_SIZE = 192; // Higher res for sharp thumbnails on retina displays
-const BATCH_SIZE = 2; // Capture 2 at a time to avoid blocking
-const BATCH_DELAY = 100; // ms between batches
+const THUMB_CACHE_KEY = "sloty_avatar_thumbs_v4";
+const THUMB_SIZE = 128; // 2x of 56px display = sharp enough on retina
+const BATCH_SIZE = 4; // More parallel captures for faster completion
+const BATCH_DELAY = 50; // ms between batches
 
 function loadCachedThumbnails(): Record<string, string> {
   try {
@@ -96,12 +96,32 @@ function useThumbnailCapture() {
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         preserveDrawingBuffer: true,
-        antialias: true,
+        antialias: false, // Not needed at 56px display size
         powerPreference: "low-power",
       });
       renderer.setSize(THUMB_SIZE, THUMB_SIZE);
       renderer.setPixelRatio(1);
       renderer.setClearColor(0x000000, 0);
+
+      // Helper: downscale textures for thumbnail rendering (saves GPU memory & speeds up)
+      const MAX_THUMB_TEX = 256;
+      function downscaleTextures(obj: THREE.Object3D) {
+        obj.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            const mat = child.material as THREE.MeshStandardMaterial;
+            const maps = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap, mat.emissiveMap];
+            for (const tex of maps) {
+              if (tex && tex.image && (tex.image.width > MAX_THUMB_TEX || tex.image.height > MAX_THUMB_TEX)) {
+                tex.image.width = MAX_THUMB_TEX;
+                tex.image.height = MAX_THUMB_TEX;
+                tex.needsUpdate = true;
+              }
+            }
+            mat.generateMipmaps = false;
+            if (mat.map) mat.map.minFilter = THREE.LinearFilter;
+          }
+        });
+      }
 
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
       camera.position.set(0, 0.5, 3);
@@ -146,10 +166,10 @@ function useThumbnailCapture() {
             const sc = center.clone().multiplyScalar(scale);
             model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
 
+            downscaleTextures(model);
             scene.add(model);
             renderer.render(scene, camera);
-            // Use JPEG with higher quality for sharp thumbnails
-            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.85);
+            const dataUrl = renderer.domElement.toDataURL("image/jpeg", 0.8);
 
             allThumbs[avatar.id] = dataUrl;
             if (!disposed) {
