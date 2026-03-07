@@ -26,7 +26,7 @@ const PROXIMITY_DIST = 6;
 const NPC_INTERVAL = 4000;
 const NPC_RANGE = 2.5;
 const SWIPE_THRESHOLD = 10;
-const LEFT_MARGIN = 600; // extra px users can scroll past the left edge to see café
+const LEFT_MARGIN = 0; // no scroll past left edge — building fills viewport
 const AVATAR_DRAG_THRESHOLD = 8;
 const MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;

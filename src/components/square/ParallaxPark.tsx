@@ -279,9 +279,10 @@ export function NearLayer() {
       ))}
 
       {/* ══════════════════════════════════════════════════════════
-           STARBUCKS BUILDING — x=300-900 (centered for camera visibility)
-           Layout: Brick+wood+glass | column | glass entrance | brick+white panel
+           STARBUCKS BUILDING + LANDSCAPING — shifted left so building is never cut off
+           Wrapping group shifts all café content 200px left (building effective x=100-700)
          ══════════════════════════════════════════════════════════ */}
+      <g transform="translate(-200,0)">
       <g filter="url(#n-sh2)">
 
         {/* ── FLAT ROOF (black trim) ── */}
@@ -508,6 +509,8 @@ export function NearLayer() {
           <rect x="35" y="8" width="3" height="10" rx="1" fill="#808080" />
         </g>
       ))}
+
+      </g>{/* end café shift wrapper */}
 
       {/* ══════════════════════════════════════════════════════
            AREA 2 — Fountain park (1000-2000)
