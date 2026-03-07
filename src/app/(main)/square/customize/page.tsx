@@ -20,21 +20,20 @@ type AvatarItem = {
   modelUrl: string;
   gender: "female" | "male";
   color: string; // gradient color for thumbnail
-  thumbnail?: string; // optional face image
 };
 
 const AVATAR_CATALOG: AvatarItem[] = [
   // 女性アバター
-  { id: "f-haruka", name: "はるか", modelUrl: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF", gender: "female", color: "#ec4899", thumbnail: "/avatars/avatar-haruka.png" },
-  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6", thumbnail: "/avatars/avatar-kotone.png" },
-  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa", thumbnail: "/avatars/avatar-misaki.png" },
+  { id: "f-haruka", name: "はるか", modelUrl: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF", gender: "female", color: "#ec4899" },
+  { id: "f-001", name: "アバター 1", modelUrl: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_", gender: "female", color: "#f472b6" },
+  { id: "f-002", name: "アバター 2", modelUrl: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ", gender: "female", color: "#a78bfa" },
   { id: "f-003", name: "アバター 3", modelUrl: "/api/model-proxy?id=13AHSMGJJQiK_y5zJYvmSd72hXyN4fAXu", gender: "female", color: "#60a5fa" },
   { id: "f-004", name: "アバター 4", modelUrl: "/api/model-proxy?id=1vNzQX_exuRrf2NscqIZYydaACaAt0uGj", gender: "female", color: "#34d399" },
   { id: "f-005", name: "アバター 5", modelUrl: "/api/model-proxy?id=1Vy5TUp1iODbnNS0ixu_vWHC3Ex4mQel5", gender: "female", color: "#fbbf24" },
   { id: "f-006", name: "アバター 6", modelUrl: "/api/model-proxy?id=14sUdfRO4M2gfZrTQ8WbRukZfGZGHYIH1", gender: "female", color: "#fb923c" },
   { id: "f-007", name: "アバター 7", modelUrl: "/api/model-proxy?id=1VJ2HXqWrGcKmnzrOkME3tqzHyeLf7htf", gender: "female", color: "#f87171" },
   // 男性アバター
-  { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea", thumbnail: "/avatars/avatar-takuya.png" },
+  { id: "m-jibun", name: "自分", modelUrl: "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp", gender: "male", color: "#667eea" },
 ];
 
 const GENDER_TABS = [
@@ -63,34 +62,18 @@ function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelecte
       }}
     >
       <div className="flex flex-col items-center gap-1">
-        {avatar.thumbnail ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={avatar.thumbnail}
-            alt={avatar.name}
-            className="rounded-full object-cover"
-            style={{
-              width: 56,
-              height: 56,
-              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-              border: `2px solid ${avatar.color}60`,
-              transition: "box-shadow 0.3s",
-            }}
-          />
-        ) : (
-          <div
-            className="flex items-center justify-center rounded-full"
-            style={{
-              width: 56,
-              height: 56,
-              background: `linear-gradient(135deg, ${avatar.color}, ${avatar.color}aa)`,
-              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-              transition: "box-shadow 0.3s",
-            }}
-          >
-            <span className="text-[20px] font-bold text-white">{avatar.name.charAt(0)}</span>
-          </div>
-        )}
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{
+            width: 56,
+            height: 56,
+            background: `linear-gradient(135deg, ${avatar.color}, ${avatar.color}aa)`,
+            boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
+            transition: "box-shadow 0.3s",
+          }}
+        >
+          <span className="text-[20px] font-bold text-white">{avatar.name.charAt(0)}</span>
+        </div>
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
           {label}
         </span>

@@ -59,7 +59,7 @@ function ChibiModel({
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2.2 / maxDim;
+    const scale = 2 / maxDim;
     scene.scale.setScalar(scale);
 
     const sc = center.multiplyScalar(scale);
@@ -277,11 +277,9 @@ const Avatar3D = memo(function Avatar3D({
       style={{
         width: size,
         height: size,
-        borderRadius: isRotating ? "12px" : "50%",
-        overflow: "hidden",
         background: "transparent",
         position: "relative",
-        transition: "border-radius 0.3s, box-shadow 0.3s",
+        transition: "box-shadow 0.3s",
         boxShadow: isRotating
           ? "0 0 0 2px rgba(155,138,251,0.6), 0 0 12px rgba(155,138,251,0.3)"
           : "none",
@@ -291,7 +289,7 @@ const Avatar3D = memo(function Avatar3D({
       onPointerLeave={handlePointerLeave}
     >
       <Canvas
-        camera={{ position: [0, 0.4, 2.8], fov: 35 }}
+        camera={{ position: [0, 0.5, 3], fov: 35 }}
         gl={{
           alpha: true,
           antialias: false,
