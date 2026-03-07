@@ -22,12 +22,15 @@ const Avatar3D = dynamic(() => import("@/components/square/Avatar3D"), {
 const WORLD_SCALE = 4; // 4 areas, 4× viewport width
 const WALK_SPEED = 8;
 const APPROACH_STOP_DIST = 4;
-const PROXIMITY_DIST = 6; // world % for "talk" button
+const PROXIMITY_DIST = 6;
 const NPC_INTERVAL = 4000;
 const NPC_RANGE = 2.5;
 const SWIPE_THRESHOLD = 10;
+const AVATAR_DRAG_THRESHOLD = 8;
 const MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
+const MIN_AVATAR_SIZE = 58;
+const MAX_AVATAR_SIZE = 82;
 
 const AREAS = [
   { name: "カフェ前", icon: "☕", xMin: 0, xMax: 25, xCenter: 12.5 },
@@ -48,6 +51,19 @@ type VisitorAnim = SquareVisitor & {
 type TapRipple = { id: number; x: number; y: number };
 type MeetEffect = { id: number; x: number; y: number };
 type FloatingEmote = { id: number; emoji: string; x: number; y: number };
+type WeatherData = {
+  weather: string;
+  temp: number;
+  description: string;
+  isDay: boolean;
+  source: string;
+};
+
+/* ─── Helper: clamp avatar size ─── */
+function avatarSizeFromY(y: number): number {
+  const raw = MIN_AVATAR_SIZE + Math.round(((Math.max(20, Math.min(90, y)) - 20) / 70) * (MAX_AVATAR_SIZE - MIN_AVATAR_SIZE));
+  return Math.max(MIN_AVATAR_SIZE, Math.min(MAX_AVATAR_SIZE, raw));
+}
 
 export default function SquarePage() {
   /* ── Visitor state ── */
@@ -76,11 +92,30 @@ export default function SquarePage() {
   const [meetEffects, setMeetEffects] = useState<MeetEffect[]>([]);
   const rippleId = useRef(0);
 
-  /* ── Time-based atmosphere ── */
+  /* ── Weather & time ── */
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
-  const isNight = currentHour < 6 || currentHour >= 19;
+
+  /* ── Area tab swipe ── */
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabSwipeRef = useRef({ startX: 0, startY: 0, active: false });
+
+  /* ── Avatar drag-to-move ── */
+  const [isDraggingSelf, setIsDraggingSelf] = useState(false);
+  const [dragGhostPos, setDragGhostPos] = useState<{ x: number; y: number } | null>(null);
+  const avatarDragRef = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
+
+  /* ── Compute time overlay ── */
+  const isNight = weather ? !weather.isDay : (currentHour < 6 || currentHour >= 19);
   const isSunset = currentHour >= 17 && currentHour < 19;
   const isDawn = currentHour >= 5 && currentHour < 7;
+  const isRaining = weather?.weather === "rain" || weather?.weather === "storm";
+
   const timeOverlay = isNight
     ? "rgba(10,15,40,0.4)"
     : isSunset
@@ -96,6 +131,7 @@ export default function SquarePage() {
   const bubbleRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const npcRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const cameraXRef = useRef(0);
+  const myPosRef = useRef(myPos);
   const dragRef = useRef({
     active: false,
     startX: 0,
@@ -111,6 +147,22 @@ export default function SquarePage() {
   const currentAreaIdx = Math.min(Math.floor(myPos.x / 25), 3);
 
   useEffect(() => { cameraXRef.current = cameraX; }, [cameraX]);
+  useEffect(() => { myPosRef.current = myPos; }, [myPos]);
+
+  /* ── Fetch weather ── */
+  useEffect(() => {
+    fetch("/api/weather")
+      .then((r) => r.json())
+      .then((d) => setWeather(d))
+      .catch(() => {});
+    const interval = setInterval(() => {
+      fetch("/api/weather")
+        .then((r) => r.json())
+        .then((d) => setWeather(d))
+        .catch(() => {});
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   /* ── Viewport sizing ── */
   useEffect(() => {
@@ -156,7 +208,7 @@ export default function SquarePage() {
     );
   }, []);
 
-  /* ── NPC wander (near home position) ── */
+  /* ── NPC wander ── */
   useEffect(() => {
     npcRef.current = setInterval(() => {
       setVisitors((prev) =>
@@ -165,7 +217,7 @@ export default function SquarePage() {
           const dx = (Math.random() - 0.5) * NPC_RANGE * 2;
           const dy = (Math.random() - 0.5) * NPC_RANGE;
           const newX = Math.max(v.x - 8, Math.min(v.x + 8, v.posX + dx));
-          const newY = Math.max(25, Math.min(85, v.posY + dy));
+          const newY = Math.max(30, Math.min(80, v.posY + dy));
           const dist = Math.sqrt(dx * dx + dy * dy);
           const ms = Math.max(1500, (dist / WALK_SPEED) * 1000 * 3);
           return { ...v, posX: newX, posY: newY, facing: dx >= 0 ? "right" : "left", walkMs: ms };
@@ -202,8 +254,9 @@ export default function SquarePage() {
     (tx: number, ty: number, onArrive?: () => void) => {
       clearTimeout(moveTimeout.current);
       approachRef.current = null;
-      const dx = tx - myPos.x;
-      const dist = distBetween(myPos.x, myPos.y, tx, ty);
+      const cur = myPosRef.current;
+      const dx = tx - cur.x;
+      const dist = distBetween(cur.x, cur.y, tx, ty);
       if (dist < 0.5) return;
       const ms = (dist / WALK_SPEED) * 1000;
       setMyFacing(dx >= 0 ? "right" : "left");
@@ -218,7 +271,7 @@ export default function SquarePage() {
         onArrive?.();
       }, ms + 50);
     },
-    [myPos, getCameraTarget]
+    [getCameraTarget]
   );
 
   /* ── Screen → world ── */
@@ -229,7 +282,7 @@ export default function SquarePage() {
       const worldPxX = cameraXRef.current + (clientX - rect.left);
       return {
         x: Math.max(2, Math.min(98, (worldPxX / worldW) * 100)),
-        y: Math.max(20, Math.min(90, ((clientY - rect.top) / rect.height) * 100)),
+        y: Math.max(25, Math.min(85, ((clientY - rect.top) / rect.height) * 100)),
       };
     },
     [worldW]
@@ -255,9 +308,10 @@ export default function SquarePage() {
       if (rotatingAvatarId) return;
       const v = visitors.find((vv) => vv.id === visitor.id);
       if (!v) { setSelected(visitor); return; }
-      const angle = Math.atan2(myPos.y - v.posY, myPos.x - v.posX);
+      const cur = myPosRef.current;
+      const angle = Math.atan2(cur.y - v.posY, cur.x - v.posX);
       const tx = Math.max(2, Math.min(98, v.posX + Math.cos(angle) * APPROACH_STOP_DIST));
-      const ty = Math.max(20, Math.min(90, v.posY + Math.sin(angle) * APPROACH_STOP_DIST));
+      const ty = Math.max(25, Math.min(85, v.posY + Math.sin(angle) * APPROACH_STOP_DIST));
       approachRef.current = visitor;
       moveMyAvatar(tx, ty, () => {
         const midX = (tx + v.posX) / 2;
@@ -268,7 +322,7 @@ export default function SquarePage() {
         setTimeout(() => { setSelected(visitor); approachRef.current = null; }, 400);
       });
     },
-    [visitors, myPos, moveMyAvatar, rotatingAvatarId]
+    [visitors, moveMyAvatar, rotatingAvatarId]
   );
 
   /* ── Area jump ── */
@@ -285,10 +339,11 @@ export default function SquarePage() {
   const handleEmote = useCallback(
     (emoji: string) => {
       const id = ++rippleId.current;
-      setFloatingEmotes((e) => [...e, { id, emoji, x: myPos.x, y: myPos.y }]);
+      const cur = myPosRef.current;
+      setFloatingEmotes((e) => [...e, { id, emoji, x: cur.x, y: cur.y }]);
       setTimeout(() => setFloatingEmotes((e) => e.filter((ee) => ee.id !== id)), 2000);
     },
-    [myPos]
+    []
   );
 
   /* ── Area people count ── */
@@ -302,6 +357,35 @@ export default function SquarePage() {
     },
     [myPos, visitors]
   );
+
+  /* ── Self avatar drag-to-move (Streetview style) ── */
+  const handleSelfDragStart = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation();
+    avatarDragRef.current = { active: true, startX: e.clientX, startY: e.clientY, moved: false };
+  }, []);
+
+  const handleSelfDragMove = useCallback((e: React.PointerEvent) => {
+    const d = avatarDragRef.current;
+    if (!d.active) return;
+    const totalDist = Math.sqrt((e.clientX - d.startX) ** 2 + (e.clientY - d.startY) ** 2);
+    if (totalDist > AVATAR_DRAG_THRESHOLD) {
+      d.moved = true;
+      if (!isDraggingSelf) setIsDraggingSelf(true);
+      const pos = screenToWorld(e.clientX, e.clientY);
+      if (pos) setDragGhostPos(pos);
+    }
+  }, [isDraggingSelf, screenToWorld]);
+
+  const handleSelfDragEnd = useCallback((e: React.PointerEvent) => {
+    const d = avatarDragRef.current;
+    d.active = false;
+    if (d.moved && dragGhostPos) {
+      // Walk to drop position
+      moveMyAvatar(dragGhostPos.x, dragGhostPos.y);
+    }
+    setIsDraggingSelf(false);
+    setDragGhostPos(null);
+  }, [dragGhostPos, moveMyAvatar]);
 
   /* ── Pointer handlers (swipe + tap) ── */
   const handlePointerDown = useCallback(
@@ -323,6 +407,11 @@ export default function SquarePage() {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
+      // Handle avatar drag
+      if (avatarDragRef.current.active) {
+        handleSelfDragMove(e);
+        return;
+      }
       const d = dragRef.current;
       if (!d.active) return;
       const totalDx = e.clientX - d.startX;
@@ -334,11 +423,16 @@ export default function SquarePage() {
         setCameraDur(0);
       }
     },
-    [maxCamX]
+    [maxCamX, handleSelfDragMove]
   );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
+      // Handle avatar drag end
+      if (avatarDragRef.current.active || isDraggingSelf) {
+        handleSelfDragEnd(e);
+        return;
+      }
       const d = dragRef.current;
       if (!d.active) return;
       d.active = false;
@@ -350,11 +444,29 @@ export default function SquarePage() {
         setCameraDur(300);
       }
     },
-    [maxCamX, handleGroundTapAt]
+    [maxCamX, handleGroundTapAt, isDraggingSelf, handleSelfDragEnd]
   );
 
+  /* ── Area tab swipe gesture ── */
+  const handleTabTouchStart = useCallback((e: React.TouchEvent) => {
+    tabSwipeRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, active: true };
+  }, []);
+
+  const handleTabTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!tabSwipeRef.current.active) return;
+    tabSwipeRef.current.active = false;
+    const dx = e.changedTouches[0].clientX - tabSwipeRef.current.startX;
+    const dy = e.changedTouches[0].clientY - tabSwipeRef.current.startY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const newIdx = dx < 0
+        ? Math.min(currentAreaIdx + 1, AREAS.length - 1)
+        : Math.max(currentAreaIdx - 1, 0);
+      if (newIdx !== currentAreaIdx) jumpToArea(newIdx);
+    }
+  }, [currentAreaIdx, jumpToArea]);
+
   /* ── Render sizes ── */
-  const myAvatarSize = 62 + Math.round((myPos.y / 100) * 16);
+  const myAvatarSize = avatarSizeFromY(myPos.y);
   const myZIndex = Math.round(myPos.y) + 10;
 
   return (
@@ -369,6 +481,16 @@ export default function SquarePage() {
               {visitors.length + 1}人
             </span>
           </div>
+          {/* Weather badge */}
+          {weather && (
+            <div className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{
+              backgroundColor: "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)",
+              border: "1px solid rgba(0,0,0,0.06)",
+            }}>
+              <span>{weather.weather.includes("rain") ? "🌧" : weather.weather.includes("cloud") ? "☁️" : weather.isDay ? "☀️" : "🌙"}</span>
+              <span>{weather.temp}°C</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <Link href="/square/bubble" className="flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-medium transition-colors" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
@@ -380,19 +502,26 @@ export default function SquarePage() {
         </div>
       </div>
 
-      {/* ── Area tabs ── */}
-      <div className="flex gap-1.5 overflow-x-auto px-3 pb-1.5 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+      {/* ── Area tabs with swipe gesture ── */}
+      <div
+        ref={tabsRef}
+        className="flex gap-1.5 overflow-x-auto px-3 pb-1.5 scrollbar-hide"
+        style={{ WebkitOverflowScrolling: "touch" }}
+        onTouchStart={handleTabTouchStart}
+        onTouchEnd={handleTabTouchEnd}
+      >
         {AREAS.map((area, i) => (
           <button
             key={area.name}
             onClick={() => jumpToArea(i)}
-            className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-all active:scale-95"
+            className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-300 active:scale-95"
             style={{
               background: i === currentAreaIdx ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "rgba(255,255,255,0.7)",
               color: i === currentAreaIdx ? "white" : "#3A3A4A",
               backdropFilter: "blur(8px)",
               border: i === currentAreaIdx ? "none" : "1px solid rgba(0,0,0,0.06)",
               boxShadow: i === currentAreaIdx ? "0 2px 8px rgba(102,126,234,0.3)" : "none",
+              transform: i === currentAreaIdx ? "scale(1.05)" : "scale(1)",
             }}
           >
             <span className="text-[12px]">{area.icon}</span>
@@ -477,11 +606,33 @@ export default function SquarePage() {
                 </div>
               ))}
 
+              {/* ── Drag ghost (drop target indicator) ── */}
+              {isDraggingSelf && dragGhostPos && (
+                <div className="absolute pointer-events-none" style={{
+                  left: `${dragGhostPos.x}%`, top: `${dragGhostPos.y}%`,
+                  transform: "translate(-50%, -100%)", zIndex: 2000,
+                }}>
+                  <div className="flex flex-col items-center">
+                    <div style={{
+                      width: myAvatarSize * 0.7, height: myAvatarSize * 0.7,
+                      borderRadius: "50%", border: "2px dashed rgba(102,126,234,0.6)",
+                      background: "rgba(102,126,234,0.1)",
+                      animation: "tapRipple 1.5s ease-out infinite",
+                    }} />
+                    <div style={{
+                      width: myAvatarSize * 0.4, height: 6, borderRadius: "50%",
+                      background: "radial-gradient(ellipse, rgba(102,126,234,0.3) 0%, transparent 100%)",
+                      marginTop: 2,
+                    }} />
+                  </div>
+                </div>
+              )}
+
               {/* ── NPC avatars ── */}
               {visitors.map((v, idx) => {
                 const zIndex = Math.round(v.posY);
-                const avatarSize = 62 + Math.round((v.posY / 100) * 16);
-                const avatar3DSize = avatarSize * 0.95;
+                const aSize = avatarSizeFromY(v.posY);
+                const avatar3DSize = Math.round(aSize * 0.95);
                 return (
                   <div
                     key={v.id}
@@ -532,9 +683,11 @@ export default function SquarePage() {
                   left: `${myPos.x}%`, top: `${myPos.y}%`,
                   transform: "translate(-50%, -100%)", zIndex: myZIndex,
                   transition: myWalkMs > 0 ? `left ${myWalkMs}ms ease-in-out, top ${myWalkMs}ms ease-in-out` : "none",
+                  cursor: isDraggingSelf ? "grabbing" : "grab",
                 }}
+                onPointerDown={handleSelfDragStart}
               >
-                <div className="relative flex flex-col items-center">
+                <div className={`relative flex flex-col items-center ${isDraggingSelf ? "opacity-50 scale-90" : ""}`} style={{ transition: "opacity 0.2s, transform 0.2s" }}>
                   {/* "今ひま" badge */}
                   {isFree && (
                     <div className="absolute -top-9 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[8px] font-bold text-white whitespace-nowrap z-20 animate-pulse" style={{
@@ -552,7 +705,7 @@ export default function SquarePage() {
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
                   }}>3D</div>
 
-                  <Avatar3D modelUrl={MY_MODEL} size={myAvatarSize * 0.95} autoRotate={false}
+                  <Avatar3D modelUrl={MY_MODEL} size={Math.round(myAvatarSize * 0.95)} autoRotate={false}
                     animationSpeed={myIsWalking ? 1.2 : 0.6} enableLongPressRotate
                     onRotatingChange={(r) => setRotatingAvatarId(r ? "self" : null)} />
 
@@ -586,6 +739,40 @@ export default function SquarePage() {
         {/* ── Day/night overlay ── */}
         <div className="absolute inset-0 pointer-events-none z-30 transition-colors duration-[3000ms]" style={{ backgroundColor: timeOverlay }} />
 
+        {/* ── Rain effect ── */}
+        {isRaining && (
+          <div className="absolute inset-0 pointer-events-none z-31 overflow-hidden">
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div key={`rain-${i}`} className="absolute" style={{
+                left: `${Math.random() * 100}%`,
+                top: `-${Math.random() * 20}%`,
+                width: 1,
+                height: 12 + Math.random() * 8,
+                background: "rgba(180,200,220,0.3)",
+                animation: `rainDrop ${0.6 + Math.random() * 0.4}s linear infinite`,
+                animationDelay: `${Math.random() * 2}s`,
+              }} />
+            ))}
+          </div>
+        )}
+
+        {/* ── Night lit windows (far buildings) ── */}
+        {isNight && (
+          <div className="absolute inset-0 pointer-events-none z-29">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={`glow-${i}`} className="absolute rounded-sm" style={{
+                left: `${10 + Math.random() * 80}%`,
+                top: `${5 + Math.random() * 15}%`,
+                width: 3 + Math.random() * 4,
+                height: 3 + Math.random() * 3,
+                background: `rgba(255,${200 + Math.random() * 55},${100 + Math.random() * 80},${0.3 + Math.random() * 0.3})`,
+                animation: `windowFlicker ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 5}s`,
+              }} />
+            ))}
+          </div>
+        )}
+
         {/* ── Proximity "talk" button ── */}
         {nearbyVisitor && !selected && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 animate-[fadeIn_300ms_ease-out]">
@@ -605,12 +792,21 @@ export default function SquarePage() {
           </div>
         )}
 
+        {/* ── Drag hint ── */}
+        {isDraggingSelf && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md" style={{
+            background: "rgba(102,126,234,0.8)", boxShadow: "0 2px 12px rgba(102,126,234,0.4)",
+          }}>
+            ドロップで移動先を決定
+          </div>
+        )}
+
         {/* ── Bottom hint ── */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full px-3.5 py-1.5 text-[10px] font-medium backdrop-blur-md pointer-events-none" style={{
           backgroundColor: "rgba(123,140,255,0.12)", color: "var(--accent)",
           border: "1px solid rgba(123,140,255,0.2)", boxShadow: "0 2px 8px rgba(123,140,255,0.08)", zIndex: 100,
         }}>
-          スワイプで見渡す / タップで歩く
+          スワイプで見渡す / タップで歩く / アバターをドラッグで移動
         </div>
       </div>
 
@@ -673,14 +869,22 @@ export default function SquarePage() {
           50% { opacity: 0.8; }
           100% { transform: scale(2); opacity: 0; }
         }
-        @keyframes meetStar {
-          0% { transform: rotate(var(--deg, 0deg)) translateX(0px); opacity: 1; }
-          100% { transform: rotate(var(--deg, 0deg)) translateX(30px); opacity: 0; }
-        }
         @keyframes emoteFloat {
           0% { transform: translate(-50%, -100%) scale(0.5); opacity: 1; }
           30% { transform: translate(-50%, -180%) scale(1.2); opacity: 1; }
           100% { transform: translate(-50%, -280%) scale(0.8); opacity: 0; }
+        }
+        @keyframes rainDrop {
+          0% { transform: translateY(-10vh); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(110vh); opacity: 0; }
+        }
+        @keyframes windowFlicker {
+          0%, 100% { opacity: 0.3; }
+          30% { opacity: 0.7; }
+          50% { opacity: 0.4; }
+          70% { opacity: 0.8; }
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
