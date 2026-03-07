@@ -24,8 +24,8 @@ const WALK_SPEED = 10; // % per second
 const APPROACH_STOP_DIST = 7; // stop this far from target (%)
 const NPC_INTERVAL = 4000; // ms between NPC wander decisions
 const NPC_RANGE = 3.5; // max % per NPC step
-// TODO: Replace with chibi+character+3d+model.glb (男の子モデル) when available on Google Drive
-const MY_MODEL = "/models/chibi+girl+3d+model.glb";
+// 男の子3Dモデル — Google Drive経由
+const MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 
 /* ─── Types ─── */
 type VisitorAnim = SquareVisitor & {
