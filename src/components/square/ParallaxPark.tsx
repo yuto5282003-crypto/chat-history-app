@@ -23,75 +23,168 @@ export function FarLayer() {
     <svg viewBox="0 0 4000 900" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden>
       <defs>
         <linearGradient id="f-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#C8E0F8" />
-          <stop offset="40%" stopColor="#DDE9F6" />
-          <stop offset="70%" stopColor="#E8F0E8" />
-          <stop offset="100%" stopColor="#EEF4E0" />
+          <stop offset="0%" stopColor="#8BB8E0" />
+          <stop offset="15%" stopColor="#A8CEE8" />
+          <stop offset="35%" stopColor="#C4DDF0" />
+          <stop offset="55%" stopColor="#D8E6F0" />
+          <stop offset="75%" stopColor="#E4ECE8" />
+          <stop offset="100%" stopColor="#E8EEE0" />
+        </linearGradient>
+        <linearGradient id="f-haze" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(200,216,230,0)" />
+          <stop offset="60%" stopColor="rgba(200,216,230,0.05)" />
+          <stop offset="100%" stopColor="rgba(200,216,230,0.25)" />
+        </linearGradient>
+        <radialGradient id="f-sun" cx="22%" cy="8%" r="18%" fx="22%" fy="8%">
+          <stop offset="0%" stopColor="rgba(255,248,220,0.55)" />
+          <stop offset="40%" stopColor="rgba(255,240,200,0.2)" />
+          <stop offset="100%" stopColor="rgba(255,240,200,0)" />
+        </radialGradient>
+        <filter id="f-blur">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+        <filter id="f-blur2">
+          <feGaussianBlur stdDeviation="1.5" />
+        </filter>
+        <linearGradient id="f-bldg-far" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#B4BCC8" /><stop offset="100%" stopColor="#C0C8D4" />
         </linearGradient>
       </defs>
 
+      {/* Sky */}
       <rect width="4000" height="900" fill="url(#f-sky)" />
+      {/* Sun glow */}
+      <rect width="4000" height="900" fill="url(#f-sun)" />
+      {/* Atmospheric haze overlay */}
+      <rect width="4000" height="900" fill="url(#f-haze)" />
 
-      {/* Clouds */}
+      {/* ── Realistic layered clouds ── */}
+      {/* Large soft background clouds */}
       {[
-        [200,50,90,25,.4],[160,45,55,20,.45],[600,35,100,28,.35],
-        [1000,55,80,22,.3],[1400,40,100,26,.35],[1800,60,70,20,.3],
-        [2200,45,95,24,.32],[2600,55,75,22,.28],[900,70,50,16,.22],
-        [1700,75,60,18,.2],[2400,70,55,17,.22],
-        [3100,50,85,24,.3],[3500,40,70,20,.28],[3800,60,60,18,.25],
+        [300,40,140,35,.18],[800,55,120,30,.15],[1400,35,160,38,.2],
+        [2100,50,130,32,.16],[2800,40,150,36,.18],[3500,55,120,30,.15],
       ].map(([cx,cy,rx,ry,o],i) => (
-        <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} fill="white" opacity={o} />
+        <ellipse key={`cb-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="white" opacity={o} filter="url(#f-blur)" />
       ))}
-
-      {/* ── Café area — low-rise European-style buildings ── */}
+      {/* Main cloud formations — multi-blob clusters */}
       {[
-        [60,110,18,45,.14],[90,100,22,55,.16],[130,108,16,47,.13],
-        [700,105,20,50,.15],[740,112,16,43,.12],[780,98,24,57,.16],
-        [830,108,18,47,.14],
-      ].map(([x,y,w,h,o],i) => (
-        <rect key={`cf-${i}`} x={x} y={y} width={w} height={h} rx="2" fill="#C8C0B8" opacity={o} />
+        {x:180,y:48,blobs:[[0,0,70,22],[55,-8,50,18],[-40,5,45,16],[30,10,55,15]]},
+        {x:650,y:32,blobs:[[0,0,80,24],[60,-6,55,20],[-50,4,48,17],[40,8,60,16],[-20,-10,40,14]]},
+        {x:1100,y:55,blobs:[[0,0,65,20],[50,-5,48,16],[-35,6,40,14]]},
+        {x:1550,y:38,blobs:[[0,0,75,22],[55,-8,52,18],[-45,3,42,15],[30,10,50,14]]},
+        {x:2000,y:48,blobs:[[0,0,68,21],[48,-6,50,17],[-38,5,44,15]]},
+        {x:2500,y:35,blobs:[[0,0,82,25],[65,-7,55,19],[-48,4,50,17],[35,10,58,15]]},
+        {x:3000,y:50,blobs:[[0,0,60,18],[42,-5,45,15],[-30,6,38,13]]},
+        {x:3450,y:40,blobs:[[0,0,72,22],[52,-6,48,16],[-40,3,42,14],[28,9,52,14]]},
+        {x:3850,y:55,blobs:[[0,0,55,17],[38,-4,40,14],[-28,5,35,12]]},
+      ].map((cloud,ci) => (
+        <g key={`cloud-${ci}`} opacity=".38">
+          {cloud.blobs.map(([dx,dy,rx,ry],bi) => (
+            <ellipse key={`cl-${ci}-${bi}`} cx={cloud.x+dx} cy={cloud.y+dy} rx={rx} ry={ry} fill="white" />
+          ))}
+        </g>
       ))}
-
-      {/* ── Park area — scattered buildings ── */}
-      <rect x="1200" y="100" width="18" height="45" rx="2" fill="#C0C8D4" opacity=".12" />
-      <rect x="1700" y="105" width="14" height="40" rx="1" fill="#CCD4DC" opacity=".10" />
-
-      {/* ── City district — DENSE Tokyo skyline ── */}
+      {/* Small wispy clouds */}
       {[
-        [2020,30,28,130,.24],[2055,50,22,110,.22],[2085,35,18,125,.25],
-        [2110,55,30,105,.22],[2150,25,24,135,.26],[2185,60,20,100,.21],
-        [2210,40,26,120,.24],[2245,70,22,90,.20],[2275,30,20,130,.25],
-        [2300,50,32,110,.23],[2340,20,22,140,.27],[2370,55,28,105,.22],
-        [2405,35,18,125,.24],[2430,65,24,95,.20],[2465,25,20,135,.25],
-        [2490,45,30,115,.23],[2530,60,22,100,.21],[2560,30,26,130,.25],
-        [2595,50,18,110,.22],[2620,70,24,90,.19],[2655,40,28,120,.23],
-        [2690,55,20,105,.21],[2720,35,22,125,.24],[2760,65,26,95,.20],
-        [2800,45,18,115,.22],[2840,60,24,100,.20],[2880,50,20,110,.21],
-        [2920,75,22,85,.18],[2960,55,26,105,.21],
-      ].map(([x,y,w,h,o],i) => (
-        <rect key={`sk-${i}`} x={x} y={y} width={w} height={h} rx="2" fill="#B0B8C8" opacity={o} />
-      ))}
-      {/* Tokyo Tower hint */}
-      <rect x="2450" y="10" width="10" height="150" rx="1" fill="#C0A0A0" opacity=".20" />
-      <polygon points="2445,10 2465,10 2455,-5" fill="#C0A0A0" opacity=".17" />
-
-      {/* ── Station area — dense mid-rise + high-rise (Shinjuku feel) ── */}
-      {[
-        [3050,50,26,110,.20],[3085,35,22,125,.22],[3115,60,30,100,.19],
-        [3150,40,24,120,.21],[3185,55,20,105,.20],[3220,30,28,130,.23],
-        [3260,65,22,95,.18],[3295,45,26,115,.21],[3330,55,18,105,.19],
-        [3365,35,24,125,.22],[3400,60,20,100,.18],[3440,50,28,110,.20],
-        [3480,40,22,120,.21],[3520,65,20,95,.17],[3560,55,26,105,.19],
-        [3600,45,18,115,.18],[3640,60,24,100,.17],[3680,50,20,110,.18],
-        [3720,70,22,90,.16],[3760,55,18,105,.17],
-      ].map(([x,y,w,h,o],i) => (
-        <rect key={`sks-${i}`} x={x} y={y} width={w} height={h} rx="2" fill="#B8C0CC" opacity={o} />
+        [450,80,30,8],[950,72,25,7],[1350,85,28,8],[1800,78,22,6],
+        [2250,82,26,7],[2700,76,24,7],[3200,85,28,8],[3700,78,22,6],
+      ].map(([cx,cy,rx,ry],i) => (
+        <ellipse key={`cw-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="white" opacity=".2" />
       ))}
 
-      {/* Birds */}
-      {[[420,100],[1500,85],[2300,75],[2500,90],[3300,80],[3600,95]].map(([x,y],i) => (
-        <path key={`b-${i}`} d={`M${x} ${y} Q${x+4} ${y-6} ${x+8} ${y}`} stroke="#888" strokeWidth="1" fill="none" opacity={.25-.02*i} />
+      {/* ── Café area — distant European low-rise with depth ── */}
+      <g opacity=".18" filter="url(#f-blur2)">
+        {[
+          [40,108,22,50,3],[70,96,26,62,3],[105,104,20,54,2],[140,100,24,58,3],
+          [670,102,22,56,2],[705,108,18,50,2],[735,96,26,62,3],[770,104,20,54,2],
+          [810,100,24,58,3],[848,106,18,52,2],
+        ].map(([x,y,w,h,r],i) => (
+          <rect key={`cf-${i}`} x={x} y={y} width={w} height={h} rx={r} fill="#B8B0A8" />
+        ))}
+      </g>
+
+      {/* ── Park area — very sparse distant ── */}
+      <g opacity=".12" filter="url(#f-blur2)">
+        <rect x="1180" y="100" width="20" height="48" rx="2" fill="#B8C0C8" />
+        <rect x="1700" y="105" width="16" height="42" rx="2" fill="#C0C8D0" />
+      </g>
+
+      {/* ── City district — detailed Tokyo skyline silhouette ── */}
+      <g opacity=".22">
+        {/* Farthest row (blurred, lighter) */}
+        <g filter="url(#f-blur2)" opacity=".6">
+          {[
+            [2010,25,22,140],[2040,40,18,125],[2065,15,26,150],[2100,50,20,115],
+            [2130,30,24,135],[2162,55,18,110],[2190,20,22,145],[2220,45,20,120],
+            [2248,35,24,130],[2280,50,18,115],[2305,25,22,140],[2335,55,20,110],
+            [2365,30,26,135],[2400,45,18,120],[2425,20,24,145],[2460,40,22,125],
+            [2490,55,20,110],[2518,25,24,140],[2550,35,22,130],[2580,50,20,115],
+            [2610,20,26,145],[2644,40,22,125],[2674,55,18,110],[2700,30,24,135],
+            [2732,45,22,120],[2762,25,20,140],[2790,50,24,115],[2822,35,22,130],
+            [2855,45,18,120],[2880,55,22,110],[2910,30,20,135],[2940,40,24,125],
+            [2972,20,22,145],
+          ].map(([x,y,w,h],i) => (
+            <rect key={`skf-${i}`} x={x} y={y} width={w} height={h} rx="1" fill="url(#f-bldg-far)" />
+          ))}
+        </g>
+        {/* Main skyline row */}
+        {[
+          [2020,30,28,130],[2055,50,22,110],[2085,35,18,125],[2110,55,30,105],
+          [2150,25,24,135],[2185,60,20,100],[2210,40,26,120],[2245,70,22,90],
+          [2275,30,20,130],[2300,50,32,110],[2340,20,22,140],[2370,55,28,105],
+          [2405,35,18,125],[2430,65,24,95],[2465,25,20,135],[2490,45,30,115],
+          [2530,60,22,100],[2560,30,26,130],[2595,50,18,110],[2620,70,24,90],
+          [2655,40,28,120],[2690,55,20,105],[2720,35,22,125],[2760,65,26,95],
+          [2800,45,18,115],[2840,60,24,100],[2880,50,20,110],[2920,75,22,85],
+          [2960,55,26,105],
+        ].map(([x,y,w,h],i) => (
+          <g key={`sk-${i}`}>
+            <rect x={x} y={y} width={w} height={h} rx="1" fill="#A8B0C0" />
+            {/* Window dots for realism */}
+            {Array.from({length:Math.floor(h/12)}).map((_,r) =>
+              Array.from({length:Math.floor(w/8)}).map((_,c) => (
+                <rect key={`skw-${i}-${r}-${c}`} x={x+3+c*8} y={y+4+r*12} width="4" height="6" fill="#95A0B0" opacity=".6" />
+              ))
+            )}
+          </g>
+        ))}
+      </g>
+      {/* Tokyo Tower */}
+      <g opacity=".22">
+        <rect x="2448" y="8" width="12" height="152" rx="1" fill="#C0908A" />
+        <polygon points="2442,20 2466,20 2454,-8" fill="#C09090" />
+        <rect x="2451" y="60" width="6" height="6" rx="3" fill="#D0A0A0" />
+        {[30,50,70,90,110,130].map((dy,i) => (
+          <line key={`tt-${i}`} x1="2448" y1={8+dy} x2="2460" y2={8+dy} stroke="#B88080" strokeWidth=".7" opacity=".4" />
+        ))}
+      </g>
+
+      {/* ── Station area skyline ── */}
+      <g opacity=".18" filter="url(#f-blur2)">
+        {[
+          [3050,50,26,110],[3085,35,22,125],[3115,60,30,100],[3150,40,24,120],
+          [3185,55,20,105],[3220,30,28,130],[3260,65,22,95],[3295,45,26,115],
+          [3330,55,18,105],[3365,35,24,125],[3400,60,20,100],[3440,50,28,110],
+          [3480,40,22,120],[3520,65,20,95],[3560,55,26,105],[3600,45,18,115],
+          [3640,60,24,100],[3680,50,20,110],[3720,70,22,90],[3760,55,18,105],
+        ].map(([x,y,w,h],i) => (
+          <rect key={`sks-${i}`} x={x} y={y} width={w} height={h} rx="2" fill="#B0B8C4" />
+        ))}
+      </g>
+
+      {/* ── Birds (more natural V-shape pairs) ── */}
+      {[[320,95],[540,105],[1450,82],[1650,108],[2280,72],[2520,88],[3280,78],[3580,98]].map(([x,y],i) => (
+        <g key={`b-${i}`} opacity={.22-.01*i}>
+          <path d={`M${x} ${y} Q${x+5} ${y-5} ${x+10} ${y+1}`} stroke="#666" strokeWidth="1.2" fill="none" />
+          <path d={`M${x+10} ${y+1} Q${x+15} ${y-4} ${x+20} ${y+2}`} stroke="#666" strokeWidth="1.2" fill="none" />
+        </g>
       ))}
+
+      {/* ── Distant mountain range (very faint) ── */}
+      <path d="M0 165 Q200 130 400 148 Q600 125 800 142 Q1000 120 1200 140 Q1400 128 1600 145 Q1800 118 2000 138 L2000 170 L0 170Z"
+        fill="#C0D0C0" opacity=".12" />
+      <path d="M2000 165 Q2200 135 2400 150 Q2600 128 2800 145 Q3000 120 3200 140 Q3400 130 3600 148 Q3800 122 4000 140 L4000 170 L2000 170Z"
+        fill="#B8C8C8" opacity=".1" />
     </svg>
   );
 }
@@ -102,40 +195,109 @@ export function FarLayer() {
 export function MidLayer() {
   return (
     <svg viewBox="0 0 4000 900" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      {/* Rolling hills (café + park areas) */}
+      <defs>
+        <linearGradient id="m-hill1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8EC070" /><stop offset="100%" stopColor="#6AA850" />
+        </linearGradient>
+        <linearGradient id="m-hill2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#9ACA7A" /><stop offset="100%" stopColor="#78B060" />
+        </linearGradient>
+        <linearGradient id="m-hill3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#A8D488" /><stop offset="100%" stopColor="#88BC68" />
+        </linearGradient>
+        <linearGradient id="m-tree1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5A9848" /><stop offset="100%" stopColor="#488838" />
+        </linearGradient>
+        <linearGradient id="m-tree2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#68A855" /><stop offset="100%" stopColor="#559842" />
+        </linearGradient>
+        <filter id="m-blur">
+          <feGaussianBlur stdDeviation="2" />
+        </filter>
+      </defs>
+
+      {/* ── Rolling hills — organic shapes using paths ── */}
+      {/* Far hill layer (lightest) */}
+      <path d="M-50 175 Q150 140 350 155 Q550 130 750 152 Q950 138 1150 150 Q1350 128 1550 148 Q1750 135 1950 155 L2000 175 L-50 175Z"
+        fill="url(#m-hill3)" opacity=".35" />
+      <path d="M2000 172 Q2200 145 2400 158 Q2600 135 2800 150 Q3000 130 3200 148 Q3400 138 3600 155 Q3800 128 4050 145 L4050 175 L2000 175Z"
+        fill="#A0C888" opacity=".2" />
+
+      {/* Mid hill layer */}
+      <path d="M-50 178 Q200 155 450 165 Q650 148 850 162 Q1050 152 1250 168 Q1500 145 1700 158 Q1900 150 2050 170 L2050 195 L-50 195Z"
+        fill="url(#m-hill2)" opacity=".3" />
+
+      {/* Near hill layer (darkest, most visible) */}
+      <path d="M-50 185 Q100 170 300 175 Q500 162 700 172 Q900 165 1100 178 Q1350 160 1550 170 Q1800 162 2050 180 L2050 210 L-50 210Z"
+        fill="url(#m-hill1)" opacity=".32" />
+
+      {/* ── Distant tree line — layered canopy clusters ── */}
+      {/* Back tree row (lighter, blurred) */}
+      <g filter="url(#m-blur)" opacity=".2">
+        {[80,180,280,380,500,620,740,860,980,1100,1220,1380,1520,1660,1800,1940].map((x,i) => (
+          <ellipse key={`tbk-${i}`} cx={x} cy={168} rx={35+i%3*8} ry={16+i%2*4} fill="#78B860" />
+        ))}
+      </g>
+      {/* Front tree row (darker, sharper) */}
       {[
-        [300,170,200,40,.30],[700,165,180,38,.25],[1100,170,200,42,.28],
-        [1500,165,220,40,.25],[1900,172,190,38,.27],
-      ].map(([cx,cy,rx,ry,o],i) => (
-        <ellipse key={`h-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="#A8D090" opacity={o} />
+        [120,172,32,14],[250,169,28,12],[370,172,35,15],[480,170,25,11],
+        [600,172,30,13],[730,169,34,15],[850,172,28,12],[960,170,32,14],
+        [1080,172,26,11],[1200,169,34,15],[1340,172,30,13],[1480,170,28,12],
+        [1620,172,32,14],[1760,169,26,11],[1880,172,30,13],
+      ].map(([cx,cy,rx,ry],i) => (
+        <ellipse key={`tfr-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#m-tree1)" opacity=".35" />
       ))}
-      {/* Distant tree line (café + park only) */}
+      {/* Individual tree tops poking above canopy */}
       {[
-        [200,168,50,22,.35],[400,165,40,18,.30],[700,168,45,20,.32],
-        [1000,166,42,19,.28],[1300,168,48,21,.33],[1600,165,38,17,.28],
-        [1900,170,44,19,.30],
-      ].map(([cx,cy,rx,ry,o],i) => (
-        <ellipse key={`t-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="#88B870" opacity={o} />
+        [160,162,12,10],[340,160,10,9],[550,163,11,9],[720,160,13,11],
+        [900,162,10,8],[1060,160,12,10],[1260,162,11,9],[1430,161,10,8],
+        [1580,163,12,10],[1730,160,10,9],[1850,162,11,9],
+      ].map(([cx,cy,rx,ry],i) => (
+        <ellipse key={`tp-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#m-tree2)" opacity=".4" />
       ))}
 
-      {/* ── City district mid-distance buildings ── */}
-      {[
-        [2100,120,35,55,.20],[2160,130,28,45,.18],[2220,115,32,60,.21],
-        [2300,125,26,50,.18],[2370,118,30,57,.20],[2440,128,24,47,.17],
-        [2510,112,28,63,.21],[2580,132,32,43,.18],[2650,120,26,55,.19],
-        [2730,125,30,50,.18],[2800,118,24,57,.19],[2870,130,28,45,.17],
-      ].map(([x,y,w,h,o],i) => (
-        <rect key={`cm-${i}`} x={x} y={y} width={w} height={h} rx="3" fill="#B0B8C4" opacity={o} />
-      ))}
+      {/* ── City district mid-distance buildings (with windows) ── */}
+      <g opacity=".22">
+        {[
+          [2080,115,38,60],[2128,125,30,50],[2168,110,34,65],[2212,128,26,47],
+          [2250,118,32,57],[2295,130,28,45],[2335,108,36,67],[2382,122,30,53],
+          [2425,132,24,43],[2460,112,34,63],[2506,126,28,49],[2545,118,32,57],
+          [2590,130,26,45],[2628,108,30,67],[2670,122,34,53],[2718,115,28,60],
+          [2758,128,24,47],[2795,110,32,65],[2840,125,26,50],[2878,118,30,57],
+        ].map(([x,y,w,h],i) => (
+          <g key={`cm-${i}`}>
+            <rect x={x} y={y} width={w} height={h} rx="2" fill="#A8B0BC" />
+            {/* Window rows */}
+            {Array.from({length:Math.floor(h/14)}).map((_,r) =>
+              Array.from({length:Math.floor(w/10)}).map((_,c) => (
+                <rect key={`mw-${i}-${r}-${c}`} x={x+3+c*10} y={y+4+r*14} width="5" height="8" fill="#96A0B0" opacity=".5" />
+              ))
+            )}
+          </g>
+        ))}
+      </g>
 
       {/* ── Station area mid-distance ── */}
-      {[
-        [3100,125,30,50,.19],[3170,118,26,57,.20],[3240,130,32,45,.18],
-        [3320,122,28,53,.19],[3400,128,24,47,.17],[3480,120,30,55,.19],
-        [3560,130,26,45,.17],[3640,125,28,50,.18],[3720,132,24,43,.16],
-      ].map(([x,y,w,h,o],i) => (
-        <rect key={`sm-${i}`} x={x} y={y} width={w} height={h} rx="3" fill="#BAC0CC" opacity={o} />
-      ))}
+      <g opacity=".19">
+        {[
+          [3080,120,32,55],[3125,112,28,63],[3168,128,34,47],[3218,118,30,57],
+          [3262,125,26,50],[3302,110,32,65],[3348,130,28,45],[3390,115,34,60],
+          [3438,122,26,53],[3478,108,30,67],[3522,128,28,47],[3565,118,32,57],
+          [3610,125,24,50],[3648,112,30,63],[3692,130,26,45],[3730,118,28,57],
+        ].map(([x,y,w,h],i) => (
+          <g key={`sm-${i}`}>
+            <rect x={x} y={y} width={w} height={h} rx="2" fill="#ACB4C0" />
+            {Array.from({length:Math.floor(h/14)}).map((_,r) =>
+              Array.from({length:Math.floor(w/10)}).map((_,c) => (
+                <rect key={`sw-${i}-${r}-${c}`} x={x+3+c*10} y={y+4+r*14} width="5" height="8" fill="#9CA4B4" opacity=".45" />
+              ))
+            )}
+          </g>
+        ))}
+      </g>
+
+      {/* ── Atmospheric depth — gradient fade at bottom ── */}
+      <rect y="160" width="4000" height="40" fill="url(#m-hill3)" opacity=".08" />
     </svg>
   );
 }
@@ -148,13 +310,16 @@ export function NearLayer() {
     <svg viewBox="0 0 4000 900" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden>
       <defs>
         <linearGradient id="n-grass" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#7ECF60" /><stop offset="100%" stopColor="#6BBF50" />
+          <stop offset="0%" stopColor="#6EBE52" /><stop offset="40%" stopColor="#5DAD44" /><stop offset="100%" stopColor="#4E9E38" />
         </linearGradient>
         <linearGradient id="n-gl" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#90D878" /><stop offset="100%" stopColor="#7ECF60" />
+          <stop offset="0%" stopColor="#7EC862" /><stop offset="100%" stopColor="#6AB850" />
         </linearGradient>
         <linearGradient id="n-gd" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6BBF50" /><stop offset="100%" stopColor="#5AAE42" />
+          <stop offset="0%" stopColor="#58AE42" /><stop offset="100%" stopColor="#489838" />
+        </linearGradient>
+        <linearGradient id="n-grass-shadow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(0,40,0,0.08)" /><stop offset="100%" stopColor="rgba(0,40,0,0)" />
         </linearGradient>
         <linearGradient id="n-path" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#F2E6D2" /><stop offset="50%" stopColor="#E8D8C0" /><stop offset="100%" stopColor="#F0E2CE" />
@@ -228,44 +393,101 @@ export function NearLayer() {
 
       {/* ═══ GROUND ═══ */}
       {/* Paved ground for café area (0-1000) — urban sidewalk/tiles */}
-      <rect y="175" width="1000" height="725" fill="#D0CCC4" />
+      <rect y="175" width="1000" height="725" fill="#CBC7BF" />
+      {/* Subtle warm tone variation */}
+      <rect y="175" width="500" height="725" fill="#D0CBC2" opacity=".3" />
+      <rect x="500" y="175" width="500" height="725" fill="#C8C4BA" opacity=".2" />
+
       {/* Grass for park area (1000-2000) */}
       <rect x="1000" y="175" width="1000" height="725" fill="url(#n-grass)" />
+      {/* Grass color variation patches for realism */}
+      <ellipse cx="1300" cy="400" rx="200" ry="120" fill="url(#n-gl)" opacity=".15" />
+      <ellipse cx="1700" cy="550" rx="180" ry="100" fill="url(#n-gd)" opacity=".12" />
+      <ellipse cx="1150" cy="650" rx="150" ry="90" fill="url(#n-gl)" opacity=".1" />
+      <ellipse cx="1500" cy="300" rx="160" ry="80" fill="#5DAD44" opacity=".08" />
+      {/* Grass shadows under trees/structures */}
+      <rect x="1000" y="175" width="80" height="725" fill="url(#n-grass-shadow)" />
+
       {/* Paved ground for city + station areas (2000-4000) */}
-      <rect x="2000" y="175" width="2000" height="725" fill="#C4C0B8" />
-      {/* Transition café paved → park grass */}
-      <rect x="950" y="175" width="100" height="725" fill="url(#n-grass)" opacity=".5" />
-      {/* Transition park grass → city */}
+      <rect x="2000" y="175" width="2000" height="725" fill="#C0BCB4" />
+      {/* Subtle variation for city ground */}
+      <rect x="2000" y="175" width="1000" height="725" fill="#C4C0B8" opacity=".3" />
+      <rect x="3000" y="175" width="1000" height="725" fill="#C8C4BC" opacity=".2" />
+
+      {/* Smooth transitions between areas */}
+      <rect x="930" y="175" width="140" height="725" fill="url(#n-grass)" opacity=".4" />
+      <rect x="960" y="175" width="80" height="725" fill="url(#n-grass)" opacity=".6" />
+      <rect x="1920" y="175" width="160" height="725" fill="url(#n-grass)" opacity=".35" />
       <rect x="1950" y="175" width="100" height="725" fill="url(#n-grass)" opacity=".5" />
 
-      {/* Café area sidewalk tile pattern */}
+      {/* Café area sidewalk tile pattern — more detailed */}
       {Array.from({length: 20}).map((_,row) =>
-        Array.from({length: 25}).map((_,col) => (
-          <rect key={`ct-${row}-${col}`} x={col*40} y={180+row*36} width="38" height="34" rx="1" fill={((row+col)%2===0) ? "#D8D4CC" : "#CBC7BF"} opacity=".3" />
-        ))
+        Array.from({length: 25}).map((_,col) => {
+          const shade = ((row+col)%4===0) ? "#D5D1C9" : ((row+col)%4===1) ? "#C9C5BD" : ((row+col)%4===2) ? "#D0CCc4" : "#C6C2BA";
+          return (
+            <rect key={`ct-${row}-${col}`} x={col*40} y={180+row*36} width="38" height="34" rx="1" fill={shade} opacity=".35" />
+          );
+        })
       )}
+      {/* Tile joint lines (subtle) */}
+      {Array.from({length: 21}).map((_,row) => (
+        <line key={`tj-h-${row}`} x1="0" y1={180+row*36} x2="1000" y2={180+row*36} stroke="#B8B4AC" strokeWidth=".5" opacity=".15" />
+      ))}
+      {Array.from({length: 26}).map((_,col) => (
+        <line key={`tj-v-${col}`} x1={col*40} y1="180" x2={col*40} y2="900" stroke="#B8B4AC" strokeWidth=".5" opacity=".12" />
+      ))}
       {/* Café area decorative brick border along buildings */}
       <rect x="0" y="490" width="1000" height="48" fill="url(#n-sidewalk)" opacity=".5" />
 
-      {/* Grass texture patches (park area only) */}
+      {/* Grass texture patches (park area) — more varied and natural */}
       {[
-        [1500,420,140,35,.2],[1800,300,90,24,.12],[1200,700,130,32,.15],
-        [1100,500,100,25,.18],[1300,350,80,22,.12],
+        [1500,420,140,35,.15],[1800,300,90,24,.1],[1200,700,130,32,.12],
+        [1100,500,100,25,.14],[1300,350,80,22,.1],[1600,600,120,30,.12],
+        [1400,250,95,28,.08],[1850,450,110,30,.1],[1150,400,80,25,.09],
+        [1700,700,100,28,.11],[1300,600,110,30,.13],[1500,550,80,22,.08],
       ].map(([cx,cy,rx,ry,o],i) => (
-        <ellipse key={`gt-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#n-gl)" opacity={o} />
+        <ellipse key={`gt-${i}`} cx={cx} cy={cy} rx={rx} ry={ry} fill={i%2===0?"url(#n-gl)":"url(#n-gd)"} opacity={o} />
       ))}
+      {/* Individual grass blade clusters (very subtle) */}
+      {Array.from({length:40}).map((_,i) => {
+        const gx = 1020 + (i*24 + (i*17)%950);
+        const gy = 200 + (i*31)%680;
+        return (
+          <g key={`gb-${i}`} opacity=".08">
+            <line x1={gx} y1={gy} x2={gx-1} y2={gy-6} stroke="#4A9838" strokeWidth="1" />
+            <line x1={gx+2} y1={gy} x2={gx+3} y2={gy-7} stroke="#58A842" strokeWidth="1" />
+            <line x1={gx+4} y1={gy} x2={gx+3} y2={gy-5} stroke="#4A9838" strokeWidth="1" />
+          </g>
+        );
+      })}
 
       {/* ═══ MAIN CONNECTING PATH — full width ═══ */}
+      {/* Path shadow (subtle depth) */}
+      <path
+        d="M0 502 Q250 490 500 496 Q750 502 1000 500 Q1250 504 1500 500 Q1750 496 2000 500 L2000 534 Q1750 530 1500 534 Q1250 538 1000 534 Q750 536 500 530 Q250 524 0 536Z"
+        fill="#000" opacity=".04"
+      />
+      {/* Main path surface */}
       <path
         d="M0 500 Q250 488 500 494 Q750 500 1000 498 Q1250 502 1500 498 Q1750 494 2000 498 L2000 528 Q1750 524 1500 528 Q1250 532 1000 528 Q750 530 500 524 Q250 518 0 530Z"
         fill="url(#n-path)" opacity=".85"
       />
+      {/* Path edge highlight (top) */}
+      <path
+        d="M0 500 Q250 488 500 494 Q750 500 1000 498 Q1250 502 1500 498 Q1750 494 2000 498 L2000 500 Q1750 496 1500 500 Q1250 504 1000 500 Q750 502 500 496 Q250 490 0 502Z"
+        fill="white" opacity=".08"
+      />
+      {/* Path edge shadow (bottom) */}
       <path
         d="M0 530 Q250 518 500 524 Q750 530 1000 528 Q1250 532 1500 528 Q1750 524 2000 528 L2000 535 Q1750 531 1500 535 Q1250 539 1000 535 Q750 537 500 531 Q250 525 0 537Z"
         fill="url(#n-pe)" opacity=".5"
       />
-      {/* City + station: wide sidewalk */}
+      {/* City + station: wide sidewalk with texture */}
       <rect x="2000" y="488" width="2000" height="50" fill="url(#n-sidewalk)" opacity=".6" />
+      {/* Subtle tile lines on city sidewalk */}
+      {Array.from({length:50}).map((_,i) => (
+        <line key={`csw-${i}`} x1={2000+i*40} y1="488" x2={2000+i*40} y2="538" stroke="#B8B4AC" strokeWidth=".5" opacity=".1" />
+      ))}
 
       {/* ══════════════════════════════════════════════════════
            AREA 1 — Starbucks Café (0-1000)
@@ -1032,6 +1254,11 @@ export function NearLayer() {
 
       {/* ═══ ATMOSPHERE ═══ */}
       <rect y="175" width="4000" height="725" fill="url(#n-atmo)" />
+      {/* Subtle light rays from top-left */}
+      <rect x="0" y="175" width="600" height="300" fill="rgba(255,250,230,0.03)" />
+      <rect x="200" y="175" width="400" height="200" fill="rgba(255,248,220,0.02)" />
+      {/* Ground-level atmospheric haze */}
+      <rect y="780" width="4000" height="120" fill="rgba(200,210,190,0.04)" />
     </svg>
   );
 }
