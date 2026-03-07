@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -19,7 +19,7 @@ type AvatarItem = {
   name: string;
   modelUrl: string;
   gender: "female" | "male";
-  color: string; // gradient color for thumbnail
+  color: string;
 };
 
 const AVATAR_CATALOG: AvatarItem[] = [
@@ -43,8 +43,119 @@ const GENDER_TABS = [
 
 const STORAGE_KEY = "sloty_selected_avatar";
 
-/* ── Lightweight avatar thumbnail for grid (no WebGL) ── */
-function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelected: boolean }) {
+/* ── Hook: capture 3D model thumbnails using a single offscreen renderer ── */
+function useThumbnailCapture() {
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
+    let disposed = false;
+
+    async function captureAll() {
+      const THREE = await import("three");
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        preserveDrawingBuffer: true,
+        antialias: true,
+        powerPreference: "low-power",
+      });
+      renderer.setSize(128, 128);
+      renderer.setPixelRatio(1);
+      renderer.setClearColor(0x000000, 0);
+
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      camera.position.set(0, 0.5, 3);
+      camera.lookAt(0, 0, 0);
+
+      const scene = new THREE.Scene();
+      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(3, 5, 4);
+      scene.add(dirLight);
+
+      const loader = new GLTFLoader();
+
+      for (const avatar of AVATAR_CATALOG) {
+        if (disposed) break;
+        try {
+          const gltf = await loader.loadAsync(avatar.modelUrl);
+          if (disposed) break;
+
+          const model = gltf.scene;
+          model.rotation.set(0, Math.PI, 0);
+
+          // Compute bounding box from visible meshes
+          const box = new THREE.Box3();
+          model.traverse((child) => {
+            if ("isMesh" in child && child.isMesh && child.visible) {
+              box.union(new THREE.Box3().setFromObject(child));
+            }
+          });
+          if (box.isEmpty()) box.setFromObject(model);
+
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 2 / maxDim;
+          model.scale.setScalar(scale);
+
+          const sc = center.clone().multiplyScalar(scale);
+          model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
+
+          scene.add(model);
+          renderer.render(scene, camera);
+          const dataUrl = renderer.domElement.toDataURL("image/png");
+
+          if (!disposed) {
+            setThumbnails((prev) => ({ ...prev, [avatar.id]: dataUrl }));
+          }
+
+          scene.remove(model);
+          // Dispose model resources
+          model.traverse((child) => {
+            if ("isMesh" in child && child.isMesh) {
+              const mesh = child as { geometry?: { dispose(): void }; material?: { dispose(): void } | { dispose(): void }[] };
+              mesh.geometry?.dispose();
+              if (Array.isArray(mesh.material)) {
+                mesh.material.forEach((m) => m.dispose());
+              } else if (mesh.material) {
+                mesh.material.dispose();
+              }
+            }
+          });
+        } catch {
+          // Skip failed models
+        }
+      }
+
+      if (!disposed) renderer.dispose();
+    }
+
+    captureAll();
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  return thumbnails;
+}
+
+/* ── Lightweight avatar thumbnail for grid ── */
+function AvatarThumbnail({
+  avatar,
+  isSelected,
+  capturedImage,
+}: {
+  avatar: AvatarItem;
+  isSelected: boolean;
+  capturedImage?: string;
+}) {
   const num = avatar.id.split("-")[1];
   const isNamed = avatar.id === "f-haruka" || avatar.id === "m-jibun";
   const label = isNamed ? avatar.name : `No.${num}`;
@@ -62,18 +173,36 @@ function AvatarThumbnail({ avatar, isSelected }: { avatar: AvatarItem; isSelecte
       }}
     >
       <div className="flex flex-col items-center gap-1">
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{
-            width: 56,
-            height: 56,
-            background: `linear-gradient(135deg, ${avatar.color}, ${avatar.color}aa)`,
-            boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
-            transition: "box-shadow 0.3s",
-          }}
-        >
-          <span className="text-[20px] font-bold text-white">{avatar.name.charAt(0)}</span>
-        </div>
+        {capturedImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={capturedImage}
+            alt={avatar.name}
+            className="rounded-full"
+            style={{
+              width: 56,
+              height: 56,
+              objectFit: "contain",
+              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
+              border: `2px solid ${avatar.color}40`,
+              transition: "box-shadow 0.3s",
+            }}
+          />
+        ) : (
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 56,
+              height: 56,
+              background: `linear-gradient(135deg, ${avatar.color}30, ${avatar.color}15)`,
+              boxShadow: isSelected ? `0 4px 12px ${avatar.color}40` : `0 2px 6px ${avatar.color}20`,
+              border: `2px solid ${avatar.color}40`,
+              transition: "box-shadow 0.3s",
+            }}
+          >
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: avatar.color }} />
+          </div>
+        )}
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
           {label}
         </span>
@@ -87,6 +216,10 @@ export default function AvatarSelectPage() {
   const [gender, setGender] = useState<"female" | "male">("female");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentModelUrl, setCurrentModelUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+  // Capture thumbnails from 3D models (single offscreen renderer)
+  const thumbnails = useThumbnailCapture();
 
   // Load current selection
   useEffect(() => {
@@ -104,11 +237,9 @@ export default function AvatarSelectPage() {
   const filteredAvatars = AVATAR_CATALOG.filter((a) => a.gender === gender);
   const selectedAvatar = AVATAR_CATALOG.find((a) => a.id === selectedId);
 
-  const [previewError, setPreviewError] = useState(false);
-
   const handleSelect = (avatar: AvatarItem) => {
     setSelectedId(avatar.id);
-    setPreviewError(false); // reset error on new selection
+    setPreviewError(false);
   };
 
   const handleSave = () => {
@@ -220,7 +351,7 @@ export default function AvatarSelectPage() {
         })}
       </div>
 
-      {/* Avatar grid — lightweight thumbnails, NO 3D */}
+      {/* Avatar grid */}
       {filteredAvatars.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 flex-1">
           {filteredAvatars.map((avatar) => {
@@ -245,7 +376,11 @@ export default function AvatarSelectPage() {
                     使用中
                   </span>
                 )}
-                <AvatarThumbnail avatar={avatar} isSelected={isSelected} />
+                <AvatarThumbnail
+                  avatar={avatar}
+                  isSelected={isSelected}
+                  capturedImage={thumbnails[avatar.id]}
+                />
                 <span className="text-[11px] font-medium">{avatar.name}</span>
               </button>
             );
