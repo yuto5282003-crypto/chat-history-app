@@ -509,6 +509,10 @@ export type SquareVisitor = {
  * - Lower left path: ~26%, ~75%
  * - Lower right path: ~76%, ~75%
  */
+/**
+ * 広場表示対象 — 現在は「はるか」のみ（3Dモデル対応済み）
+ * 今後3Dモデルが用意でき次第、段階的に追加する。
+ */
 export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
   {
     // Near left bench — sitting/standing by bench
@@ -520,32 +524,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
     ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
   },
-  // NOTE: たくや(sv-2), みさき(sv-3), ことね(sv-4) — removed (旧2Dアニメ調キャラ。今後3Dモデル差し替え予定)
-  {
-    // Near fountain — left side
-    id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
-    avatarStyle: DEFAULT_AVATAR_STYLES["user-e"],
-    bubble: "ゲームしよ！", mode: "call", tags: ["ゲーム"], verified: true,
-    availability: "今日中OK", area: "", bio: "スプラ・スマブラ一緒にやろう",
-    ratingAvg: 4.6, ratingCount: 20, x: 42, y: 47, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
-  },
-  {
-    // Path intersection area — left
-    id: "sv-6", userId: "user-f", displayName: "りょう", gender: "男性",
-    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 8, browType: 7, mouthType: 3, hairStyle: 13, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topType: 0, topColor: "#667eea", bottomType: 0, bottomColor: "#3D3D5C" }),
-    bubble: "ちょい暇", mode: "call", tags: ["雑談", "ゲーム"], verified: true,
-    availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
-    ratingAvg: 4.4, ratingCount: 18, x: 35, y: 37, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
-  },
-  // NOTE: ことね(sv-7) — removed (旧2Dアニメ調キャラ。今後3Dモデル差し替え予定)
-  {
-    // Near left tree — slightly apart
-    id: "sv-8", userId: "user-h", displayName: "そうた", gender: "男性",
-    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 6, browType: 5, mouthType: 5, hairStyle: 12, hairColor: "#1A1A2E", skinTone: "#F0C8A0", topType: 2, topColor: "#2C2C2C", bottomType: 0, bottomColor: "#3A3A5E", accessory: 2, cheekType: 2 }),
-    bubble: "30分だけOK", mode: "either", tags: ["相談", "作業"], verified: true,
-    availability: "30分OK", area: "", bio: "フリーランスエンジニア。気軽にどうぞ",
-    ratingAvg: 4.7, ratingCount: 35, x: 15, y: 40, lastActive: new Date(Date.now() - 7 * 60_000).toISOString(),
-  },
+  // NOTE: あおい(sv-5), りょう(sv-6), そうた(sv-8) — 3Dモデル未対応のため一時非表示。今後段階的に追加。
 ];
 
 // ===== ピグ風着せ替えオプション =====

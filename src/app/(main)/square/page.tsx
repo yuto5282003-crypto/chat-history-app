@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ParkBackground from "@/components/square/ParkBackground";
-import AvatarFigure from "@/components/square/AvatarFigure";
 import Bubble from "@/components/square/Bubble";
 import VisitorSheet from "@/components/square/VisitorSheet";
 import { DEMO_SQUARE_VISITORS } from "@/lib/demo-data";
@@ -63,10 +62,12 @@ export default function SquarePage() {
   const bubbleRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const npcRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  /* ── Initialize visitors — show all (3D model, avatarImage, or AvatarFigure fallback) ── */
+  /* ── Initialize visitors — 3Dモデル対応キャラのみ（現在は「はるか」のみ） ── */
   useEffect(() => {
+    // 3Dモデルがあるキャラのみ広場に表示（将来の追加に備えたフィルタ）
+    const supported = DEMO_SQUARE_VISITORS.filter((v) => !!v.model3d);
     setVisitors(
-      DEMO_SQUARE_VISITORS.map((v, i) => ({
+      supported.map((v, i) => ({
         ...v,
         posX: v.x,
         posY: v.y,
@@ -372,12 +373,10 @@ export default function SquarePage() {
           </div>
         ))}
 
-        {/* ── NPC visitor avatars ── */}
+        {/* ── NPC visitor avatars（3Dモデル対応キャラのみ・常駐表示） ── */}
         {visitors.map((v, idx) => {
           const zIndex = Math.round(v.posY);
           const avatarSize = 62 + Math.round((v.posY / 100) * 16);
-          const hasImage = !!v.avatarImage;
-          const has3D = !!v.model3d;
           const avatar3DSize = avatarSize * 0.95;
 
           return (
@@ -392,19 +391,16 @@ export default function SquarePage() {
               style={{
                 left: `${v.posX}%`,
                 top: `${v.posY}%`,
-                transform: `translate(-50%, -100%)${!has3D && v.facing === "left" ? " scaleX(-1)" : ""}`,
-                zIndex: has3D ? zIndex + 10 : zIndex,
+                transform: "translate(-50%, -100%)",
+                zIndex: zIndex + 10,
                 transition: `left ${v.walkMs}ms ease-in-out, top ${v.walkMs}ms ease-in-out`,
                 cursor: "pointer",
-                // Larger touch target
                 padding: "8px",
                 margin: "-8px",
               }}
             >
               <div className="relative">
-                <div style={{ transform: `scaleX(${!has3D && v.facing === "left" ? -1 : 1})` }}>
-                  <Bubble text={v.bubble} visible={v.showBubble} />
-                </div>
+                <Bubble text={v.bubble} visible={v.showBubble} />
 
                 {/* Hover glow */}
                 <div
@@ -416,80 +412,49 @@ export default function SquarePage() {
                   }}
                 />
 
-                {has3D ? (
-                  <div className="flex flex-col items-center relative">
-                    <div
-                      className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
-                      style={{
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
-                      }}
-                    >
-                      3D
-                    </div>
-                    <Avatar3D
-                      modelUrl={v.model3d}
-                      size={avatar3DSize}
-                      autoRotate={false}
-                      animationSpeed={0.8}
-                      enableLongPressRotate
-                      onRotatingChange={(rotating) =>
-                        setRotatingAvatarId(rotating ? v.id : null)
-                      }
-                    />
-                    {/* Transparent tap capture — ensures click reaches handleVisitorTap even over Canvas */}
-                    {rotatingAvatarId !== v.id && (
-                      <div
-                        className="absolute inset-0 z-[5] cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVisitorTap(v);
-                        }}
-                      />
-                    )}
-                    <div
-                      className="animate-avatar-shadow"
-                      style={{
-                        width: avatar3DSize * 0.5,
-                        height: avatar3DSize * 0.1,
-                        borderRadius: "50%",
-                        background:
-                          "radial-gradient(ellipse, rgba(102,126,234,0.25) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
-                        marginTop: -4,
-                        animationDelay: `${idx * 0.6}s`,
-                      }}
-                    />
+                <div className="flex flex-col items-center relative">
+                  <div
+                    className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
+                    style={{
+                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
+                    }}
+                  >
+                    3D
                   </div>
-                ) : hasImage ? (
-                  <div className="flex flex-col items-center">
-                    <img
-                      src={v.avatarImage}
-                      alt={v.displayName}
-                      className="animate-avatar-float"
-                      style={{
-                        width: avatarSize,
-                        height: avatarSize,
-                        objectFit: "contain",
-                        animationDelay: `${idx * 0.6}s`,
-                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.08))",
-                      }}
-                      draggable={false}
-                    />
+                  <Avatar3D
+                    modelUrl={v.model3d}
+                    size={avatar3DSize}
+                    autoRotate={false}
+                    animationSpeed={0.8}
+                    enableLongPressRotate
+                    onRotatingChange={(rotating) =>
+                      setRotatingAvatarId(rotating ? v.id : null)
+                    }
+                  />
+                  {/* Transparent tap capture — ensures click reaches handleVisitorTap even over Canvas */}
+                  {rotatingAvatarId !== v.id && (
                     <div
-                      className="animate-avatar-shadow"
-                      style={{
-                        width: avatarSize * 0.5,
-                        height: avatarSize * 0.12,
-                        borderRadius: "50%",
-                        backgroundColor: "rgba(0,0,0,0.12)",
-                        marginTop: -2,
-                        animationDelay: `${idx * 0.6}s`,
+                      className="absolute inset-0 z-[5] cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVisitorTap(v);
                       }}
                     />
-                  </div>
-                ) : (
-                  <AvatarFigure style={v.avatarStyle} size={avatarSize} animate="idle" />
-                )}
+                  )}
+                  <div
+                    className="animate-avatar-shadow"
+                    style={{
+                      width: avatar3DSize * 0.5,
+                      height: avatar3DSize * 0.1,
+                      borderRadius: "50%",
+                      background:
+                        "radial-gradient(ellipse, rgba(102,126,234,0.25) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
+                      marginTop: -4,
+                      animationDelay: `${idx * 0.6}s`,
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Name tag */}
@@ -499,7 +464,6 @@ export default function SquarePage() {
                   color: "#3A3A4A",
                   textShadow:
                     "0 0 6px rgba(255,255,255,0.95), 0 0 12px rgba(255,255,255,0.5)",
-                  transform: `scaleX(${!has3D && v.facing === "left" ? -1 : 1})`,
                   letterSpacing: "0.02em",
                 }}
               >
