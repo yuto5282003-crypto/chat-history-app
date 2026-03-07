@@ -643,6 +643,21 @@ export const AVATAR_PRESETS: AvatarPreset[] = [
   { name: "ミステリアス", style: _base({ base: "neutral", faceShape: 1, eyeType: 2, browType: 5, mouthType: 2, hairStyle: 17, hairColor: "#1A1A2E", topType: 0, topColor: "#2C2C2C", bottomType: 0, bottomColor: "#3A3A5E" }) },
 ];
 
+// ===== アバターギャラリー（CHARAT画像ベース） =====
+export type AvatarGalleryItem = {
+  id: string;
+  name: string;
+  gender: "male" | "female";
+  imagePath: string;
+};
+
+export const AVATAR_GALLERY: AvatarGalleryItem[] = [
+  { id: "avatar-haruka", name: "はるか", gender: "female", imagePath: "/avatars/avatar-haruka.png" },
+  { id: "avatar-misaki", name: "みさき", gender: "female", imagePath: "/avatars/avatar-misaki.png" },
+  { id: "avatar-kotone", name: "ことね", gender: "female", imagePath: "/avatars/avatar-kotone.png" },
+  { id: "avatar-takuya", name: "たくや", gender: "male", imagePath: "/avatars/avatar-takuya.png" },
+];
+
 export const BUBBLE_TEMPLATES = [
   "誰か話そー", "ちょい暇", "通話OK", "対面OK",
   "30分だけ雑談OK", "作業通話できる人いる？", "カフェ行ける人",

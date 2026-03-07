@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import AvatarFigure from "./AvatarFigure";
 import type { SquareVisitor } from "@/lib/demo-data";
 
 /**
@@ -63,7 +62,12 @@ export default function VisitorSheet({
                     draggable={false}
                   />
                 ) : (
-                  <AvatarFigure style={visitor.avatarStyle} size={72} />
+                  <div
+                    className="flex items-center justify-center rounded-full text-white font-bold text-2xl"
+                    style={{ width: 72, height: 72, background: "var(--gradient-main)" }}
+                  >
+                    {visitor.displayName.charAt(0)}
+                  </div>
                 )}
               </div>
             </div>
