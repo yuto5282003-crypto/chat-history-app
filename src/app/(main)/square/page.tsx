@@ -28,7 +28,7 @@ const NPC_RANGE = 2.5;
 const SWIPE_THRESHOLD = 10;
 const LEFT_MARGIN = 0; // no scroll past left edge — building fills viewport
 const AVATAR_DRAG_THRESHOLD = 8;
-const MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
+const DEFAULT_MY_MODEL = "/api/model-proxy?id=11oL9zWREayIqI2Nh3s7-1dpu9EYGvoTp";
 const EMOTES = ["👋", "😂", "❤️", "🔥", "✨"] as const;
 const MIN_AVATAR_SIZE = 58;
 const MAX_AVATAR_SIZE = 82;
@@ -71,6 +71,7 @@ export default function SquarePage() {
   const [visitors, setVisitors] = useState<VisitorAnim[]>([]);
   const [selected, setSelected] = useState<SquareVisitor | null>(null);
   const [rotatingAvatarId, setRotatingAvatarId] = useState<string | null>(null);
+  const [myModel, setMyModel] = useState(DEFAULT_MY_MODEL);
 
   /* ── Self avatar (world coords: x 0-100, y 0-100) ── */
   const [myPos, setMyPos] = useState({ x: 37.5, y: 55 });
@@ -149,6 +150,18 @@ export default function SquarePage() {
 
   useEffect(() => { cameraXRef.current = cameraX; }, [cameraX]);
   useEffect(() => { myPosRef.current = myPos; }, [myPos]);
+
+  /* ── Load selected avatar from localStorage ── */
+  useEffect(() => {
+    const saved = localStorage.getItem("sloty_selected_avatar");
+    if (saved) setMyModel(saved);
+    const handleStorage = () => {
+      const updated = localStorage.getItem("sloty_selected_avatar");
+      if (updated) setMyModel(updated);
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   /* ── Fetch weather ── */
   useEffect(() => {
@@ -505,7 +518,7 @@ export default function SquarePage() {
             吹き出し
           </Link>
           <Link href="/square/customize" className="flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-medium transition-colors" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-soft-text)" }}>
-            着せ替え
+            アバター
           </Link>
         </div>
       </div>
@@ -710,7 +723,7 @@ export default function SquarePage() {
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
                   }}>3D</div>
 
-                  <Avatar3D modelUrl={MY_MODEL} size={Math.round(myAvatarSize * 0.95)} autoRotate={false}
+                  <Avatar3D modelUrl={myModel} size={Math.round(myAvatarSize * 0.95)} autoRotate={false}
                     animationSpeed={myIsWalking ? 1.2 : 0.6} enableLongPressRotate
                     onRotatingChange={(r) => setRotatingAvatarId(r ? "self" : null)} />
 
