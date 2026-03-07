@@ -515,7 +515,7 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
     avatarImage: "/avatars/avatar-haruka.png",
-    model3d: "/models/chibi-girl-3d-model.glb",
+    model3d: "/api/model-proxy?id=1HPLEuAsvSBhGocNN3RIByW8HAM95yMkF",
     bubble: "誰か話そー", mode: "call", tags: ["雑談"], verified: true,
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
     ratingAvg: 4.8, ratingCount: 31, x: 25, y: 54, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
