@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import AvatarFigure from "./AvatarFigure";
 import type { SquareVisitor } from "@/lib/demo-data";
 
 /**
@@ -48,7 +49,7 @@ export default function VisitorSheet({
         <div className="px-5">
           {/* ── Avatar + identity row ── */}
           <div className="flex items-start gap-4">
-            {/* Avatar — larger, centered */}
+            {/* Avatar preview — 2D only (3Dは広場に常駐させ、ここでは重複生成しない) */}
             <div className="shrink-0 -mt-1">
               <div
                 className="rounded-2xl p-2"
@@ -62,12 +63,7 @@ export default function VisitorSheet({
                     draggable={false}
                   />
                 ) : (
-                  <div
-                    className="flex items-center justify-center rounded-full text-white font-bold text-2xl"
-                    style={{ width: 72, height: 72, background: "var(--gradient-main)" }}
-                  >
-                    {visitor.displayName.charAt(0)}
-                  </div>
+                  <AvatarFigure style={visitor.avatarStyle} size={72} />
                 )}
               </div>
             </div>
