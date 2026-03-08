@@ -50,6 +50,11 @@ const STORAGE_KEY = "sloty_selected_avatar";
 const thumbnailCache = new Map<string, string>();
 /* ── Larger preview snapshot cache ── */
 const previewCache = new Map<string, string>();
+const failedUrls = new Set<string>();
+const FALLBACK_AVATAR = (() => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" fill="none"/><circle cx="64" cy="40" r="20" fill="#c4b5fd"/><ellipse cx="64" cy="100" rx="30" ry="24" fill="#c4b5fd"/></svg>`;
+  return `data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa(svg) : ""}`;
+})();
 
 /* ── Offscreen snapshot renderer: uses ONE WebGL context to capture all thumbnails + preview ── */
 function useThumbnailRenderer() {
@@ -106,21 +111,26 @@ function useThumbnailRenderer() {
       dirLight.position.set(3, 5, 4);
       scene.add(dirLight);
 
-      // Load model (cache the parsed GLTF)
+      // Load model (cache the parsed GLTF) with timeout
       let model: THREE.Group;
       if (modelCacheRef.current.has(url)) {
         model = modelCacheRef.current.get(url)!.clone(true);
       } else {
         const loader = loaderRef.current;
-        const gltf = await new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
-          loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
-        });
+        const gltf = await Promise.race([
+          new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
+            loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Model load timeout")), 15000)
+          ),
+        ]);
         const origModel = (gltf as { scene: THREE.Group }).scene;
         modelCacheRef.current.set(url, origModel);
         model = origModel.clone(true);
       }
 
-      model.rotation.set(0, Math.PI, 0);
+      model.rotation.set(0, 0, 0);
 
       // Auto-fit to view
       const box = new THREE.Box3().setFromObject(model);
@@ -167,7 +177,15 @@ function useThumbnailRenderer() {
         }
       });
     } catch {
-      // Failed to render this model, skip
+      // Failed to render — set fallback so spinner doesn't spin forever
+      failedUrls.add(url);
+      const cache = size === "preview" ? previewCache : thumbnailCache;
+      cache.set(url, FALLBACK_AVATAR);
+      if (size === "preview") {
+        setPreviews((prev) => { const next = new Map(prev); next.set(url, FALLBACK_AVATAR); return next; });
+      } else {
+        setSnapshots((prev) => { const next = new Map(prev); next.set(url, FALLBACK_AVATAR); return next; });
+      }
     }
 
     busyRef.current = false;

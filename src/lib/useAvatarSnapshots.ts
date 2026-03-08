@@ -5,6 +5,13 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const snapshotCache = new Map<string, string>();
+const failedUrls = new Set<string>();
+
+/* Fallback: a simple silhouette SVG data URL for failed models */
+const FALLBACK_AVATAR = (() => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" fill="none"/><circle cx="64" cy="40" r="20" fill="#c4b5fd"/><ellipse cx="64" cy="100" rx="30" ry="24" fill="#c4b5fd"/></svg>`;
+  return `data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa(svg) : ""}`;
+})();
 
 /**
  * Offscreen snapshot renderer: uses ONE WebGL context to capture all avatar thumbnails.
@@ -24,7 +31,16 @@ export function useAvatarSnapshots(renderSize = 128) {
 
     const url = queueRef.current.shift()!;
 
-    if (snapshotCache.has(url)) {
+    if (snapshotCache.has(url) || failedUrls.has(url)) {
+      // If previously failed, set fallback
+      if (failedUrls.has(url) && !snapshotCache.has(url)) {
+        snapshotCache.set(url, FALLBACK_AVATAR);
+        setSnapshots((prev) => {
+          const next = new Map(prev);
+          next.set(url, FALLBACK_AVATAR);
+          return next;
+        });
+      }
       busyRef.current = false;
       renderNext();
       return;
@@ -61,15 +77,20 @@ export function useAvatarSnapshots(renderSize = 128) {
         model = modelCacheRef.current.get(url)!.clone(true);
       } else {
         const loader = loaderRef.current;
-        const gltf = await new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
-          loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
-        });
+        const gltf = await Promise.race([
+          new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
+            loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Model load timeout")), 15000)
+          ),
+        ]);
         const origModel = (gltf as { scene: THREE.Group }).scene;
         modelCacheRef.current.set(url, origModel);
         model = origModel.clone(true);
       }
 
-      model.rotation.set(0, Math.PI, 0);
+      model.rotation.set(0, 0, 0);
 
       const box = new THREE.Box3().setFromObject(model);
       const sz = box.getSize(new THREE.Vector3());
@@ -124,7 +145,14 @@ export function useAvatarSnapshots(renderSize = 128) {
         }
       });
     } catch {
-      // Failed to render, skip
+      // Failed to render — set fallback so spinner doesn't spin forever
+      failedUrls.add(url);
+      snapshotCache.set(url, FALLBACK_AVATAR);
+      setSnapshots((prev) => {
+        const next = new Map(prev);
+        next.set(url, FALLBACK_AVATAR);
+        return next;
+      });
     }
 
     busyRef.current = false;
