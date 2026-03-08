@@ -1,18 +1,12 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import SplashScreen from "@/components/shared/SplashScreen";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
 import "./globals.css";
 
-
 export const metadata: Metadata = {
-  title: "SLOTY — 時間共有マーケット",
-  description: "「人」ではなく「時間枠」を売買・共有するアプリ",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
+  title: "Affi OS - Affiliate Operating System",
+  description: "アフィリエイト運用を半自動化する管理ツール",
 };
 
 export default function RootLayout({
@@ -23,10 +17,19 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <SplashScreen>
-            {children}
-          </SplashScreen>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <div className="flex-1 ml-56">
+              <Header />
+              <main className="p-6">{children}</main>
+            </div>
+          </div>
         </ThemeProvider>
       </body>
     </html>
