@@ -219,9 +219,8 @@ export default function SquarePage() {
 
   /* ── Initialize visitors ── */
   useEffect(() => {
-    const supported = DEMO_SQUARE_VISITORS.filter((v) => !!v.model3d);
     setVisitors(
-      supported.map((v, i) => ({
+      DEMO_SQUARE_VISITORS.map((v, i) => ({
         ...v,
         posX: v.x,
         posY: v.y,

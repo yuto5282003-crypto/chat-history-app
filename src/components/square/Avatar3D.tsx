@@ -231,7 +231,7 @@ const Avatar3D = memo(function Avatar3D({
   const [isVisible, setIsVisible] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -245,7 +245,7 @@ const Avatar3D = memo(function Avatar3D({
   // Auto-retry on error with exponential backoff + cache clearing
   useEffect(() => {
     if (!hasError || retryCount >= MAX_RETRIES || !modelUrl) return;
-    const delay = Math.min(2000 * Math.pow(2, retryCount), 8000);
+    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 6000);
     const timer = setTimeout(() => {
       // Clear drei's useGLTF cache to avoid re-throwing cached errors
       try { useGLTF.clear(modelUrl); } catch { /* ignore */ }

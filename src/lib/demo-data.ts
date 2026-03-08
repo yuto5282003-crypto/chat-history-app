@@ -509,13 +509,8 @@ export type SquareVisitor = {
  * - Lower left path: ~26%, ~75%
  * - Lower right path: ~76%, ~75%
  */
-/**
- * 広場表示対象 — 現在は「はるか」のみ（3Dモデル対応済み）
- * 今後3Dモデルが用意でき次第、段階的に追加する。
- */
 export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
   {
-    // Near left bench — sitting/standing by bench
     id: "sv-1", userId: "user-a", displayName: "はるか", gender: "女性",
     avatarStyle: DEFAULT_AVATAR_STYLES["user-a"],
     avatarImage: "/avatars/avatar-haruka.png",
@@ -524,7 +519,49 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     availability: "今からOK", area: "", bio: "カフェと散歩が好き！気軽に話しかけてね",
     ratingAvg: 4.8, ratingCount: 31, x: 12, y: 55, lastActive: new Date(Date.now() - 3 * 60_000).toISOString(),
   },
-  // NOTE: あおい(sv-5), りょう(sv-6), そうた(sv-8) — 3Dモデル未対応のため一時非表示。今後段階的に追加。
+  {
+    id: "sv-2", userId: "user-b", displayName: "たくや", gender: "男性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-b"],
+    avatarImage: "/avatars/avatar-takuya.png",
+    model3d: "/api/model-proxy?id=17DOS8dIWcuaveJn2i6bC7uMWWoByZuSo",
+    bubble: "ちょい暇", mode: "call", tags: ["雑談", "ゲーム"], verified: true,
+    availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
+    ratingAvg: 4.4, ratingCount: 18, x: 35, y: 50, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-3", userId: "user-c", displayName: "みさき", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-c"],
+    avatarImage: "/avatars/avatar-misaki.png",
+    model3d: "/api/model-proxy?id=1Ov9wTWnjDuT_Uxv9ZzCuzNN-CsvB36j_",
+    bubble: "カフェ行きたい", mode: "either", tags: ["カフェ", "お散歩"], verified: true,
+    availability: "今日中OK", area: "", bio: "カフェ巡りが趣味です",
+    ratingAvg: 4.7, ratingCount: 24, x: 42, y: 47, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-5", userId: "user-e", displayName: "あおい", gender: "女性",
+    avatarStyle: DEFAULT_AVATAR_STYLES["user-e"],
+    avatarImage: "/avatars/avatar-kotone.png",
+    model3d: "/api/model-proxy?id=1_4Zz2DqKXTXH0WjSfBqyDpa18_2DvWiQ",
+    bubble: "ゲームしよ！", mode: "call", tags: ["ゲーム"], verified: true,
+    availability: "今日中OK", area: "", bio: "スプラ・スマブラ一緒にやろう",
+    ratingAvg: 4.6, ratingCount: 20, x: 60, y: 52, lastActive: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-6", userId: "user-f", displayName: "りょう", gender: "男性",
+    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 8, browType: 7, mouthType: 3, hairStyle: 13, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topType: 0, topColor: "#667eea", bottomType: 0, bottomColor: "#3D3D5C" }),
+    model3d: "/api/model-proxy?id=19ZNNMNayYT7F9rIVvEi-Mwlh5NwNju8S",
+    bubble: "作業通話できる人いる？", mode: "call", tags: ["作業", "雑談"], verified: true,
+    availability: "30分OK", area: "", bio: "エンジニアやってます。気軽にどうぞ",
+    ratingAvg: 4.5, ratingCount: 15, x: 78, y: 48, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
+  },
+  {
+    id: "sv-8", userId: "user-h", displayName: "そうた", gender: "男性",
+    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 6, browType: 5, mouthType: 5, hairStyle: 12, hairColor: "#1A1A2E", skinTone: "#F0C8A0", topType: 2, topColor: "#2C2C2C", bottomType: 0, bottomColor: "#3A3A5E", accessory: 2, cheekType: 2 }),
+    model3d: "/api/model-proxy?id=11zJGTW_nwDEFjHgCQ1xjUCx5aR14GF98",
+    bubble: "30分だけOK", mode: "either", tags: ["相談", "作業"], verified: true,
+    availability: "30分OK", area: "", bio: "フリーランスエンジニア。気軽にどうぞ",
+    ratingAvg: 4.7, ratingCount: 35, x: 88, y: 55, lastActive: new Date(Date.now() - 7 * 60_000).toISOString(),
+  },
 ];
 
 // ===== ピグ風着せ替えオプション =====
