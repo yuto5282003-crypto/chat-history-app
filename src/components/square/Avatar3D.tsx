@@ -286,11 +286,6 @@ const Avatar3D = memo(function Avatar3D({
 
   const showFallback = !modelUrl || hasError;
 
-  // If hideOnError is true and model failed, render nothing
-  if (hideOnError && showFallback && (hasError || !modelUrl)) {
-    return null;
-  }
-
   // ── WebGL context loss/restore handling ──
   const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
     const gl = state.gl;
@@ -342,6 +337,11 @@ const Avatar3D = memo(function Avatar3D({
 
   // DPR: use device native (sharp & clear) but cap at 2 to avoid overkill on 3x screens
   const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1;
+
+  // If hideOnError is true and model failed, render nothing
+  if (hideOnError && showFallback && (hasError || !modelUrl)) {
+    return null;
+  }
 
   return (
     <div
