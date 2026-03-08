@@ -3,6 +3,8 @@
 // プロバイダーを切り替え可能な抽象インターフェース
 // ========================================
 
+import { resizeBase64ImageForAPI, fetchAndResizeImageForAPI } from "@/lib/utils/image-resize";
+
 export interface AIGenerationResult {
   text: string;
   input_tokens: number;
@@ -12,20 +14,31 @@ export interface AIGenerationResult {
   provider: string;
 }
 
+export interface ImageInput {
+  /** Base64 エンコードされた画像データ */
+  base64?: string;
+  /** 画像の URL（base64 がない場合に使用） */
+  url?: string;
+  /** メディアタイプ（base64 使用時に指定可能、省略時は自動検出） */
+  mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+}
+
 export interface AIProvider {
   readonly name: string;
-  generateText(prompt: string, systemPrompt?: string): Promise<AIGenerationResult>;
+  generateText(prompt: string, systemPrompt?: string, images?: ImageInput[]): Promise<AIGenerationResult>;
 }
 
 // ---------- Claude Provider ----------
 export class ClaudeProvider implements AIProvider {
   readonly name = "claude";
 
-  async generateText(prompt: string, systemPrompt?: string): Promise<AIGenerationResult> {
+  async generateText(prompt: string, systemPrompt?: string, images?: ImageInput[]): Promise<AIGenerationResult> {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return this.mockGenerate(prompt);
     }
+
+    const content = await this.buildContent(prompt, images);
 
     const start = Date.now();
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -39,7 +52,7 @@ export class ClaudeProvider implements AIProvider {
         model: process.env.AI_MODEL || "claude-sonnet-4-6",
         max_tokens: 1024,
         system: systemPrompt || "",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content }],
       }),
     });
 
@@ -52,6 +65,50 @@ export class ClaudeProvider implements AIProvider {
       model: data.model || "claude-sonnet-4-6",
       provider: "claude",
     };
+  }
+
+  /**
+   * 画像を含むコンテンツブロックを構築。
+   * 画像は自動的に 2000px 以下にリサイズされる。
+   */
+  private async buildContent(
+    prompt: string,
+    images?: ImageInput[]
+  ): Promise<string | Array<Record<string, unknown>>> {
+    if (!images || images.length === 0) {
+      return prompt;
+    }
+
+    const blocks: Array<Record<string, unknown>> = [];
+
+    for (const img of images) {
+      let base64: string;
+      let mediaType: string;
+
+      if (img.base64) {
+        const resized = await resizeBase64ImageForAPI(img.base64);
+        base64 = resized.base64;
+        mediaType = img.mediaType || resized.mediaType;
+      } else if (img.url) {
+        const resized = await fetchAndResizeImageForAPI(img.url);
+        base64 = resized.base64;
+        mediaType = resized.mediaType;
+      } else {
+        continue;
+      }
+
+      blocks.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: mediaType,
+          data: base64,
+        },
+      });
+    }
+
+    blocks.push({ type: "text", text: prompt });
+    return blocks;
   }
 
   private async mockGenerate(prompt: string): Promise<AIGenerationResult> {
@@ -72,7 +129,7 @@ export class ClaudeProvider implements AIProvider {
 export class OpenAIProvider implements AIProvider {
   readonly name = "openai";
 
-  async generateText(prompt: string, systemPrompt?: string): Promise<AIGenerationResult> {
+  async generateText(prompt: string, systemPrompt?: string, images?: ImageInput[]): Promise<AIGenerationResult> {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return this.mockGenerate(prompt);
@@ -81,7 +138,9 @@ export class OpenAIProvider implements AIProvider {
     const start = Date.now();
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-    messages.push({ role: "user", content: prompt });
+
+    const content = await this.buildContent(prompt, images);
+    messages.push({ role: "user", content });
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -105,6 +164,48 @@ export class OpenAIProvider implements AIProvider {
       model: data.model || "gpt-4o",
       provider: "openai",
     };
+  }
+
+  /**
+   * OpenAI Vision 形式でコンテンツを構築。
+   * 画像は自動的に 2000px 以下にリサイズされる。
+   */
+  private async buildContent(
+    prompt: string,
+    images?: ImageInput[]
+  ): Promise<string | Array<Record<string, unknown>>> {
+    if (!images || images.length === 0) {
+      return prompt;
+    }
+
+    const blocks: Array<Record<string, unknown>> = [];
+
+    for (const img of images) {
+      let base64: string;
+      let mediaType: string;
+
+      if (img.base64) {
+        const resized = await resizeBase64ImageForAPI(img.base64);
+        base64 = resized.base64;
+        mediaType = img.mediaType || resized.mediaType;
+      } else if (img.url) {
+        const resized = await fetchAndResizeImageForAPI(img.url);
+        base64 = resized.base64;
+        mediaType = resized.mediaType;
+      } else {
+        continue;
+      }
+
+      blocks.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${mediaType};base64,${base64}`,
+        },
+      });
+    }
+
+    blocks.push({ type: "text", text: prompt });
+    return blocks;
   }
 
   private async mockGenerate(prompt: string): Promise<AIGenerationResult> {
