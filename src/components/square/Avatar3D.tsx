@@ -2,7 +2,7 @@
 
 import { Suspense, useRef, useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Canvas, useFrame, invalidate } from "@react-three/fiber";
-import { useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
+import { useGLTF, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { registerModelCacheSW } from "@/lib/perf";
 import WebGLErrorBoundary from "./WebGLErrorBoundary";
@@ -76,8 +76,8 @@ function ChibiModel({
     const sc = center.multiplyScalar(scale);
     scene.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
 
-    // Texture optimization: disable mipmaps + cap at 512px (preview is 160px, no need for 1K+)
-    const MAX_TEX = 512;
+    // Texture optimization: disable mipmaps + cap at 256px (avatar is small, no need for large textures)
+    const MAX_TEX = 256;
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const mat = child.material as THREE.MeshStandardMaterial;
@@ -335,8 +335,8 @@ const Avatar3D = memo(function Avatar3D({
     };
   }, [isRotating, onRotatingChange]);
 
-  // DPR: use device native (sharp & clear) but cap at 2 to avoid overkill on 3x screens
-  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1;
+  // DPR: cap at 1.5 for performance (small avatars don't need high DPR)
+  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 1.5) : 1;
 
   // If hideOnError is true and model failed, render nothing
   if (hideOnError && showFallback && (hasError || !modelUrl)) {
@@ -362,52 +362,12 @@ const Avatar3D = memo(function Avatar3D({
       onPointerLeave={handlePointerLeave}
     >
       {showFallback || !isVisible ? (
-        /* ── 2D HTML fallback: shown when model URL missing, error, or not in viewport ── */
+        /* ── Loading/retry placeholder: never show 2D images ── */
         <div
           className="flex flex-col items-center justify-center"
           style={{ width: size, height: size }}
         >
-          {!isVisible && !showFallback ? (
-            <LoadingPlaceholder size={size} />
-          ) : fallbackImage ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={fallbackImage}
-              alt=""
-              style={{
-                width: size * 0.85,
-                height: size * 0.85,
-                objectFit: "contain",
-                borderRadius: "50%",
-                filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
-              }}
-            />
-          ) : (
-            <div
-              className="flex items-center justify-center rounded-full"
-              style={{
-                width: size * 0.65,
-                height: size * 0.65,
-                background: "linear-gradient(135deg, #f5c0d0, #c4b5fd)",
-                boxShadow: "0 2px 8px rgba(155,138,251,0.3)",
-              }}
-            >
-              <svg
-                width={size * 0.3}
-                height={size * 0.3}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-          )}
-          {hasError && retryCount >= MAX_RETRIES && modelUrl && (
+          {hasError && retryCount >= MAX_RETRIES && modelUrl ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -421,6 +381,8 @@ const Avatar3D = memo(function Avatar3D({
             >
               再読み込み
             </button>
+          ) : (
+            <LoadingPlaceholder size={size} />
           )}
         </div>
       ) : (
@@ -452,16 +414,6 @@ const Avatar3D = memo(function Avatar3D({
                 baseRotationY={Math.PI}
               />
             </Suspense>
-
-            <ContactShadows
-              position={[0, -1, 0]}
-              opacity={0.2}
-              scale={2}
-              blur={1}
-              far={2}
-              frames={1}
-              resolution={32}
-            />
 
             {(isRotating || autoRotate) && (
               <OrbitControls

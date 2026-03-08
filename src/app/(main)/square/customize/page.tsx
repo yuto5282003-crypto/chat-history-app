@@ -2,23 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-
-const Avatar3D = dynamic(
-  () => import("@/components/square/Avatar3D").then((mod) => {
-    return mod;
-  }),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
-      </div>
-    ),
-  },
-);
 
 /* ── Avatar catalog ── */
 type AvatarItem = {
@@ -63,26 +48,35 @@ const STORAGE_KEY = "sloty_selected_avatar";
 
 /* ── Thumbnail snapshot cache (shared across renders) ── */
 const thumbnailCache = new Map<string, string>();
+/* ── Larger preview snapshot cache ── */
+const previewCache = new Map<string, string>();
 
-/* ── Offscreen snapshot renderer: uses ONE WebGL context to capture all thumbnails ── */
+/* ── Offscreen snapshot renderer: uses ONE WebGL context to capture all thumbnails + preview ── */
 function useThumbnailRenderer() {
   const [snapshots, setSnapshots] = useState<Map<string, string>>(new Map(thumbnailCache));
-  const queueRef = useRef<string[]>([]);
+  const [previews, setPreviews] = useState<Map<string, string>>(new Map(previewCache));
+  const queueRef = useRef<{ url: string; size: "thumb" | "preview" }[]>([]);
   const busyRef = useRef(false);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const loaderRef = useRef<GLTFLoader | null>(null);
+  const modelCacheRef = useRef<Map<string, THREE.Group>>(new Map());
 
   const renderNext = useCallback(async () => {
     if (busyRef.current || queueRef.current.length === 0) return;
     busyRef.current = true;
 
-    const url = queueRef.current.shift()!;
+    const item = queueRef.current.shift()!;
+    const { url, size } = item;
+    const cache = size === "preview" ? previewCache : thumbnailCache;
 
     // Skip if already cached
-    if (thumbnailCache.has(url)) {
+    if (cache.has(url)) {
       busyRef.current = false;
       renderNext();
       return;
     }
+
+    const renderSize = size === "preview" ? 320 : 144;
 
     try {
       // Create renderer lazily (single context for all thumbnails)
@@ -92,11 +86,15 @@ function useThumbnailRenderer() {
           antialias: true,
           preserveDrawingBuffer: true,
         });
-        rendererRef.current.setSize(144, 144);
         rendererRef.current.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }
+      if (!loaderRef.current) {
+        loaderRef.current = new GLTFLoader();
       }
 
       const renderer = rendererRef.current;
+      renderer.setSize(renderSize, renderSize);
+
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
       camera.position.set(0, 0.5, 3);
@@ -108,24 +106,31 @@ function useThumbnailRenderer() {
       dirLight.position.set(3, 5, 4);
       scene.add(dirLight);
 
-      // Load model
-      const loader = new GLTFLoader();
-      const gltf = await new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
-        loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
-      });
+      // Load model (cache the parsed GLTF)
+      let model: THREE.Group;
+      if (modelCacheRef.current.has(url)) {
+        model = modelCacheRef.current.get(url)!.clone(true);
+      } else {
+        const loader = loaderRef.current;
+        const gltf = await new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
+          loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
+        });
+        const origModel = (gltf as { scene: THREE.Group }).scene;
+        modelCacheRef.current.set(url, origModel);
+        model = origModel.clone(true);
+      }
 
-      const model = (gltf as { scene: THREE.Group }).scene;
       model.rotation.set(0, Math.PI, 0);
 
       // Auto-fit to view
       const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
+      const sz = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2 / maxDim;
-      model.scale.setScalar(scale);
-      const sc = center.multiplyScalar(scale);
-      model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
+      const maxDim = Math.max(sz.x, sz.y, sz.z);
+      const sc = 2 / maxDim;
+      model.scale.setScalar(sc);
+      const c = center.multiplyScalar(sc);
+      model.position.set(-c.x, -c.y + (sz.y * sc) / 2 - 1, -c.z);
 
       scene.add(model);
 
@@ -134,12 +139,20 @@ function useThumbnailRenderer() {
       const dataUrl = renderer.domElement.toDataURL("image/png");
 
       // Cache it
-      thumbnailCache.set(url, dataUrl);
-      setSnapshots((prev) => {
-        const next = new Map(prev);
-        next.set(url, dataUrl);
-        return next;
-      });
+      cache.set(url, dataUrl);
+      if (size === "preview") {
+        setPreviews((prev) => {
+          const next = new Map(prev);
+          next.set(url, dataUrl);
+          return next;
+        });
+      } else {
+        setSnapshots((prev) => {
+          const next = new Map(prev);
+          next.set(url, dataUrl);
+          return next;
+        });
+      }
 
       // Cleanup scene
       scene.remove(model);
@@ -163,8 +176,15 @@ function useThumbnailRenderer() {
   }, []);
 
   const enqueue = useCallback((urls: string[]) => {
-    const newUrls = urls.filter((u) => !thumbnailCache.has(u) && !queueRef.current.includes(u));
-    queueRef.current.push(...newUrls);
+    const newUrls = urls.filter((u) => !thumbnailCache.has(u) && !queueRef.current.some(q => q.url === u && q.size === "thumb"));
+    queueRef.current.push(...newUrls.map(u => ({ url: u, size: "thumb" as const })));
+    renderNext();
+  }, [renderNext]);
+
+  const enqueuePreview = useCallback((url: string) => {
+    if (previewCache.has(url)) return;
+    // Add preview to front of queue (high priority)
+    queueRef.current.unshift({ url, size: "preview" });
     renderNext();
   }, [renderNext]);
 
@@ -176,7 +196,7 @@ function useThumbnailRenderer() {
     };
   }, []);
 
-  return { snapshots, enqueue };
+  return { snapshots, previews, enqueue, enqueuePreview };
 }
 
 /* ── Thumbnail component: shows captured snapshot or loading spinner ── */
@@ -234,8 +254,7 @@ export default function AvatarSelectPage() {
   const [gender, setGender] = useState<"female" | "male">("female");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentModelUrl, setCurrentModelUrl] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState(false);
-  const { snapshots, enqueue } = useThumbnailRenderer();
+  const { snapshots, previews, enqueue, enqueuePreview } = useThumbnailRenderer();
 
   // Load current selection
   useEffect(() => {
@@ -258,9 +277,15 @@ export default function AvatarSelectPage() {
 
   const selectedAvatar = AVATAR_CATALOG.find((a) => a.id === selectedId);
 
+  // Enqueue high-res preview when avatar is selected
+  useEffect(() => {
+    if (selectedAvatar) {
+      enqueuePreview(selectedAvatar.modelUrl);
+    }
+  }, [selectedAvatar, enqueuePreview]);
+
   const handleSelect = (avatar: AvatarItem) => {
     setSelectedId(avatar.id);
-    setPreviewError(false);
   };
 
   const handleSave = () => {
@@ -285,37 +310,27 @@ export default function AvatarSelectPage() {
         <h1 className="text-lg font-bold">アバター選択</h1>
       </div>
 
-      {/* Preview area — only ONE live 3D Canvas here */}
+      {/* Preview area — 3D snapshot (no live Canvas, saves WebGL contexts) */}
       <div
         className="flex flex-col items-center rounded-2xl py-6 mb-4 relative"
         style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
       >
         {selectedAvatar ? (
           <>
-            {previewError ? (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{
-                    width: 64, height: 64,
-                    background: `linear-gradient(135deg, ${selectedAvatar.color}, ${selectedAvatar.color}aa)`,
-                  }}
-                >
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <p className="text-[10px]" style={{ color: "var(--muted)" }}>3Dプレビューを読み込めませんでした</p>
-              </div>
+            {previews.get(selectedAvatar.modelUrl) || snapshots.get(selectedAvatar.modelUrl) ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={previews.get(selectedAvatar.modelUrl) || snapshots.get(selectedAvatar.modelUrl)}
+                alt={selectedAvatar.name}
+                style={{
+                  width: 160,
+                  height: 160,
+                  objectFit: "contain",
+                }}
+              />
             ) : (
-              <div onError={() => setPreviewError(true)}>
-                <Avatar3D
-                  modelUrl={selectedAvatar.modelUrl}
-                  size={160}
-                  autoRotate
-                  animationSpeed={0.8}
-                />
+              <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent" style={{ borderColor: selectedAvatar.color }} />
               </div>
             )}
             <p className="mt-2 text-[13px] font-semibold">{selectedAvatar.name}</p>
@@ -418,7 +433,7 @@ export default function AvatarSelectPage() {
 
       {/* Hint text */}
       <p className="text-center text-[10px] mt-2 mb-1" style={{ color: "var(--muted)" }}>
-        タップで選択 → 上のプレビューで3D確認できるよ
+        タップで選択 → 上のプレビューで確認できるよ
       </p>
 
       {/* Save button */}

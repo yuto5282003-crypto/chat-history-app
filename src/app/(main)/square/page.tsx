@@ -680,12 +680,8 @@ export default function SquarePage() {
                         transform: "scale(2)", pointerEvents: "none",
                       }} />
                       <div className="flex flex-col items-center relative">
-                        <div className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white" style={{
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
-                        }}>3D</div>
                         <Avatar3D modelUrl={v.model3d} size={avatar3DSize} autoRotate={false} animationSpeed={0.8}
-                          enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)}
-                          fallbackImage={v.avatarImage} />
+                          enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)} />
                         {rotatingAvatarId !== v.id && (
                           <div className="absolute inset-0 z-[5] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleVisitorTap(v); }} />
                         )}
@@ -733,10 +729,6 @@ export default function SquarePage() {
                   <div className={`absolute ${isFree ? "-top-[14px]" : "-top-5"} left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[7px] font-bold text-white whitespace-nowrap z-20`} style={{
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 6px rgba(102,126,234,0.5)",
                   }}>YOU</div>
-
-                  <div className="absolute -top-1 -right-1 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white" style={{
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 4px rgba(102,126,234,0.4)",
-                  }}>3D</div>
 
                   <Avatar3D modelUrl={myModel} size={myAvatarSize} autoRotate={false}
                     animationSpeed={myIsWalking ? 1.2 : 0.6} enableLongPressRotate
