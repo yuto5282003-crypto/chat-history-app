@@ -528,14 +528,6 @@ export const DEMO_SQUARE_VISITORS: SquareVisitor[] = [
     availability: "1時間OK", area: "渋谷", bio: "デザイナーやってます。ゲーム雑談なんでも",
     ratingAvg: 4.4, ratingCount: 18, x: 35, y: 50, lastActive: new Date(Date.now() - 2 * 60_000).toISOString(),
   },
-  {
-    id: "sv-6", userId: "user-f", displayName: "りょう", gender: "男性",
-    avatarStyle: _base({ base: "male", faceShape: 0, eyeType: 8, browType: 7, mouthType: 3, hairStyle: 13, hairColor: "#2C2C2C", skinTone: "#F5CBA7", topType: 0, topColor: "#667eea", bottomType: 0, bottomColor: "#3D3D5C" }),
-    model3d: "/api/model-proxy?id=19ZNNMNayYT7F9rIVvEi-Mwlh5NwNju8S",
-    bubble: "作業通話できる人いる？", mode: "call", tags: ["作業", "雑談"], verified: true,
-    availability: "30分OK", area: "", bio: "エンジニアやってます。気軽にどうぞ",
-    ratingAvg: 4.5, ratingCount: 15, x: 65, y: 52, lastActive: new Date(Date.now() - 8 * 60_000).toISOString(),
-  },
 ];
 
 // ===== ピグ風着せ替えオプション =====
