@@ -1,20 +1,12 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/collect",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/score",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/generate",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/post",
-      "schedule": "*/15 * * * *"
-    }
-  ]
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_DEMO_MODE": "1",
+    "NEXT_PUBLIC_DEMO_ENTRY_KEY": "sloty-demo",
+    "ADMIN_PASSCODE": "sloty2024",
+    "OWNER_EMAIL": "demo@sloty.app",
+    "RETENTION_DAYS": "180"
+  }
 }
