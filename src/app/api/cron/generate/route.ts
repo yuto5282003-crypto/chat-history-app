@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAIProvider } from "@/lib/adapters/ai-provider";
+import { createAIProvider, AIRateLimitError, AIOverloadedError } from "@/lib/adapters/ai-provider";
 import { buildPostGenerationPrompt } from "@/lib/prompts/post-generation";
 import { demoItems } from "@/lib/demo-data";
 
@@ -11,39 +11,50 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const provider = createAIProvider();
-    const tones = ["click_bait", "natural", "casual"] as const;
-    let generatedCount = 0;
+  const provider = createAIProvider();
+  const tones = ["click_bait", "natural", "casual"] as const;
+  let generatedCount = 0;
+  let skippedCount = 0;
+  let rateLimitHit = false;
 
-    // TODO: DBから上位候補を取得
-    const topItems = demoItems.slice(0, 3);
+  // TODO: DBから上位候補を取得
+  const topItems = demoItems.slice(0, 3);
 
-    for (const item of topItems) {
-      for (const tone of tones) {
-        const prompt = buildPostGenerationPrompt({
-          item,
-          tone,
-          length: "medium",
-          ng_words: [],
-        });
+  for (const item of topItems) {
+    if (rateLimitHit) break;
 
+    for (const tone of tones) {
+      const prompt = buildPostGenerationPrompt({
+        item,
+        tone,
+        length: "medium",
+        ng_words: [],
+      });
+
+      try {
         await provider.generateText(prompt);
         generatedCount++;
+      } catch (error) {
+        if (error instanceof AIRateLimitError || error instanceof AIOverloadedError) {
+          console.warn(`[cron/generate] レート制限到達、残りのアイテムをスキップ: ${error.message}`);
+          rateLimitHit = true;
+          skippedCount++;
+          break;
+        }
+        // その他のエラーはスキップして続行
+        console.error(`[cron/generate] 生成失敗 (item=${item.id}, tone=${tone}):`, error);
+        skippedCount++;
       }
     }
-
-    return NextResponse.json({
-      success: true,
-      workflow: "generate",
-      items_processed: topItems.length,
-      variants_generated: generatedCount,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Generation failed", details: String(error) },
-      { status: 500 }
-    );
   }
+
+  return NextResponse.json({
+    success: !rateLimitHit,
+    workflow: "generate",
+    items_processed: topItems.length,
+    variants_generated: generatedCount,
+    variants_skipped: skippedCount,
+    rate_limited: rateLimitHit,
+    timestamp: new Date().toISOString(),
+  });
 }

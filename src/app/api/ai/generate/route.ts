@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAIProvider } from "@/lib/adapters/ai-provider";
+import { createAIProvider, AIRateLimitError, AIOverloadedError } from "@/lib/adapters/ai-provider";
 import { buildPostGenerationPrompt, type PostGenerationParams } from "@/lib/prompts/post-generation";
 import { demoItems } from "@/lib/demo-data";
 
@@ -37,8 +37,33 @@ export async function POST(request: Request) {
       duration_ms: result.duration_ms,
     });
   } catch (error) {
+    if (error instanceof AIRateLimitError) {
+      const retryAfterSec = error.retryAfterMs ? Math.ceil(error.retryAfterMs / 1000) : null;
+      return NextResponse.json(
+        {
+          error: "rate_limit",
+          message: "APIのレート制限に達しました。リトライ後も制限が解除されませんでした。",
+          retry_after_seconds: retryAfterSec,
+        },
+        {
+          status: 429,
+          headers: retryAfterSec ? { "Retry-After": String(retryAfterSec) } : {},
+        }
+      );
+    }
+
+    if (error instanceof AIOverloadedError) {
+      return NextResponse.json(
+        {
+          error: "overloaded",
+          message: "AIサーバーが混雑しています。しばらく待ってから再度お試しください。",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "AI generation failed", details: String(error) },
+      { error: "generation_failed", message: "AI文面生成に失敗しました", details: String(error) },
       { status: 500 }
     );
   }
