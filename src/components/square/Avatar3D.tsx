@@ -411,7 +411,7 @@ const Avatar3D = memo(function Avatar3D({
                 url={modelUrl!}
                 animationSpeed={animationSpeed}
                 userRotating={isRotating}
-                baseRotationY={Math.PI}
+                baseRotationY={0}
               />
             </Suspense>
 

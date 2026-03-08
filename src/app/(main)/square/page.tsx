@@ -2,31 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { FarLayer, MidLayer, NearLayer } from "@/components/square/ParallaxPark";
 import Bubble from "@/components/square/Bubble";
 import VisitorSheet from "@/components/square/VisitorSheet";
 import { DEMO_SQUARE_VISITORS } from "@/lib/demo-data";
 import type { SquareVisitor } from "@/lib/demo-data";
-
-const Avatar3D = dynamic(
-  () => import("@/components/square/Avatar3D").then((mod) => {
-    // Preload self model + all NPC models for fast 3D display
-    mod.preloadModel(DEFAULT_MY_MODEL);
-    DEMO_SQUARE_VISITORS.forEach((v) => {
-      if (v.model3d) mod.preloadModel(v.model3d);
-    });
-    return mod;
-  }),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center" style={{ width: 64, height: 64 }}>
-        <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "var(--accent)" }} />
-      </div>
-    ),
-  }
-);
+import { useAvatarSnapshots } from "@/lib/useAvatarSnapshots";
 
 /* ─── Constants ─── */
 const WORLD_SCALE = 4; // 4 areas, 4× viewport width
@@ -80,7 +61,6 @@ export default function SquarePage() {
   /* ── Visitor state ── */
   const [visitors, setVisitors] = useState<VisitorAnim[]>([]);
   const [selected, setSelected] = useState<SquareVisitor | null>(null);
-  const [rotatingAvatarId, setRotatingAvatarId] = useState<string | null>(null);
   const [myModel, setMyModel] = useState(DEFAULT_MY_MODEL);
 
   /* ── Self avatar (world coords: x 0-100, y 0-100) ── */
@@ -98,6 +78,9 @@ export default function SquarePage() {
   const [isFree, setIsFree] = useState(false);
   const [nearbyVisitor, setNearbyVisitor] = useState<SquareVisitor | null>(null);
   const [floatingEmotes, setFloatingEmotes] = useState<FloatingEmote[]>([]);
+
+  /* ── Avatar snapshots (lightweight pre-rendered images instead of live 3D) ── */
+  const { snapshots: avatarSnapshots, enqueue: enqueueAvatarSnapshots } = useAvatarSnapshots(128);
 
   /* ── Effects ── */
   const [tapRipples, setTapRipples] = useState<TapRipple[]>([]);
@@ -121,8 +104,6 @@ export default function SquarePage() {
     startY: 0,
     moved: false,
   });
-
-  /* ── (NPC 3D fallback handled by Avatar3D component with fallbackImage) ── */
 
   /* ── Compute time overlay ── */
   const isNight = weather ? !weather.isDay : (currentHour < 6 || currentHour >= 19);
@@ -174,6 +155,12 @@ export default function SquarePage() {
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
+
+  /* ── Enqueue avatar snapshots for all models ── */
+  useEffect(() => {
+    const urls = [myModel, ...DEMO_SQUARE_VISITORS.filter((v) => v.model3d).map((v) => v.model3d!)];
+    enqueueAvatarSnapshots(urls);
+  }, [myModel, enqueueAvatarSnapshots]);
 
   /* ── Fetch weather ── */
   useEffect(() => {
@@ -316,7 +303,6 @@ export default function SquarePage() {
   /* ── Tap to walk ── */
   const handleGroundTapAt = useCallback(
     (clientX: number, clientY: number) => {
-      if (rotatingAvatarId) return;
       const pos = screenToWorld(clientX, clientY);
       if (!pos) return;
       const id = ++rippleId.current;
@@ -324,13 +310,12 @@ export default function SquarePage() {
       setTimeout(() => setTapRipples((r) => r.filter((rr) => rr.id !== id)), 800);
       moveMyAvatar(pos.x, pos.y);
     },
-    [screenToWorld, moveMyAvatar, rotatingAvatarId]
+    [screenToWorld, moveMyAvatar]
   );
 
   /* ── Visitor tap — approach then profile ── */
   const handleVisitorTap = useCallback(
     (visitor: SquareVisitor) => {
-      if (rotatingAvatarId) return;
       const v = visitors.find((vv) => vv.id === visitor.id);
       if (!v) { setSelected(visitor); return; }
       const cur = myPosRef.current;
@@ -347,7 +332,7 @@ export default function SquarePage() {
         setTimeout(() => { setSelected(visitor); approachRef.current = null; }, 400);
       });
     },
-    [visitors, moveMyAvatar, rotatingAvatarId]
+    [visitors, moveMyAvatar]
   );
 
   /* ── Area jump ── */
@@ -425,7 +410,6 @@ export default function SquarePage() {
   /* ── Pointer handlers (swipe + tap) ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (rotatingAvatarId) return;
       if ((e.target as HTMLElement).closest("[data-avatar]")) return;
       dragRef.current = {
         active: true,
@@ -437,7 +421,7 @@ export default function SquarePage() {
       };
       (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     },
-    [rotatingAvatarId]
+    []
   );
 
   const handlePointerMove = useCallback(
@@ -680,10 +664,17 @@ export default function SquarePage() {
                         transform: "scale(2)", pointerEvents: "none",
                       }} />
                       <div className="flex flex-col items-center relative">
-                        <Avatar3D modelUrl={v.model3d} size={avatar3DSize} autoRotate={false} animationSpeed={0.8}
-                          enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)} />
-                        {rotatingAvatarId !== v.id && (
-                          <div className="absolute inset-0 z-[5] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleVisitorTap(v); }} />
+                        {v.model3d && avatarSnapshots.get(v.model3d) ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={avatarSnapshots.get(v.model3d)}
+                            alt={v.displayName}
+                            style={{ width: avatar3DSize, height: avatar3DSize, objectFit: "contain" }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center" style={{ width: avatar3DSize, height: avatar3DSize }}>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "rgba(155,138,251,0.6)" }} />
+                          </div>
                         )}
                         <div className="animate-avatar-shadow" style={{
                           width: avatar3DSize * 0.5, height: avatar3DSize * 0.1, borderRadius: "50%",
@@ -730,9 +721,18 @@ export default function SquarePage() {
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", boxShadow: "0 1px 6px rgba(102,126,234,0.5)",
                   }}>YOU</div>
 
-                  <Avatar3D modelUrl={myModel} size={myAvatarSize} autoRotate={false}
-                    animationSpeed={myIsWalking ? 1.2 : 0.6} enableLongPressRotate
-                    onRotatingChange={(r) => setRotatingAvatarId(r ? "self" : null)} />
+                  {avatarSnapshots.get(myModel) ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={avatarSnapshots.get(myModel)}
+                      alt="自分"
+                      style={{ width: myAvatarSize, height: myAvatarSize, objectFit: "contain" }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center" style={{ width: myAvatarSize, height: myAvatarSize }}>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: "rgba(155,138,251,0.6)" }} />
+                    </div>
+                  )}
 
                   <div className="animate-avatar-shadow" style={{
                     width: myAvatarSize * 0.5, height: myAvatarSize * 0.1, borderRadius: "50%",
