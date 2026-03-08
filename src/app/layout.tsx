@@ -22,6 +22,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" suppressHydrationWarning>
+      <head>
+        {/* DNS prefetch & preconnect for faster 3D model loading */}
+        <link rel="dns-prefetch" href="https://drive.usercontent.google.com" />
+        <link rel="preconnect" href="https://drive.usercontent.google.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googleapis.com" />
+        <link rel="preconnect" href="https://www.googleapis.com" crossOrigin="anonymous" />
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SplashScreen>

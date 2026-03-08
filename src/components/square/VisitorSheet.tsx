@@ -49,7 +49,7 @@ export default function VisitorSheet({
         <div className="px-5">
           {/* ── Avatar + identity row ── */}
           <div className="flex items-start gap-4">
-            {/* Avatar — larger, centered */}
+            {/* Avatar preview — 2D only (3Dは広場に常駐させ、ここでは重複生成しない) */}
             <div className="shrink-0 -mt-1">
               <div
                 className="rounded-2xl p-2"

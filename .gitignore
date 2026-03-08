@@ -36,3 +36,7 @@ prisma/migrations/
 # IDE
 .idea/
 .vscode/
+
+# 3D model files (too large for git, serve locally or via CDN)
+public/models/*.glb
+public/models/*.gltf
