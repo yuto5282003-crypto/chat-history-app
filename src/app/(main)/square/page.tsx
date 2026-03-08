@@ -122,6 +122,16 @@ export default function SquarePage() {
     moved: false,
   });
 
+  /* ── Track NPCs whose 3D model failed to load ── */
+  const [failed3dIds, setFailed3dIds] = useState<Set<string>>(new Set());
+  const handleNpc3dError = useCallback((id: string) => {
+    setFailed3dIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
   /* ── Compute time overlay ── */
   const isNight = weather ? !weather.isDay : (currentHour < 6 || currentHour >= 19);
   const isSunset = currentHour >= 17 && currentHour < 19;
@@ -369,16 +379,19 @@ export default function SquarePage() {
     []
   );
 
+  /* ── Visible visitors (only those with working 3D) ── */
+  const visibleVisitors = visitors.filter((v) => v.model3d && !failed3dIds.has(v.id));
+
   /* ── Area people count ── */
   const getAreaCount = useCallback(
     (area: typeof AREAS[number]) => {
       const selfIn = myPos.x >= area.xMin && myPos.x < (area.xMax === 100 ? 101 : area.xMax) ? 1 : 0;
-      const npcIn = visitors.filter(
+      const npcIn = visibleVisitors.filter(
         (v) => v.posX >= area.xMin && v.posX < (area.xMax === 100 ? 101 : area.xMax)
       ).length;
       return selfIn + npcIn;
     },
-    [myPos, visitors]
+    [myPos, visibleVisitors]
   );
 
   /* ── Self avatar drag-to-move (Streetview style) ── */
@@ -508,7 +521,7 @@ export default function SquarePage() {
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-[6px] w-[6px] rounded-full animate-pulse" style={{ backgroundColor: "var(--success)" }} />
             <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
-              {visitors.length + 1}人
+              {visibleVisitors.length + 1}人
             </span>
           </div>
           {/* Weather badge */}
@@ -650,8 +663,8 @@ export default function SquarePage() {
                 </div>
               )}
 
-              {/* ── NPC avatars ── */}
-              {visitors.map((v, idx) => {
+              {/* ── NPC avatars (only show 3D-capable ones) ── */}
+              {visitors.filter((v) => v.model3d && !failed3dIds.has(v.id)).map((v, idx) => {
                 const zIndex = Math.round(v.posY);
                 const aSize = avatarSizeFromY(v.posY);
                 const avatar3DSize = aSize;
@@ -680,7 +693,7 @@ export default function SquarePage() {
                         }}>3D</div>
                         <Avatar3D modelUrl={v.model3d} size={avatar3DSize} autoRotate={false} animationSpeed={0.8}
                           enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)}
-                          fallbackImage={v.avatarImage} />
+                          hideOnError onLoadError={() => handleNpc3dError(v.id)} />
                         {rotatingAvatarId !== v.id && (
                           <div className="absolute inset-0 z-[5] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleVisitorTap(v); }} />
                         )}

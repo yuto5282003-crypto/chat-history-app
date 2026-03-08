@@ -216,6 +216,8 @@ const Avatar3D = memo(function Avatar3D({
   enableLongPressRotate = false,
   onRotatingChange,
   fallbackImage,
+  hideOnError = false,
+  onLoadError,
 }: {
   modelUrl?: string;
   size?: number;
@@ -225,6 +227,10 @@ const Avatar3D = memo(function Avatar3D({
   enableLongPressRotate?: boolean;
   onRotatingChange?: (rotating: boolean) => void;
   fallbackImage?: string;
+  /** If true, renders nothing when 3D model fails to load (no 2D fallback) */
+  hideOnError?: boolean;
+  /** Called when model fails to load */
+  onLoadError?: () => void;
 }) {
   const [hasError, setHasError] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
@@ -271,7 +277,19 @@ const Avatar3D = memo(function Avatar3D({
     return () => observer.disconnect();
   }, []);
 
+  // Notify parent when load fails
+  useEffect(() => {
+    if (hasError && retryCount >= MAX_RETRIES && onLoadError) {
+      onLoadError();
+    }
+  }, [hasError, retryCount, onLoadError]);
+
   const showFallback = !modelUrl || hasError;
+
+  // If hideOnError is true and model failed, render nothing
+  if (hideOnError && showFallback && (hasError || !modelUrl)) {
+    return null;
+  }
 
   // ── WebGL context loss/restore handling ──
   const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
