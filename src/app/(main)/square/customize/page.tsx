@@ -64,7 +64,7 @@ const GENDER_TABS = [
 
 const STORAGE_KEY = "sloty_selected_avatar";
 
-/* ── Avatar thumbnail for grid (uses simple styled card to avoid WebGL context limit) ── */
+/* ── Live 3D avatar thumbnail for grid ── */
 function AvatarThumbnail({
   avatar,
   isSelected,
@@ -84,23 +84,13 @@ function AvatarThumbnail({
         transition: "background 0.3s",
       }}
     >
-      <div className="flex flex-col items-center gap-1.5">
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{
-            width: 56,
-            height: 56,
-            background: `linear-gradient(135deg, ${avatar.color}50, ${avatar.color}30)`,
-            boxShadow: isSelected ? `0 2px 10px ${avatar.color}40` : "none",
-            transition: "box-shadow 0.3s",
-          }}
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-        <span className="text-[10px] font-bold" style={{ color: avatar.color }}>
+      <div className="flex flex-col items-center gap-0.5">
+        <Avatar3D
+          modelUrl={avatar.modelUrl}
+          size={72}
+          animationSpeed={0.5}
+        />
+        <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
           {avatar.name}
         </span>
       </div>
