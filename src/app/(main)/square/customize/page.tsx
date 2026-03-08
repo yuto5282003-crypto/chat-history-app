@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const Avatar3D = dynamic(
   () => import("@/components/square/Avatar3D").then((mod) => {
-    // Preload the first few popular models for faster preview
-    const preloadIds = AVATAR_CATALOG.slice(0, 4);
-    preloadIds.forEach((a) => mod.preloadModel(a.modelUrl));
     return mod;
   }),
   {
@@ -29,8 +28,6 @@ type AvatarItem = {
   gender: "female" | "male";
   color: string;
 };
-
-/* ── (placeholder generator removed — now using live 3D thumbnails) ── */
 
 const AVATAR_CATALOG: AvatarItem[] = [
   // 女性アバター
@@ -64,13 +61,133 @@ const GENDER_TABS = [
 
 const STORAGE_KEY = "sloty_selected_avatar";
 
-/* ── Live 3D avatar thumbnail for grid ── */
+/* ── Thumbnail snapshot cache (shared across renders) ── */
+const thumbnailCache = new Map<string, string>();
+
+/* ── Offscreen snapshot renderer: uses ONE WebGL context to capture all thumbnails ── */
+function useThumbnailRenderer() {
+  const [snapshots, setSnapshots] = useState<Map<string, string>>(new Map(thumbnailCache));
+  const queueRef = useRef<string[]>([]);
+  const busyRef = useRef(false);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+
+  const renderNext = useCallback(async () => {
+    if (busyRef.current || queueRef.current.length === 0) return;
+    busyRef.current = true;
+
+    const url = queueRef.current.shift()!;
+
+    // Skip if already cached
+    if (thumbnailCache.has(url)) {
+      busyRef.current = false;
+      renderNext();
+      return;
+    }
+
+    try {
+      // Create renderer lazily (single context for all thumbnails)
+      if (!rendererRef.current) {
+        rendererRef.current = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+          preserveDrawingBuffer: true,
+        });
+        rendererRef.current.setSize(144, 144);
+        rendererRef.current.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }
+
+      const renderer = rendererRef.current;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      camera.position.set(0, 0.5, 3);
+      camera.lookAt(0, 0, 0);
+
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      dirLight.position.set(3, 5, 4);
+      scene.add(dirLight);
+
+      // Load model
+      const loader = new GLTFLoader();
+      const gltf = await new Promise<ReturnType<GLTFLoader["parseAsync"]>>((resolve, reject) => {
+        loader.load(url, resolve as (gltf: unknown) => void, undefined, reject);
+      });
+
+      const model = (gltf as { scene: THREE.Group }).scene;
+      model.rotation.set(0, Math.PI, 0);
+
+      // Auto-fit to view
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2 / maxDim;
+      model.scale.setScalar(scale);
+      const sc = center.multiplyScalar(scale);
+      model.position.set(-sc.x, -sc.y + (size.y * scale) / 2 - 1, -sc.z);
+
+      scene.add(model);
+
+      // Render & capture
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL("image/png");
+
+      // Cache it
+      thumbnailCache.set(url, dataUrl);
+      setSnapshots((prev) => {
+        const next = new Map(prev);
+        next.set(url, dataUrl);
+        return next;
+      });
+
+      // Cleanup scene
+      scene.remove(model);
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry?.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m: THREE.Material) => m.dispose());
+          } else {
+            child.material?.dispose();
+          }
+        }
+      });
+    } catch {
+      // Failed to render this model, skip
+    }
+
+    busyRef.current = false;
+    // Process next in queue
+    requestAnimationFrame(() => renderNext());
+  }, []);
+
+  const enqueue = useCallback((urls: string[]) => {
+    const newUrls = urls.filter((u) => !thumbnailCache.has(u) && !queueRef.current.includes(u));
+    queueRef.current.push(...newUrls);
+    renderNext();
+  }, [renderNext]);
+
+  // Cleanup renderer on unmount
+  useEffect(() => {
+    return () => {
+      rendererRef.current?.dispose();
+      rendererRef.current = null;
+    };
+  }, []);
+
+  return { snapshots, enqueue };
+}
+
+/* ── Thumbnail component: shows captured snapshot or loading spinner ── */
 function AvatarThumbnail({
   avatar,
   isSelected,
+  snapshot,
 }: {
   avatar: AvatarItem;
   isSelected: boolean;
+  snapshot?: string;
 }) {
   return (
     <div
@@ -85,11 +202,25 @@ function AvatarThumbnail({
       }}
     >
       <div className="flex flex-col items-center gap-0.5">
-        <Avatar3D
-          modelUrl={avatar.modelUrl}
-          size={72}
-          animationSpeed={0.5}
-        />
+        {snapshot ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={snapshot}
+            alt={avatar.name}
+            style={{
+              width: 72,
+              height: 72,
+              objectFit: "contain",
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center" style={{ width: 72, height: 72 }}>
+            <div
+              className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent"
+              style={{ borderColor: avatar.color }}
+            />
+          </div>
+        )}
         <span className="text-[9px] font-bold" style={{ color: avatar.color }}>
           {avatar.name}
         </span>
@@ -104,6 +235,7 @@ export default function AvatarSelectPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentModelUrl, setCurrentModelUrl] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState(false);
+  const { snapshots, enqueue } = useThumbnailRenderer();
 
   // Load current selection
   useEffect(() => {
@@ -118,7 +250,12 @@ export default function AvatarSelectPage() {
     }
   }, []);
 
+  // Enqueue thumbnails for current gender tab
   const filteredAvatars = AVATAR_CATALOG.filter((a) => a.gender === gender);
+  useEffect(() => {
+    enqueue(filteredAvatars.map((a) => a.modelUrl));
+  }, [gender, enqueue, filteredAvatars]);
+
   const selectedAvatar = AVATAR_CATALOG.find((a) => a.id === selectedId);
 
   const handleSelect = (avatar: AvatarItem) => {
@@ -148,7 +285,7 @@ export default function AvatarSelectPage() {
         <h1 className="text-lg font-bold">アバター選択</h1>
       </div>
 
-      {/* Preview area — only ONE 3D Canvas here */}
+      {/* Preview area — only ONE live 3D Canvas here */}
       <div
         className="flex flex-col items-center rounded-2xl py-6 mb-4 relative"
         style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
@@ -263,6 +400,7 @@ export default function AvatarSelectPage() {
                 <AvatarThumbnail
                   avatar={avatar}
                   isSelected={isSelected}
+                  snapshot={snapshots.get(avatar.modelUrl)}
                 />
                 <span className="text-[11px] font-medium">{avatar.name}</span>
               </button>

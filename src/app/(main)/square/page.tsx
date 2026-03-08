@@ -122,15 +122,7 @@ export default function SquarePage() {
     moved: false,
   });
 
-  /* ── Track NPCs whose 3D model failed to load ── */
-  const [failed3dIds, setFailed3dIds] = useState<Set<string>>(new Set());
-  const handleNpc3dError = useCallback((id: string) => {
-    setFailed3dIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
+  /* ── (NPC 3D fallback handled by Avatar3D component with fallbackImage) ── */
 
   /* ── Compute time overlay ── */
   const isNight = weather ? !weather.isDay : (currentHour < 6 || currentHour >= 19);
@@ -379,8 +371,8 @@ export default function SquarePage() {
     []
   );
 
-  /* ── Visible visitors (only those with working 3D) ── */
-  const visibleVisitors = visitors.filter((v) => v.model3d && !failed3dIds.has(v.id));
+  /* ── Visible visitors (all with 3D models) ── */
+  const visibleVisitors = visitors.filter((v) => v.model3d);
 
   /* ── Area people count ── */
   const getAreaCount = useCallback(
@@ -663,8 +655,8 @@ export default function SquarePage() {
                 </div>
               )}
 
-              {/* ── NPC avatars (only show 3D-capable ones) ── */}
-              {visitors.filter((v) => v.model3d && !failed3dIds.has(v.id)).map((v, idx) => {
+              {/* ── NPC avatars ── */}
+              {visitors.filter((v) => v.model3d).map((v, idx) => {
                 const zIndex = Math.round(v.posY);
                 const aSize = avatarSizeFromY(v.posY);
                 const avatar3DSize = aSize;
@@ -693,7 +685,7 @@ export default function SquarePage() {
                         }}>3D</div>
                         <Avatar3D modelUrl={v.model3d} size={avatar3DSize} autoRotate={false} animationSpeed={0.8}
                           enableLongPressRotate onRotatingChange={(r) => setRotatingAvatarId(r ? v.id : null)}
-                          hideOnError onLoadError={() => handleNpc3dError(v.id)} />
+                          fallbackImage={v.avatarImage} />
                         {rotatingAvatarId !== v.id && (
                           <div className="absolute inset-0 z-[5] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleVisitorTap(v); }} />
                         )}
