@@ -120,7 +120,7 @@ function useThumbnailRenderer() {
         model = origModel.clone(true);
       }
 
-      model.rotation.set(0, 0, 0);
+      model.rotation.set(0, Math.PI, 0);
 
       // Auto-fit to view
       const box = new THREE.Box3().setFromObject(model);

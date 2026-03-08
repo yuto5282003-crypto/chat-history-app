@@ -69,7 +69,7 @@ export function useAvatarSnapshots(renderSize = 128) {
         model = origModel.clone(true);
       }
 
-      model.rotation.set(0, 0, 0);
+      model.rotation.set(0, Math.PI, 0);
 
       const box = new THREE.Box3().setFromObject(model);
       const sz = box.getSize(new THREE.Vector3());
