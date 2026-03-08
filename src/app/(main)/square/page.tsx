@@ -664,10 +664,10 @@ export default function SquarePage() {
                         transform: "scale(2)", pointerEvents: "none",
                       }} />
                       <div className="flex flex-col items-center relative">
-                        {v.model3d && avatarSnapshots.get(v.model3d) ? (
+                        {(v.model3d && avatarSnapshots.get(v.model3d)) || v.avatarImage ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
-                            src={avatarSnapshots.get(v.model3d)}
+                            src={(v.model3d && avatarSnapshots.get(v.model3d)) || v.avatarImage || ""}
                             alt={v.displayName}
                             style={{ width: avatar3DSize, height: avatar3DSize, objectFit: "contain" }}
                           />

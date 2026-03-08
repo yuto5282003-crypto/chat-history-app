@@ -60,6 +60,15 @@ export function useAvatarSnapshots(renderSize = 128) {
       }
 
       const renderer = rendererRef.current;
+
+      // Check if WebGL context is lost
+      const gl = renderer.getContext();
+      if (gl.isContextLost()) {
+        rendererRef.current.dispose();
+        rendererRef.current = null;
+        throw new Error("WebGL context lost");
+      }
+
       renderer.setSize(renderSize, renderSize);
 
       const scene = new THREE.Scene();
@@ -90,7 +99,7 @@ export function useAvatarSnapshots(renderSize = 128) {
         model = origModel.clone(true);
       }
 
-      model.rotation.set(0, 0, 0);
+      model.rotation.set(0, Math.PI, 0);
 
       const box = new THREE.Box3().setFromObject(model);
       const sz = box.getSize(new THREE.Vector3());
